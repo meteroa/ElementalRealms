@@ -1,0 +1,31 @@
+# Все кнопки уже заранее созданы в коде, их названия MESSAGE\OK, MESSAGE\YES, MESSAGE\NO
+
+USE MESSAGE\OK
+caption=^Ok^
+x=148
+y=160
+width=103
+height=29
+style=1
+font=2
+styleinfo=usualbtn
+
+USE MESSAGE\YES
+caption=^Yes^
+x=94
+y=160
+width=103
+height=29
+font=2
+style=1
+styleinfo=usualbtn
+
+USE MESSAGE\NO
+caption=^No^
+x=202
+y=160
+width=103
+height=29
+style=1
+font=2
+styleinfo=usualbtn

@@ -1,0 +1,281 @@
+DefaultColor $FFFFFF00
+DefaultX 90
+DefaultY 20
+DefaultWidth 100
+DefaultHeight 36
+defaultstyle 0
+defaultfont 2
+
+Options\WND.caption=^Options^
+
+UseParent Options\WND
+
+Create UIButton Options\BasicOptions
+x=36
+y=108
+caption="^Basic options^"
+width=174
+height=26
+style=1
+styleinfo=OptStyle
+
+
+Create UIButton Options\RandomOptions
+x=212
+y=108
+caption="^Customize random class^"
+width=174
+height=26
+style=1
+styleinfo=OptStyle2
+
+customstyle.OptStyle\color=$F0C0B080
+customstyle.OptStyle\shadow=$B0201000
+customstyle.OptStyle\colorOver=$E0C8B890
+customstyle.OptStyle\colorDown=$A0D0C070
+customstyle.OptStyle\textOffsetY=-2
+
+customstyle.OptStyle2\color=$F0707068
+customstyle.OptStyle2\shadow=$B0201000
+customstyle.OptStyle2\colorOver=$F0C8B890
+customstyle.OptStyle2\colorDown=$A0D0C070
+
+Create UILabel Options\SoundLabel
+x=25
+width=150
+y=274
+caption="^Sound volume:^"
+align=right
+font=2
+color=$D0FFF0B0
+
+Create UILabel Options\MusicLabel
+x=25
+width=150
+y=318
+caption="^Music volume:^"
+align=right
+font=2
+color=$D0FFF0B0
+
+Use Options\SoundScroll
+x=200
+y=274
+width=135
+height=22
+
+Use Options\MusicScroll
+x=200
+y=318
+width=135
+height=22
+
+
+DefaultHeight 22
+
+Create UIButton Options\ShowDescSpells
+x=120
+y=148
+caption="^Show spell's descriptions^"
+hint="^Pop-up window will appear each time when computer casts a spell^"
+btnStyle=item
+width=250
+font=2
+color=$FF220000
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\ShowDescCreatures
+x=120
+y=174
+caption="^Show creature's descriptions^"
+hint="^Pop-up window will appear each time when computer summons a creature^"
+btnStyle=item
+width=250
+font=2
+color=$FF220000
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\ShowLifeBar
+x=120
+y=200
+caption="^Show lifebar for creatures^"
+btnStyle=item
+width=250
+font=2
+color=$FF220000
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\NeedJPG
+x=120
+y=226
+caption="^Save replays as JPG files^"
+hint="^The image gallery will be saved along with replay file^"
+btnStyle=item
+width=250
+font=2
+color=$FF220000
+style=1
+styleinfo=checkbox3
+
+
+defaultheight 22
+defaultX 86
+
+Create UIButton Options\Spec1
+y=147
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec2
+y=171
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec3
+y=195
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec4
+y=219
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec5
+y=243
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec6
+y=267
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec7
+y=291
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec8
+y=315
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+defaultX 236
+
+Create UIButton Options\Spec9
+y=147
+btnStyle=item
+font=2
+color=$FF220000
+width=130
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec10
+y=171
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec11
+y=195
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec12
+y=219
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec13
+y=243
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec14
+y=267
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec15
+y=291
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Spec16
+y=315
+btnStyle=item
+font=2
+color=$FF220000
+width=140
+style=1
+styleinfo=checkbox3
+
+Create UIButton Options\Ok
+caption=^Ok^
+x=161
+y=385
+width=103
+height=29
+style=1
+styleinfo=usualbtn
+

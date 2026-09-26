@@ -1,0 +1,137 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 170" width="100%" height="100%">
+  <defs>
+    <!-- Gold Gradient for Main Title -->
+    <linearGradient id="goldGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#fff8db" />
+      <stop offset="28%" stop-color="#fed766" />
+      <stop offset="55%" stop-color="#d49b28" />
+      <stop offset="78%" stop-color="#8a530f" />
+      <stop offset="100%" stop-color="#552c04" />
+    </linearGradient>
+
+    <!-- Bronze Filigree Gradient -->
+    <linearGradient id="bronzeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffd700" />
+      <stop offset="50%" stop-color="#9a712c" />
+      <stop offset="100%" stop-color="#4a300e" />
+    </linearGradient>
+
+    <!-- Subtitle Gold Gradient -->
+    <linearGradient id="subGold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#c69b3f" stop-opacity="0" />
+      <stop offset="25%" stop-color="#ffd700" />
+      <stop offset="50%" stop-color="#fff3cb" />
+      <stop offset="75%" stop-color="#ffd700" />
+      <stop offset="100%" stop-color="#c69b3f" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Outer Glow Filter -->
+    <filter id="goldGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="1.8" />
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Deep Drop Shadow -->
+    <filter id="shadowFilter" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="5" stdDeviation="4" flood-color="#000000" flood-opacity="0.9" />
+    </filter>
+
+    <!-- Gem Radial Gradients -->
+    <radialGradient id="gemFire" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ff9980" />
+      <stop offset="50%" stop-color="#e62e00" />
+      <stop offset="100%" stop-color="#660a00" />
+    </radialGradient>
+    <radialGradient id="gemWater" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#b3ecff" />
+      <stop offset="50%" stop-color="#0099e6" />
+      <stop offset="100%" stop-color="#003366" />
+    </radialGradient>
+    <radialGradient id="gemAir" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#ffffcc" />
+      <stop offset="50%" stop-color="#ffd700" />
+      <stop offset="100%" stop-color="#8a6b00" />
+    </radialGradient>
+    <radialGradient id="gemEarth" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#c2f0c2" />
+      <stop offset="50%" stop-color="#2eb82e" />
+      <stop offset="100%" stop-color="#0d470d" />
+    </radialGradient>
+    <radialGradient id="gemSpecial" cx="35%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#f3d9fa" />
+      <stop offset="50%" stop-color="#bf5af2" />
+      <stop offset="100%" stop-color="#4a154b" />
+    </radialGradient>
+  </defs>
+
+  <!-- Left: 5-Elements Magic Seal Emblem -->
+  <g transform="translate(68, 85)" filter="url(#goldGlow)">
+    <!-- Outer Runic Ring -->
+    <circle r="48" fill="none" stroke="url(#bronzeGrad)" stroke-width="2.5" stroke-dasharray="8 3 4 3" opacity="0.9" />
+    <circle r="42" fill="#140f0b" stroke="url(#goldGrad)" stroke-width="1.8" />
+    <!-- Inner 5-point Star -->
+    <polygon points="0,-36 21,-7 34,25 0,14 -34,25 -21,-7" fill="none" stroke="url(#goldGrad)" stroke-width="1.5" opacity="0.85" />
+    <!-- Center Core Gem -->
+    <circle r="12" fill="url(#goldGrad)" filter="url(#goldGlow)" />
+    <circle r="8" fill="#fff" opacity="0.8" />
+
+    <!-- 5 Elemental Orbiting Gems -->
+    <!-- Fire (Top) -->
+    <circle cx="0" cy="-36" r="6.5" fill="url(#gemFire)" stroke="#ffd700" stroke-width="1.2" />
+    <!-- Water (Top-Right) -->
+    <circle cx="34" cy="-11" r="6.5" fill="url(#gemWater)" stroke="#ffd700" stroke-width="1.2" />
+    <!-- Air (Bottom-Right) -->
+    <circle cx="21" cy="29" r="6.5" fill="url(#gemAir)" stroke="#ffd700" stroke-width="1.2" />
+    <!-- Earth (Bottom-Left) -->
+    <circle cx="-21" cy="29" r="6.5" fill="url(#gemEarth)" stroke="#ffd700" stroke-width="1.2" />
+    <!-- Special / Arcane (Top-Left) -->
+    <circle cx="-34" cy="-11" r="6.5" fill="url(#gemSpecial)" stroke="#ffd700" stroke-width="1.2" />
+  </g>
+
+  <!-- Right: Typography Branding -->
+  <g transform="translate(145, 0)" filter="url(#shadowFilter)">
+    <!-- English Arch-Title Header -->
+    <text x="185" y="44" text-anchor="middle"
+          font-family="'Cinzel', 'Trajan Pro', Georgia, serif"
+          font-size="14.5" font-weight="900" letter-spacing="7"
+          fill="url(#subGold)" filter="url(#goldGlow)">
+      ELEMENTAL REALMS
+    </text>
+
+    <!-- Decorative Upper Divider Wings -->
+    <line x1="20" y1="52" x2="110" y2="52" stroke="url(#subGold)" stroke-width="1.2" />
+    <polygon points="120,52 125,49 130,52 125,55" fill="#ffd700" />
+    <line x1="140" y1="52" x2="230" y2="52" stroke="url(#subGold)" stroke-width="1.2" />
+    <polygon points="240,52 245,49 250,52 245,55" fill="#ffd700" />
+    <line x1="260" y1="52" x2="350" y2="52" stroke="url(#subGold)" stroke-width="1.2" />
+
+    <!-- Main Chinese Title: 元素秘境 -->
+    <text x="185" y="112" text-anchor="middle"
+          font-family="'Songti SC', 'Noto Serif SC', 'Source Han Serif SC', 'STSong', Georgia, serif"
+          font-size="52" font-weight="900" letter-spacing="8"
+          fill="url(#goldGrad)"
+          stroke="#381e05" stroke-width="3"
+          style="paint-order: stroke fill;"
+          filter="url(#goldGlow)">
+      元素秘境
+    </text>
+
+    <!-- Subtitle Pill: 魔导对决 · 移动端 -->
+    <g transform="translate(185, 140)">
+      <line x1="-150" y1="0" x2="-65" y2="0" stroke="url(#subGold)" stroke-width="1.2" />
+      <text x="0" y="4" text-anchor="middle"
+            font-family="'Cinzel', 'Noto Serif SC', sans-serif"
+            font-size="12" font-weight="800" letter-spacing="4"
+            fill="#ffebb4">
+        ✦ 魔 导 对 决 · 移 动 端 ✦
+      </text>
+      <line x1="65" y1="0" x2="150" y2="0" stroke="url(#subGold)" stroke-width="1.2" />
+    </g>
+  </g>
+</svg>

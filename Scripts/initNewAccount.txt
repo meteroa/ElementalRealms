@@ -1,0 +1,161 @@
+DefaultColor $D8301000
+DefaultX 90
+DefaultWidth 210
+DefaultHeight 20
+defaultfont 2
+defaultstyle 0
+
+Use NewAcc\WND
+caption=^New Account^
+
+Use NewAcc\Login
+x=312
+y=189
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Password
+x=312
+y=237
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Password2
+x=312
+y=285
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Location
+x=311
+y=392
+width=160
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Age
+x=312
+y=342
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Email
+x=130
+y=392
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\Realname
+x=130
+y=342
+width=159
+height=20
+color=$D8301000
+signals=all
+
+Use NewAcc\AddInfo
+x=129
+y=442
+width=343
+height=20
+color=$D8301000
+signals=all
+
+UseParent NewAcc\WND
+DefaultColor $D8301000
+
+Create UIlabel NewAcc\CaptionLabel
+caption=^Create New Account^
+x=100
+y=135
+width=385
+height=36
+align=center
+color=$D8301000
+font=3
+
+DefaultX 301
+
+Create UIlabel NewAcc\LoginLabel
+caption=^Login:^
+y=168
+
+Create UIlabel NewAcc\PasswordLabel
+caption=^Password:^
+y=216
+
+Create UIlabel NewAcc\Password2Label
+caption=^Confirm password:^
+y=264
+
+Create UIlabel NewAcc\RealnameLabel
+caption=^Real name:^
+x=121
+y=320
+
+Create UIlabel NewAcc\AgeLabel
+caption=^Age:^
+x=301
+y=320
+width=100
+
+Create UIlabel NewAcc\EmailLabel
+caption=^Email:^
+x=121
+y=370
+
+Create UIlabel NewAcc\LocationLabel
+caption=^Location:^
+x=301
+y=370
+
+
+Create UIlabel NewAcc\AddInfoLabel
+caption=^Additional Information^:
+align=center
+x=100
+width=385
+y=420
+
+Defaulty 479
+DefaultWidth 122
+DefaultHeight 29
+
+Create UIButton NewAcc\Create
+caption=^Create^
+x=165
+style=1
+styleinfo=CombatResultBtn
+
+Create UIButton NewAcc\Back
+caption=^Back^
+x=310
+style=1
+styleinfo=CombatResultBtn
+
+DefaultY 183
+
+Create UIButton NewAcc\Left
+x=118
+Width=24
+Height=124
+Style=1
+styleinfo=ProfileLeftBTN
+
+Create UIButton NewAcc\Right
+x=255
+width=24
+height=124
+Style=1
+styleinfo=ProfileRightBTN

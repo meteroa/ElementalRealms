@@ -1,0 +1,11 @@
+UseParent NetMessage\WND
+
+Create UIButton NetMessage\Cancel
+caption=^Cancel^
+x=146
+y=160
+width=103
+height=29
+style=1
+font=2
+styleinfo=usualbtn

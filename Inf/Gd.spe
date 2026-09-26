@@ -1,0 +1,3982 @@
+1
+1
+4
+16
+-2
+0
+33
+1
+0
+0
+0
+1
+2
+0
+5
+-1
+0
+33
+0
+0
+0
+0
+1
+3
+3
+13
+3
+0
+34
+0
+0
+0
+0
+1
+4
+4
+18
+0
+0
+32
+0
+0
+0
+0
+1
+5
+3
+17
+0
+0
+31
+0
+0
+0
+0
+1
+6
+0
+0
+0
+0
+33
+0
+0
+0
+0
+1
+7
+6
+20
+1
+0
+32
+0
+0
+0
+0
+1
+8
+8
+26
+0
+0
+31
+0
+0
+0
+0
+1
+9
+0
+0
+0
+0
+33
+0
+0
+1
+1
+1
+10
+-1
+37
+4
+0
+36
+1
+0
+0
+0
+1
+11
+0
+0
+0
+0
+36
+0
+0
+0
+0
+1
+12
+9
+40
+1
+0
+36
+0
+0
+0
+0
+2
+1
+0
+0
+0
+0
+37
+0
+0
+0
+0
+2
+2
+5
+22
+-4
+0
+37
+1
+0
+0
+0
+2
+3
+3
+10
+0
+0
+37
+0
+0
+0
+0
+2
+4
+4
+12
+1
+0
+31
+0
+0
+0
+0
+2
+5
+3
+16
+3
+0
+33
+0
+0
+0
+0
+2
+6
+3
+20
+0
+0
+31
+0
+0
+0
+0
+2
+7
+5
+16
+1
+0
+31
+0
+0
+0
+0
+2
+8
+0
+0
+0
+0
+31
+0
+0
+0
+0
+2
+9
+7
+35
+0
+0
+33
+1
+0
+0
+0
+2
+10
+-1
+37
+4
+0
+33
+1
+0
+0
+0
+2
+11
+6
+23
+10
+0
+33
+0
+0
+0
+0
+2
+12
+1
+18
+20
+0
+33
+0
+0
+0
+0
+3
+1
+4
+12
+-1
+0
+38
+0
+0
+0
+0
+3
+2
+3
+15
+0
+0
+38
+0
+0
+0
+0
+3
+3
+0
+0
+0
+0
+38
+0
+0
+1
+1
+3
+4
+4
+19
+0
+0
+35
+0
+0
+0
+0
+3
+5
+0
+28
+3
+0
+35
+0
+0
+0
+0
+3
+6
+0
+0
+0
+0
+35
+0
+0
+0
+0
+3
+7
+7
+16
+1
+0
+15
+1
+0
+0
+0
+3
+8
+0
+0
+0
+0
+34
+0
+0
+0
+0
+3
+9
+4
+20
+0
+1
+33
+0
+0
+0
+0
+3
+10
+0
+0
+0
+0
+33
+0
+0
+1
+1
+3
+11
+-1
+44
+4
+0
+33
+1
+0
+0
+0
+3
+12
+9
+40
+0
+0
+33
+0
+0
+0
+0
+4
+1
+2
+12
+1
+0
+33
+0
+0
+0
+0
+4
+2
+0
+0
+0
+0
+33
+0
+0
+1
+2
+4
+3
+1
+22
+0
+1
+33
+0
+0
+0
+0
+4
+4
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+5
+1
+13
+6
+0
+33
+0
+0
+0
+0
+4
+6
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+7
+4
+24
+0
+0
+32
+0
+0
+0
+0
+4
+8
+6
+26
+0
+0
+32
+0
+0
+0
+0
+4
+9
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+10
+-1
+50
+4
+0
+36
+1
+0
+0
+0
+4
+11
+3
+34
+7
+0
+36
+0
+0
+0
+0
+4
+12
+3
+40
+3
+1
+36
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+60
+0
+0
+0
+0
+5
+2
+0
+0
+0
+0
+40
+0
+0
+0
+0
+5
+3
+4
+21
+0
+0
+50
+0
+0
+0
+0
+5
+4
+7
+48
+-1
+0
+50
+0
+0
+0
+0
+5
+5
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+6
+7
+35
+3
+0
+50
+0
+0
+0
+0
+5
+7
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+8
+8
+46
+0
+0
+50
+0
+0
+0
+0
+5
+1
+4
+9
+0
+0
+50
+0
+0
+0
+0
+5
+2
+4
+13
+0
+0
+50
+0
+0
+0
+0
+5
+3
+4
+23
+0
+0
+50
+0
+0
+0
+0
+5
+4
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+5
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+6
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+7
+8
+42
+0
+0
+50
+0
+0
+0
+0
+5
+8
+8
+48
+0
+0
+50
+0
+0
+0
+0
+5
+0
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+2
+4
+17
+1
+0
+50
+0
+0
+0
+0
+5
+3
+2
+17
+6
+0
+50
+0
+0
+0
+0
+5
+4
+4
+24
+4
+0
+50
+0
+0
+0
+0
+5
+5
+6
+20
+2
+0
+50
+0
+0
+0
+0
+5
+6
+8
+29
+6
+0
+50
+0
+0
+0
+0
+5
+7
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+8
+6
+52
+0
+0
+50
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+2
+4
+4
+1
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+55
+0
+0
+0
+0
+5
+4
+0
+20
+4
+0
+45
+0
+0
+0
+0
+5
+5
+6
+22
+0
+0
+50
+0
+0
+0
+0
+5
+6
+7
+34
+0
+0
+50
+0
+0
+0
+0
+5
+7
+8
+41
+2
+0
+50
+0
+0
+0
+0
+5
+8
+5
+39
+5
+0
+50
+0
+0
+0
+0
+4
+1
+2
+11
+0
+0
+0
+0
+0
+0
+0
+5
+1
+4
+12
+0
+0
+50
+0
+0
+0
+0
+5
+2
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+3
+0
+17
+5
+0
+50
+0
+0
+0
+0
+5
+4
+5
+25
+0
+0
+50
+0
+0
+0
+0
+5
+5
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+6
+4
+18
+0
+0
+50
+0
+0
+0
+0
+5
+7
+8
+36
+1
+0
+50
+0
+0
+0
+0
+5
+8
+8
+49
+0
+0
+50
+0
+0
+0
+0
+5
+1
+4
+11
+1
+0
+50
+0
+0
+0
+0
+5
+2
+4
+14
+2
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+4
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+5
+3
+25
+5
+0
+50
+0
+0
+0
+0
+5
+6
+6
+28
+5
+0
+50
+0
+0
+0
+0
+5
+7
+6
+38
+6
+0
+50
+0
+0
+0
+0
+5
+8
+6
+46
+7
+0
+50
+0
+0
+0
+0
+5
+1
+4
+15
+0
+0
+0
+0
+0
+0
+0
+5
+5
+6
+32
+0
+0
+0
+0
+0
+0
+0
+6
+15
+0
+55
+-20
+0
+0
+0
+0
+0
+0
+6
+15
+14
+55
+5
+0
+0
+0
+0
+0
+0
+6
+18
+0
+75
+0
+0
+0
+0
+0
+0
+0
+6
+18
+-2
+75
+5
+0
+0
+0
+0
+0
+0
+6
+9
+4
+48
+2
+0
+0
+0
+0
+0
+0
+6
+0
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+8
+4
+40
+10
+0
+0
+0
+0
+0
+0
+6
+6
+0
+90
+0
+0
+0
+0
+1
+0
+0
+6
+10
+-3
+50
+1
+1
+0
+0
+0
+0
+0
+6
+9
+0
+90
+0
+0
+0
+0
+1
+0
+0
+6
+9
+-4
+40
+1
+1
+0
+0
+0
+0
+0
+6
+9
+0
+90
+-1
+0
+0
+0
+1
+0
+0
+6
+1
+4
+12
+0
+0
+0
+0
+0
+0
+0
+6
+6
+3
+20
+-3
+0
+0
+0
+0
+0
+0
+6
+4
+3
+15
+1
+0
+0
+0
+0
+0
+0
+6
+7
+4
+50
+-3
+0
+0
+0
+0
+0
+0
+6
+2
+0
+20
+1
+0
+0
+0
+0
+0
+0
+6
+3
+0
+10
+0
+1
+0
+0
+0
+0
+0
+6
+8
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+6
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+4
+0
+25
+1
+0
+0
+0
+0
+0
+0
+6
+0
+2
+8
+0
+0
+0
+0
+0
+0
+0
+6
+0
+3
+10
+0
+0
+0
+0
+0
+0
+0
+6
+0
+4
+10
+0
+0
+0
+0
+0
+0
+0
+6
+0
+3
+15
+0
+0
+0
+0
+0
+0
+0
+6
+0
+4
+15
+0
+0
+0
+0
+0
+0
+0
+6
+0
+4
+15
+0
+0
+0
+0
+0
+0
+0
+6
+0
+4
+15
+0
+0
+0
+0
+0
+0
+0
+6
+0
+4
+15
+0
+0
+0
+0
+0
+0
+0
+6
+0
+5
+17
+0
+0
+0
+0
+0
+0
+0
+6
+0
+0
+0
+0
+0
+0
+0
+0
+1
+0
+6
+5
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+6
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+5
+0
+99
+0
+0
+0
+0
+1
+0
+0
+6
+8
+0
+30
+9
+0
+0
+0
+0
+0
+0
+6
+8
+0
+30
+9
+0
+0
+0
+0
+0
+0
+6
+9
+0
+45
+4
+0
+0
+0
+0
+0
+0
+6
+1
+4
+20
+4
+0
+0
+0
+0
+0
+0
+6
+8
+0
+99
+1
+0
+0
+0
+1
+0
+0
+6
+0
+0
+5
+0
+0
+0
+0
+0
+0
+0
+6
+5
+1
+50
+0
+0
+0
+0
+0
+0
+0
+6
+5
+0
+99
+0
+0
+0
+0
+1
+0
+0
+5
+4
+3
+28
+8
+0
+0
+0
+0
+0
+0
+6
+4
+4
+16
+-1
+0
+0
+0
+0
+0
+0
+6
+2
+4
+8
+-1
+0
+0
+0
+0
+0
+0
+6
+1
+2
+4
+-1
+0
+0
+0
+0
+0
+0
+6
+1
+1
+2
+0
+0
+0
+0
+0
+0
+0
+6
+6
+5
+50
+1
+0
+0
+0
+0
+0
+0
+6
+15
+-5
+99
+4
+0
+0
+0
+0
+0
+0
+6
+8
+0
+99
+4
+0
+0
+0
+1
+0
+0
+6
+8
+0
+99
+4
+0
+0
+0
+1
+0
+0
+6
+8
+0
+50
+4
+0
+0
+0
+0
+0
+0
+6
+12
+10
+99
+-3
+0
+0
+0
+0
+0
+0
+6
+2
+0
+99
+15
+0
+0
+0
+0
+0
+0
+5
+7
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+1
+4
+8
+0
+0
+50
+0
+0
+0
+0
+5
+2
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+3
+0
+0
+0
+0
+50
+0
+0
+1
+1
+5
+4
+6
+23
+1
+0
+50
+0
+0
+0
+0
+5
+5
+2
+21
+4
+0
+50
+0
+0
+0
+0
+5
+6
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+7
+3
+30
+0
+1
+50
+0
+0
+0
+0
+5
+8
+8
+42
+0
+0
+50
+0
+0
+0
+0
+5
+1
+3
+6
+0
+0
+0
+0
+0
+0
+0
+5
+5
+6
+20
+0
+0
+50
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+2
+0
+0
+0
+0
+50
+0
+0
+1
+1
+5
+3
+0
+0
+0
+0
+50
+0
+0
+1
+3
+5
+4
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+5
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+6
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+7
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+8
+0
+0
+0
+0
+50
+0
+0
+1
+1
+5
+1
+3
+9
+0
+0
+50
+0
+0
+0
+0
+5
+2
+5
+18
+0
+0
+50
+0
+0
+0
+0
+5
+3
+6
+25
+0
+0
+50
+0
+0
+0
+0
+5
+4
+6
+34
+0
+0
+50
+0
+0
+0
+0
+5
+5
+7
+45
+0
+0
+50
+0
+0
+0
+0
+5
+6
+8
+40
+1
+0
+50
+0
+0
+0
+0
+5
+7
+6
+54
+4
+0
+50
+0
+0
+0
+0
+5
+8
+8
+45
+1
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+2
+0
+0
+0
+0
+0
+0
+0
+1
+1
+5
+2
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+0
+0
+0
+1
+0
+5
+0
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+0
+0
+0
+0
+0
+0
+0
+0
+1
+1
+5
+3
+0
+0
+0
+0
+0
+0
+0
+0
+0
+5
+7
+2
+25
+0
+0
+0
+0
+0
+0
+0
+5
+4
+3
+40
+0
+0
+0
+0
+0
+0
+0
+5
+4
+3
+40
+0
+0
+0
+0
+0
+0
+0
+5
+2
+2
+14
+-3
+0
+0
+0
+0
+0
+0
+5
+2
+1
+99
+0
+0
+0
+0
+0
+0
+0
+5
+5
+2
+17
+0
+0
+0
+0
+0
+0
+0
+5
+1
+1
+1
+0
+0
+0
+0
+0
+0
+0
+5
+4
+4
+30
+0
+0
+0
+0
+0
+0
+0
+5
+4
+6
+20
+0
+0
+0
+0
+0
+0
+0
+6
+6
+8
+99
+0
+0
+0
+0
+1
+0
+0
+5
+0
+0
+0
+0
+0
+50
+0
+0
+1
+0
+5
+1
+3
+14
+-1
+0
+50
+0
+0
+0
+0
+5
+2
+5
+20
+0
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+4
+5
+28
+1
+0
+50
+0
+0
+0
+0
+5
+5
+5
+28
+3
+0
+50
+0
+0
+0
+0
+5
+6
+4
+24
+0
+0
+50
+0
+0
+0
+0
+5
+7
+7
+47
+7
+0
+50
+0
+0
+0
+0
+5
+3
+1
+10
+0
+0
+50
+0
+0
+0
+0
+5
+1
+2
+2
+0
+0
+50
+0
+0
+0
+0
+5
+2
+0
+24
+0
+0
+50
+0
+0
+0
+0
+5
+3
+4
+14
+0
+0
+50
+0
+0
+0
+0
+5
+4
+3
+10
+0
+0
+50
+0
+0
+0
+0
+5
+5
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+6
+4
+25
+1
+0
+50
+0
+0
+0
+0
+5
+7
+3
+14
+0
+0
+50
+0
+0
+0
+0
+5
+8
+5
+30
+1
+0
+50
+0
+0
+0
+0
+5
+0
+2
+8
+0
+0
+0
+0
+0
+0
+0
+5
+1
+4
+11
+0
+0
+50
+0
+0
+0
+0
+5
+2
+5
+17
+0
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+4
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+5
+5
+24
+1
+0
+50
+0
+0
+0
+0
+5
+6
+4
+35
+3
+0
+50
+0
+0
+0
+0
+5
+7
+3
+33
+7
+0
+50
+0
+0
+0
+0
+5
+8
+8
+40
+0
+0
+50
+0
+0
+0
+0
+1
+1
+4
+16
+-1
+0
+33
+1
+0
+0
+0
+1
+2
+0
+5
+2
+0
+33
+0
+0
+0
+0
+1
+3
+3
+13
+3
+0
+34
+0
+0
+0
+0
+1
+4
+4
+20
+0
+0
+32
+0
+0
+0
+0
+1
+5
+4
+17
+0
+0
+31
+0
+0
+0
+0
+1
+6
+0
+0
+0
+0
+33
+0
+0
+0
+0
+1
+7
+7
+20
+1
+0
+32
+0
+0
+0
+0
+1
+8
+7
+26
+2
+0
+31
+0
+0
+0
+0
+1
+9
+0
+0
+0
+0
+33
+0
+0
+1
+1
+1
+10
+-1
+36
+4
+0
+36
+1
+0
+0
+0
+1
+11
+0
+0
+0
+0
+36
+0
+0
+0
+0
+1
+12
+10
+41
+1
+0
+36
+0
+0
+0
+0
+2
+1
+0
+0
+0
+0
+37
+0
+0
+0
+0
+2
+2
+2
+22
+2
+0
+37
+1
+0
+0
+0
+2
+3
+3
+12
+0
+0
+37
+0
+0
+0
+0
+2
+4
+4
+12
+1
+0
+31
+0
+0
+0
+0
+2
+5
+3
+16
+3
+0
+33
+0
+0
+0
+0
+2
+6
+4
+20
+0
+0
+31
+0
+0
+0
+0
+2
+7
+5
+17
+2
+0
+31
+0
+0
+0
+0
+2
+8
+0
+0
+0
+0
+31
+0
+0
+0
+0
+2
+9
+8
+35
+0
+0
+33
+1
+0
+0
+0
+2
+10
+-1
+37
+4
+0
+33
+1
+0
+0
+0
+2
+11
+6
+25
+10
+0
+33
+0
+0
+0
+0
+2
+12
+4
+18
+20
+0
+33
+0
+0
+0
+0
+3
+1
+4
+14
+-1
+0
+38
+0
+0
+0
+0
+3
+2
+4
+15
+0
+0
+38
+0
+0
+0
+0
+3
+3
+0
+0
+0
+0
+38
+0
+0
+1
+1
+3
+4
+5
+19
+0
+0
+35
+0
+0
+0
+0
+3
+5
+0
+32
+3
+0
+35
+0
+0
+0
+0
+3
+6
+0
+0
+0
+0
+35
+0
+0
+0
+0
+3
+7
+7
+16
+1
+0
+15
+1
+0
+0
+0
+3
+8
+0
+0
+0
+0
+34
+0
+0
+0
+0
+3
+9
+4
+22
+0
+1
+33
+0
+0
+0
+0
+3
+10
+0
+0
+0
+0
+33
+0
+0
+1
+1
+3
+11
+-1
+44
+4
+0
+33
+1
+0
+0
+0
+3
+12
+9
+40
+0
+0
+33
+0
+0
+0
+0
+4
+1
+2
+12
+2
+0
+33
+0
+0
+0
+0
+4
+2
+0
+0
+0
+0
+33
+0
+0
+1
+2
+4
+3
+1
+24
+0
+1
+33
+0
+0
+0
+0
+4
+4
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+5
+1
+13
+6
+0
+33
+0
+0
+0
+0
+4
+6
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+7
+4
+27
+0
+0
+32
+0
+0
+0
+0
+4
+8
+6
+26
+0
+0
+32
+0
+0
+0
+0
+4
+9
+0
+0
+0
+0
+32
+0
+0
+0
+0
+4
+10
+-1
+54
+4
+0
+36
+1
+0
+0
+0
+4
+11
+4
+34
+7
+0
+36
+0
+0
+0
+0
+4
+12
+3
+40
+3
+1
+36
+0
+0
+0
+0
+5
+1
+4
+15
+-1
+0
+50
+0
+0
+0
+0
+5
+2
+4
+23
+0
+0
+50
+0
+0
+0
+0
+5
+3
+4
+26
+0
+0
+50
+0
+0
+0
+0
+5
+4
+0
+0
+0
+0
+50
+0
+0
+1
+2
+5
+5
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+6
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+7
+8
+42
+0
+0
+50
+0
+0
+0
+0
+5
+8
+8
+37
+0
+0
+50
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+2
+4
+25
+-1
+0
+50
+0
+0
+0
+0
+5
+3
+1
+19
+3
+0
+50
+0
+0
+0
+0
+5
+4
+5
+46
+0
+0
+50
+0
+0
+0
+0
+5
+5
+3
+49
+4
+0
+50
+0
+0
+0
+0
+5
+6
+9
+51
+0
+0
+50
+0
+0
+0
+0
+5
+7
+5
+27
+3
+0
+50
+0
+0
+0
+0
+5
+8
+8
+33
+0
+0
+50
+0
+0
+0
+0
+5
+0
+5
+14
+0
+0
+50
+0
+0
+0
+0
+5
+1
+4
+26
+0
+0
+50
+0
+0
+0
+0
+5
+2
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+3
+3
+42
+-2
+0
+50
+0
+0
+0
+0
+5
+4
+0
+63
+0
+0
+50
+0
+0
+0
+0
+5
+5
+6
+53
+-1
+0
+50
+0
+0
+0
+0
+5
+6
+5
+27
+4
+0
+50
+0
+0
+0
+0
+5
+7
+8
+56
+0
+0
+50
+0
+0
+0
+0
+5
+8
+13
+58
+-4
+0
+50
+0
+0
+0
+0
+5
+3
+3
+10
+1
+0
+50
+0
+0
+0
+0
+5
+1
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+2
+4
+10
+0
+0
+50
+0
+0
+0
+0
+5
+3
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+4
+0
+0
+0
+0
+50
+0
+0
+0
+0
+5
+5
+-6
+22
+2
+0
+50
+0
+0
+0
+0
+5
+6
+2
+8
+0
+0
+50
+0
+0
+0
+0
+5
+7
+7
+32
+0
+0
+50
+0
+0
+0
+0
+5
+8
+5
+40
+3
+0
+50
+0
+0
+0
+0
+^Goblin Berserker^
+^Fire creature^, ^cost^ 1~^Attack^ 4, ^life^ 16~^At the beginning of its owners turn,~Goblin Berserker deals 2 damage~to its neighboring creatures.^
+^Wall of Fire^
+^Fire creature^, ^cost^ 2~^Attack^ 0, ^life^ 5~^When Wall of Fire is summoned~it deals 5 damage to each of~the opponent's creatures.^
+^Priest of Fire^
+^Fire creature^, ^cost^ 3~^Attack^ 3, ^life^ 13~^Priest of Fire increases the growth~of its owner's Fire power by 1.^
+^Fire Drake^
+^Fire creature^, ^cost^ 4~^Attack^ 4, ^life^ 18~^Fire Drake attacks the turn~it enters play.^
+^Orc Chieftain^
+^Fire creature^, ^cost^ 5~^Attack^ 3, ^life^ 17~^Orc Chieftan increases the attack~of its neighboring creatures by 2~(except walls).^
+^Flame Wave^
+^Fire spell^, ^cost^ 6~^Flame Wave deals 9 damage to each~of the opponent's creatures.^
+^Minotaur Commander^
+^Fire creature^, ^cost^ 7~^Attack^ 6, ^life^ 20~^Minotaur Commander increases by 1~the attack of all other owner's creatures~(except walls).^
+^Bargul^
+^Fire creature^, ^cost^ 8~^Attack^ 8, ^life^ 26~^When Bargul is summoned it deals~4 damage to each other creature.^
+^Inferno^
+^Fire spell^, ^cost^ 9~^Inferno deals 18 damage to target~opponent's creature and 10 damage to~each of the opponent's other creatures.^
+^Fire Elemental^
+^Fire creature^, ^cost^ 10, ^attack is equal~to its owner's Fire power, life^ 37~^When Fire Elemental is summoned~it deals 3 damage to the opponent~and to each of the opponent's creatures.~Fire Elemental increases the growth~of its owner's Fire power by 1.^
+^Armageddon^
+^Fire spell^, ^cost^ 11~^Armageddon deals~(8 + its caster's Fire power) damage~to the opponent and to each creature.^
+^Dragon^
+^Fire creature^, ^cost^ 12~^Attack^ 9, ^life^ 40~^Dragon increases the damage~its owner's spells deal by 50%~(total damage will be rounded up).^
+^Meditation^
+^Water spell^, ^cost^ 1~^Meditation increases its caster's~Fire, Air and Earth powers by 1.^
+^Sea Sprite^
+^Water creature^, ^cost^ 2~^Attack^ 5, ^life^ 22~^At the beginning of its owner's turn,~Sea Sprite deals 2 damage to its owner.^
+^Merfolk Apostate^
+^Water creature^, ^cost^ 3~^Attack^ 3, ^life^ 10~^When Merfolk Apostate is summoned~it increases its owner's Fire power by 2.^
+^Ice Golem^
+^Water creature^, ^cost^ 4~^Attack^ 4, ^life^ 12~^Ice Golem receives no damage~from spells and abilites.^
+^Merfolk Elder^
+^Water creature^, ^cost^ 5~^Attack^ 3, ^life^ 16~^Merfolk Elder increases the growth~of its owner's Air power by 1.^
+^Ice Guard^
+^Water creature^, ^cost^ 6~^Attack^ 3, ^life^ 20~^Ice Guard reduces all damage~dealt to its owner by 50%~(total damage will be rounded up).^
+^Giant Turtle^
+^Water creature^, ^cost^ 7~^Attack^ 5, ^life^ 16~^Damage dealt to Giant Turtle~is reduced by 5.^
+^Acidic Rain^
+^Water spell^, ^cost^ 8~^Acidic Rain deals 15 damage to each~creature, then decreases each~of the opponent's powers by 1.^
+^Merfolk Overlord^
+^Water creature^, ^cost^ 9~^Attack^ 7, ^life^ 35~^Merfolk Overlord allows creatures~in its neighboring slots to attack~the turn they enter play.^
+^Water Elemental^
+^Water creature^, ^cost^ 10, ^attack is equal~to its owner's Water power, life^ 37~^When Water Elemental is summoned~it heals 10 life to its owner.~Water Elemental increases the growth~of its owner's Water power by 1.^
+^Mind Master^
+^Water creature^, ^cost^ 11~^Attack^ 6, ^life^ 23~^Mind Master increases the growth~of each of its owner's powers by 1.^
+^Astral Guard^
+^Water creature^, ^cost^ 12~^Attack^ 1, ^life^ 18~^Astral Guard decreases the growth~of each of the opponent's powers by 1.^
+^Faerie Apprentice^
+^Air creature^, ^cost^ 1~^Attack^ 4, ^life^ 12~^Faerie Apprentice increases the damage~its owner's spells deal by 1.^
+^Griffin^
+^Air creature^, ^cost^ 2~^Attack^ 3, ^life^ 15~^When Griffin is summoned,~if its owner's Air power is 5 or more,~it deals 5 damage to the opponent.^
+^Call to Thunder^
+^Air spell^, ^cost^ 3~^Call to Thunder deals 6 damage~to target opponent's creature~and 6 damage to the opponent.^
+^Faerie Sage^
+^Air creature^, ^cost^ 4~^Attack^ 4, ^life^ 19~^When Faerie Sage is summoned~it heals an amount of life to its owner~equal to its owner's Earth power,~but not more than 10.^
+^Wall of Lightning^
+^Air creature^, ^cost^ 5~^Attack^ 0, ^life^ 28~^At the beginning of its owner's turn,~Wall of Lightning deals 4 damage~to the opponent.^
+^Lightning Bolt^
+^Air spell^, ^cost^ 6~^Lightning Bolt deals~(5+its caster's Air power) damage~to the opponent.^
+^Phoenix^
+^Air creature^, ^cost^ 7~^Attack^ 7, ^life^ 16~^Each time Phoenix dies, if its owner's~Fire power is 10 or greater, it rebirths~(another Phoenix is put into the same slot).~Phoenix cannot rebirth if a card~says that it is "destroyed".^
+^Chain Lightning^
+^Air spell^, ^cost^ 8~^Chain Lightning deals 9 damage~to the opponent and to each~of the opponent's creatures.^
+^Lightning Cloud^
+^Air creature^, ^cost^ 9~^Attack^ 4, ^life^ 20~^Lightning Cloud's attack damages~the opponent and each of~the opponent's creatures.^
+^Tornado^
+^Air spell^, ^cost^ 10~^Destroy target opponent's creature.^
+^Air Elemental^
+^Air creature^, ^cost^ 11, ^attack is equal~to its owner's Air power, life^ 44~^When Air Elemental is summoned~it deals 8 damage to the opponent.~Air Elemental increases the growth~of its owner's Air power by 1.^
+^Titan^
+^Air creature^, ^cost^ 12~^Attack^ 9, ^life^ 40~^When Titan is summoned~it deals 15 damage to the creature~in the opposing slot.^
+^Elven Healer^
+^Earth creature^, ^cost^ 1~^Attack^ 2, ^life^ 12~^At the beginning of its owner's turn,~Elvish Healer heals 3 life to its owner.^
+^Nature's Ritual^
+^Earth spell^, ^cost^ 2~^Nature's Ritual heals 8 life~to target caster's creature~and to its caster.^
+^Forest Sprite^
+^Earth creature^, ^cost^ 3~^Attack^ 1, ^life^ 22~^Forest Sprite's attack damages~the opponent and each of~the opponent's creatures.^
+^Rejuvenation^
+^Earth spell^, ^cost^ 4~^Rejuvenation heals an amount of life~to its caster equal to twice~its caster's Earth power.^
+^Elf Hermit^
+^Earth creature^, ^cost^ 5~^Attack^ 1, ^life^ 13~^Elf Hermit increases the growth~of its owner's Earth power by 2.^
+^Nature's Fury^
+^Earth spell^, ^cost^ 6~^Nature's Fury deals an amount of damage~to the opponent equal to the total~attack of its caster's two creatures~with the highest attack.^
+^Giant Spider^
+^Earth creature^, ^cost^ 7~^Attack^ 4, ^life^ 24~^When Giant Spider is summoned,~it puts a 2/11 Forest Spider into~each of its empty neighboring slots.^
+^Troll^
+^Earth creature^, ^cost^ 8~^Attack^ 6, ^life^ 26~^At the beginning of its owner's turn,~Troll heals 4 life to itself.^
+^Stone Rain^
+^Earth spell^, ^cost^ 9~^Stone Rain deals 25 damage~to each creature.^
+^Earth Elemental^
+^Earth creature^, ^cost^ 10, ^attack is equal~to its owner's Earth power^, ^life^ 50~^Earth Elemental increases the growth~of its owner's Earth power by 1.^
+^Master Healer^
+^Earth creature^, ^cost^ 11~^Attack^ 3, ^life^ 34~^At the beginning of its owner's turn,~Master Healer heals 3 life to its owner~and to each of its owner's creatures.^
+^Hydra^
+^Earth creature^, ^cost^ 12~^Attack^ 3, ^life^ 40~^Hydra's attack damages the opponent~and each of the opponent's creatures.~At the beginning of its owner's turn,~Hydra heals 4 life to itself.^
+^Dark Ritual^
+^Death spell^, ^cost^ 1~^Dark Ritual deals 3 damage~to the opponent's creatures,~then heals 3 life to each~of its caster's creatures.^
+^Cursed Fog^
+^Death spell^, ^cost^ 2~^Cursed Fog deals 12 damage to each~creature and 3 damage to the opponent.^
+^Banshee^
+^Death creature^, ^cost^ 3~^Attack^ 4, ^life^ 21~^When Banshee is summoned~it deals damage to the creature~in the opposing slot~equal to half of that creature's life~(rounded up).^
+^Emissary of Dorlak^
+^Death creature^, ^cost^ 4~^Attack^ 7, ^life^ 48~^Emissary of Dorlak must be summoned~onto another of its owner's creatures.~That creature is destroyed.^
+^Blood Ritual^
+^Death spell^, ^cost^ 5~^Destroy target caster's creature.~Blood Ritual deals X damage to each of~the opponent's creatures, where X~is equal to the life of the destroyed~creature, but not more than 32.^
+^Keeper of Death^
+^Death creature^, ^cost^ 6~^Attack^ 7, ^life^ 35~^Each time an opponent's creature dies~Keeper of Death increases its owner's~Death power by 1.^
+^Drain Souls^
+^Death spell^, ^cost^ 7~^Kill all creatures. Drain Souls heals~an amount of life to its caster equal to~twice the number of creatures killed by~this spell. When Drain Souls is cast it is~replaced by the Rage of Souls spell card.^
+^Master Lich^
+^Death creature^, ^cost^ 8~^Attack^ 8, ^life^ 46~^When Master Lich is summoned it deals 8~damage to each of the opponent's creatures.~Each time Master Lich deals damage~to the opponent, it increases~its owner's Death power by 2.^
+^Paladin^
+^Holy creature^, ^cost^ 1~^Attack^ 4, ^life^ 9~^When Paladin is summoned it heals~4 life to each of its owner's creatures.^
+^Monk^
+^Holy creature^, ^cost^ 2~^Attack^ 4, ^life^ 13~^When Monk dies it increases~its owner's Holy power by 2.^
+^Holy Guard^
+^Holy creature^, ^cost^ 3~^Attack^ 4, ^life^ 23~^Holy Guard decreases all damage dealt~to its neighboring creatures by 2.^
+^Divine Justice^
+^Holy spell^, ^cost^ 4~^Divine Justice heals 12 life~to target caster's creature and~deals 12 damage to each other creature.^
+^Divine Intervention^
+^Holy spell^, ^cost^ 5~^Divine Intervention increases its caster's~Fire, Water, Air and Earth powers by 2,~then heals 10 life to its caster.^
+^Wrath of God^
+^Holy spell^, ^cost^ 6~^Wrath of God deals 12 damage to each of~the opponent's creatures, then increases~its caster's Holy power by 1 for each of~the opponent's creatures that did not die.^
+^Angel^
+^Holy creature^, ^cost^ 7~^Attack^ 8, ^life^ 42~^When Angel is summoned it increases~its owner's Holy power by 3.^
+^Archangel^
+^Holy creature^, ^cost^ 8~^Attack^ 8, ^life^ 48~^When Archangel is summoned~it completely heals each~of its owner's creatures.^
+^Overtime^
+^Mechanical spell^, ^cost^ 0~^Overtime increases its caster's~Mechanics power by 1.^
+^Dwarven Rifleman^
+^Mechanical creature^, ^cost^ 2~^Attack^ 4, ^life^ 17~^Each time the opponent summons~a creature Dwarven Rifleman deals~4 damage to that creature.^
+^Dwarven Craftsman^
+^Mechanical creature^, ^cost^ 3~^Attack^ 2, ^life^ 17~^Dwarven Craftsman increases the growth~of its owner's Mechanics power by 1.^
+^Ornithopter^
+^Mechanical creature^, ^cost^ 4~^Attack^ 4, ^life^ 24~^At the beginning of its owner's turn,~Ornithopter deals 2 damage to~each of the opponent's creatures.^
+^Steel Golem^
+^Mechanical creature^, ^cost^ 5~^Attack^ 6, ^life^ 20~^Steel Golem receives no damage from~spells and abilities. Damage dealt~to Steel Golem is reduced by 1.^
+^Cannon^
+^Mechanical creature^, ^cost^ 6~^Attack^ 8, ^life^ 29~^At the beginning of its owner's turn,~Cannon deals 8 damage to the opponent's~creature with the most life.^
+^Cannonade^
+^Mechanical spell^, ^cost^ 7~^Cannonade deals 19 damage~to each of the opponent's creatures.^
+^Steam Tank^
+^Mechanical creature^, ^cost^ 8~^Attack^ 6, ^life^ 52~^When Steam Tank is summoned~it deals 12 damage to each~of the opponent's creatures.^
+^Madness^
+^Illusion spell^, ^cost^ 1~^Madness deals damage to each~of the opponent's creatures equal~to the attack of that creature.^
+^Phantom Warrior^
+^Illusion creature^, ^cost^ 2~^Attack^ 4, ^life^ 4~^Damage dealt to Phantom Warrior~is reduced to 1.^
+^Hypnosis^
+^Illusion spell^, ^cost^ 3~^The two opponent's creatures with~the highest attack immediately~attack the opponent.^
+^Wall of Reflection^
+^Illusion creature^, ^cost^ 4~^Attack^ 0, ^life^ 20~^Each time Wall of Reflection receives~damage it deals an equal amount~of damage to the opponent, but not more~than the life lost by Wall of Reflection.^
+^Spectral Assassin^
+^Illusion creature^, ^cost^ 5~^Attack^ 6 ^life^ 22~^When Spectral Assassin is summoned~it deals 12 damage to the opponent.^
+^Spectral Mage^
+^Illusion creature^, ^cost^ 6~^Attack^ 7 ^life^ 34~^When Spectral Mage is summoned it deals~damage to each of the opponent's creatures~equal to the cost of that creature.^
+^Oracle^
+^Illusion creature^, ^cost^ 7~^Attack^ 8, ^life^ 41~^At the beginning of its owner's turn,~Oracle deals damage to the opponent~equal to its owner's Illusion power.^
+^Hypnotist^
+^Illusion creature^, ^cost^ 8~^Attack^ 5 ^life^ 39~^When Hypnotist is summoned it deals~5 damage to the opponent and to each~of the opponent's creatures.~Hypnotist increases the growth~of its owner's Illusion power by 1.^
+^Forest Spider^
+^Earth creature^, ^cost^ 1~^Attack^ 2, ^life^ 11.
+^Goblin Shaman^
+^Control creature^, ^cost^ 1~^Attack^ 4, ^life^ 12~^Goblin Shaman increases the cost~of all of the opponent's spells by 1.^
+^Weakness^
+^Control spell^, ^cost^ 2~^Weakness decreases each of~the opponent's powers by 1,~then deals 3 damage to the opponent.^
+^Damping Tower^
+^Control creature^, ^cost^ 3~^Attack^ 0, ^life^ 17~^Damping Tower increases the cost~of all of the opponent's cards by 1.^
+^Ancient Horror^
+^Control creature^, ^cost^ 4~^Attack^ 5, ^life^ 25~^During the opponent's attack, each of~their creatures with cost less than~Ancient Horror's owner's Control power~skip their attack.^
+^Poisonous Cloud^
+^Control spell^, ^cost^ 5~^Poisonous Cloud decreases all of~the opponent's powers by 1,~then deals damage to each of~the opponent's creatures equal to~half of its life (rounded up).^
+^Ancient Witch^
+^Control creature^, ^cost^ 6~^Attack^ 4, ^life^ 18~^When Ancient Witch is summoned,~it decreases each of the opponent's~powers by 2.^
+^Mindstealer^
+^Control creature^, ^cost^ 7~^Attack^ 8, ^life^ 36~^Each time a creature in the opposing slot~performs its attack, it deals damage~to itself instead of Mindstealer.^
+^Ancient Giant^
+^Control creature^, ^cost^ 8~^Attack^ 8, ^life^ 49~^When Ancient Giant is summoned~it forces opponent to skip their next turn.^
+^Insanian Peacekeeper^
+^Chaos creature^, ^cost^ 1~^Attack^ 4, ^life^ 11~^At the beginning of its owner's turn,~Insanian Peacekeeper heals 1-6 life~to its owner.^
+^Insanian Berserker^
+^Chaos creature^, ^cost^ 2~^Attack^ 4, ^life^ 14~^At the beginning of its owner's turn,~Insanian Berseker deals 1-6 damage~to the opponent.^
+^Doom Bolt^
+^Chaos spell^, ^cost^ 3~^Doom Bolt deals 25 damage to~a random opponent's creature.^
+^Chaotic Wave^
+^Chaos spell^, ^cost^ 4~^Chaotic Wave deals 2-12 damage to each~of the opponent's creatures, then heals~2-12 life to each of its caster's creatures.^
+^Insanian Shaman^
+^Chaos creature^, ^cost^ 5~^Attack^ 3, ^life^ 25~^At the beginning of its owner's turn,~Insanian Shaman decreases a random~opponent's power by 2.^
+^Insanian Lord^
+^Chaos creature^, ^cost^ 6~^Attack^ 6, ^life^ 28~^At the beginning of its owner's turn,~Insanian Lord increases a random~owner's power by 2.^
+^Insanian Catapult^
+^Chaos creature^, ^cost^ 7~^Attack^ 6, ^life^ 38~^At the beginning of its owner's turn,~Insanian Catapult deals 10 damage~to a random opponent's creature.^
+^Insanian King^
+^Chaos creature^, ^cost^ 8~^Attack^ 6, ^life^ 46~^At the end of its owner's turn,~Insanian King puts a 4/15 Soldier~into a random empty slot.^
+^Insanian Soldier^
+^Chaos creature^, ^cost^ 1~^Attack^ 4, ^life^ 15
+
+^Death creature^, ^cost^ 5~^Attack^ 6, ^life^ 32
+^Sleeping Giant^
+^Special creature^, ^cost^ 15~^Attack^ 0, ^life^ 55~^When life of Sleeping Giant~drops to 30 or less it wakes up and~becomes 14/55 Raging Giant creature.^
+^Raging Giant^
+^Special creature^, ^cost^ 15~^Attack^ 14, ^life^ 55~^Raging Giant regenerates 10 life~to itself each turn.^
+^Cloistered Elemental^
+^Special creature^, ^cost^ 18~^Attack^ 0, ^life^ 75~^When any of owner's powers becomes 12~or higher Cloistered Elemental is released~and becomes a Supreme Elemental.^
+^Supreme Elemental^
+^Special creature^~^Cost^ 18~^Attack is equal to highest owner power^~^Life:^ 75
+^Mad Cat of Alrio^
+^Special creature^, ^cost^ 9~^Attack^ 4, ^life^ 48~^Mad Cat of Alrio deal 4 damage~to its owner's other creatures each turn.^
+^Volcano^
+^Special creature^, ^cost^ 0~^Attack^ 0, ^life^ 99~^Volcano is immune to spells.~Volcano deals 5 damage to neighboring~creatures each turn.^
+^Vampire^
+^Special creature^, ^cost^ 8~^Attack^ 4, ^life^ 40~^If there is a creature in the opposing slot~the Vampire receives +4 to attack~Each time Vampire deals damage~to a creature it heals an equal~amount of life to itself.^
+^Altar of Sacrifice^
+^Special creature^, ^cost^ 6~^Attack^ 0, ^life^ 90~^Altar of Sacrifice is immune to spells.~Owner can summon creatures~onto Altar of Sacrifice~The summoned creature is sacrificed and~owner receives an amount of power~equal to twice the creature's cost.^
+^Air Spirit^
+^Air creature^, ^cost^ 10, ^attack is equal to~the number of opponent's creatures^, ^life^ 50~^Each Air Spirit's attack damages opponent~and each of opponent's creatures.^
+^Everraining Land^
+^Special creature^, ^cost^ 9~^Attack^ 0, ^life^ 90~^Everraining Land is immune to spells.~Everraining Land increases the cost~of all cards by 2 for both players.~Each time any player skips a turn~Everraining Land deals 5 damage to him.^
+^Astral Drake^
+^Special creature^, ^cost^ 9, ^attack is equal~to owner's lowest power^, ^life:^ 40~^Each turn Astral Drake~regenerates 4 life to itself.~Astral Drake's attack damages opponent~and each of opponent's creatures.^
+^Academy of magic^
+^Special creature^, ^cost^ 9~^Attack^ 0, ^life^ 90~^Academy of Magic is immune to spells.~Each time owner casts a spell~Academy of Magic summons an~Adept of Magic (4/12 creature)~to a random empty slot.^
+^Adept of Magic^
+^Special creature^, ^cost^ 1~^Attack^ 4, ^life^ 12.
+^Jade Statue^
+^Special creature^, ^cost^ 6~^Attack^ 3, ^life^ 20~^When Jade Statue is destroyed~it deals 25 damage to each creature.^
+^Nettling Faerie^
+^Special creature^, ^cost^ 4~^Attack^ 3, ^life^ 15~^Nettling Faerie moves to a random empty~slot at the end of owner's turn.^
+^Merfolk Revolutionary^
+^Special creature^, ^cost^ 7~^Attack^ 4, ^life^ 50~^Merfolk Revolutionary increases the growth~of owner's Water power by 1 and reduces~the growth of opponent's Water power by 1.~Each turn Merfolk Revolutionary~moves to the player with lower life.^
+^Ambrosia Stone^
+^Special creature^, ^cost^ 2~^Attack^ 0, ^life^ 20~^When Ambrosia Stone is destroyed~opponent receives 20 life.^
+^Phoenix Hydra^
+^Special creature^, ^cost^ 3~^Attack^ 0, ^life^ 10~^Phoenix Hydra's attack damages opponent~and each of opponent's creatures.~Each time Phoenix Hydra dies it reborn~and its attack permanently increases by 1.^
+^Baffler Roost^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 99~^Baffler Roost is immune to spells.~Baffler Roost doubles the cost~of all cards for both players.^
+^Marching Stone^
+^Special creature^, ^cost^ 6~^Attack^ 0, ^life^ 99~^Marching Stone is immune to spells.~Marching Stone moves one slot to~the right each turn, swapping positions~with any creature in that slot.^
+^Peace Tree^
+^Special creature^, ^cost^ 4~^Attack^ 0, ^life^ 25~^Peace Tree reduces attack~of opponent's creatures by 1.^
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 2, ^life^ 8
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 3, ^life^ 10
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 4, ^life^ 10
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 3, ^life^ 15
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 4, ^life^ 15
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 4, ^life^ 15~^When pet is resummoned it deals 6 damage~to creature in the opposite slot.^
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 4, ^life^ 15~^When pet's ability is used~it completely regenerates.^
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 4, ^life^ 15~^When pet is resummoned it deals 6 damage~to creature in the opposite slot.^~^When pet's ability is used~it completely regenerates.^
+^Tamed Griffin^
+^Tamed creature^, ^cost^ 0~^Attack^ 5, ^life^ 17~^When pet is resummoned it deals 6 damage~to creature in the opposite slot.^~^When pet's ability is used~it completely regenerates.^
+^Sudden strike^
+^Pet's ability^, ^cost^ 0~^Pet moves to target empty slot~and pet's attack is increased~by 3 until end of turn.^
+^Fetid Swamp^
+^Special creature^, ^cost^ 5~^Attack^ 0, ^life^ 99~^Fetid Swamp is immune to spells.~Fetid Swamp deals 2 damage~to each creature each turn.^
+^Wandering Stone^
+^Special creature^, ^cost^ 6~^Attack^ 0, ^life^ 99~^Wandering Stone is immune to spells.~Wandering stone moves to~a random slot each turn, swapping~positions with any creature in that slot.^
+^Unsummon Altar^
+^Special creature^, ^cost^ 5~^Attack^ 0, ^life^ 99~^Immune to spells.~When owner casts a creature onto~the altar, all creatures in play of that~power type are sacrificed, and their~power cost is returned to their owner.^
+^Great Oak^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 30~^Great Oak summons Forest Sprite each turn~into a random empty slot.^
+^Temple of Fire^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 30~^Temple of Fire summons Priest of Fire~each turn into a random empty slot.^
+^Astral Accelerator^
+^Special creature^, ^cost^ 9~^Attack^ 0, ^life^ 45~^Astral Accelerator gives to owner~2 power of random type each time owner~uses a card of cost 4 or less.^
+^Meatgrinder^
+^Special creature^, ^cost^ 1~^Attack^ 4, ^life^ 20~^Meatgrinder does no damage to players.^
+^Hallowed Ground^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 99~^Hallowed Ground is immune to spells.~Whenever owner's creature dies~Hallowed Ground heals all~owner's creatures and owner~by the attack of the dying creature.^
+^Mine^
+^Special creature^, ^cost^ 0~^Attack^ 0, ^life^ 5~^Mine is invisible.~When Mine is damaged by a creature~the creature suffers 12 damage~and the Mine is destroyed.^
+^Astral Damper^
+^Special creature^, ^cost^ 5~^Attack^ 1, ^life^ 50~^When opponent plays a card they lose~all remaining power of the type spent.^
+^Inactive Hellbot^
+^Special creature^, ^cost^ 9~^Attack^ 0, ^life^ 99~^Inactive Hellbot is immune to spells.~Can be activated for a cost~of 4 Mechanical power.^
+^Hellbot^
+^Mechanical creature^, ^cost^ 4~^Attack^ 3, ^life^ 28~^Attacks 3 slots - the opposing~slot and its two neighbors.~This means if completely unblocked,~it deals triple damage to opponent.^
+^Starfish^
+^Special creature^, ^cost^ 4~^Attack^ 4, ^life^ 16~^When Starfish dies~it spawns two 4/8 starfish.^
+^Starfish^
+^Special creature^, ^cost^ 2~^Attack^ 4, ^life^ 8~^When Starfish dies~it spawns two 2/4 starfish.^
+^Starfish^
+^Special creature^, ^cost^ 1~^Attack^ 2, ^life^ 4~^When Starfish dies~it spawns two 1/2 starfish.^
+^Starfish^
+^Special creature^, ^cost^ 1~^Attack^ 1, ^life^ 2
+^Baffler Dragon^
+^Special creature^, ^cost^ 6~^Attack^ 5, ^life^ 50~^All spells cost twice as much~for both players.^
+^Megacolossus^
+^Special creature^, ^cost^ 15,^ attack is~equal to sum of owner's powers^, ^life^ 99~^Megacolossus reduces the growth~of owner's Air power by 1.^
+^Cursed Ground^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 99~^Cursed Ground is immune to spells.~When any creature dies all creatures in play~are dealt damage equal to its power.^
+^Spectral Altar^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 99~^Immune to spells. Owner can summon~creatures onto Spectral Altar.~Owner gains an amount of power~equal to the creature's cost~in each of two random powers.^
+^Library of the Mad Magi^
+^Special creature^, ^cost^ 8~^Attack^ 0, ^life^ 50~^Each turn owner's special~power cards are replaced with~a random discipline's cards.^
+^Celestia^
+^Special creature^, ^cost^ 12~^Attack^ 10, ^life^ 99~^Celestia allows all allied creatures to~attack the turn they are summoned.^
+^Soul Jar^
+^Special creature^, ^cost^ 2~^Attack^ 0, ^life^ 99~^Council of Liches can't be defeated~while Soul Jar is in play.^
+^Rage of Souls^
+^Death spell^, ^cost^ 7~^Deals (9 + caster's Death power) damage~to each of opponent's creatures.~Caster gains 2 life for each~creature killed by this spell.^
+^Lemure^
+^Demonic creature^, ^cost^ 1~^Attack^ 4, ^life^ 8~^When Lemure dies it is replaced~by a 3/6 Scrambled Lemure.^
+^Explosion^
+^Demonic spell^, ^cost^ 2~^Destroy target caster's creature.~Explosion deals 28 damage to~the creature in the opposing slot.^
+^Power Chains^
+^Demonic spell^, ^cost^ 3~^Power Chains deals 12 damage to~target opponent's Fire, Water, Air or~Earth Creature, then decreases~that opponent's power by 3.^
+^Ergodemon^
+^Demonic creature^, ^cost^ 4~^Attack^ 6, ^life^ 23~^When Ergodemon dies, it decreases~each of the opponent's powers by 1.^
+^Demon Quartermaster^
+^Demonic creature^, ^cost^ 5~^Attack^ 2, ^life^ 21~^Demon Quartermaster increases the growth~of its owner's Demonic power by 1.~When Demon Quartermaster dies it is~replaced by a 6/20 Enraged Quartermaster.^
+^HellFire^
+^Demonic spell^, ^cost^ 6~^Hellfire deals 13 damage to each~of the opponent's creatures, then~increases its caster's Fire power by 1~for each creature killed by this spell.^
+^Three-headed demon^
+^Demonic creature^, ^cost^ 7~^Attack^ 3, ^life^ 30~^Three-headed Demon's attack damages~the opponent and each of the opponent's~creatures. When Three-headed Demon dies~it is replaced by a 2/25 Demon Apostate.^
+^Greater Demon^
+^Demonic creature^, ^cost^ 8~^Attack^ 8, ^life^ 42~^When Greater Demon is summoned it deals~an amount of damage to the opponent~and to each of the opponent's creatures~equal to its owner's Fire power,~but not more than 10.^
+^Scrambled Lemure^
+^Demonic creature^, ^cost^ 1~^Attack^ 3, ^life^ 6
+^Enraged Quartermaster^
+^Demonic creature^, ^cost^ 5~^Attack^ 6, ^life^ 20~^^
+^Healing Spray^
+^Sorcery spell^, ^cost^ 1~^Healing Spray heals 9 life to target~caster's creature and 6 life~to its neighboring creatures.^
+^Fireball^
+^Sorcery spell^, ^cost^ 2~^Fireball deals 9 damage to target~opponent's creature and 6 damage~to its neighboring creatures.^
+^Steal Essence^
+^Sorcery spell^, ^cost^ 3~^Steal Essence deals 5 damage to~target creature. If the creature~is killed by this spell, its caster's~Sorcery power is increased by 4.^
+^Sacrifice^
+^Sorcery spell^, ^cost^ 4~^Destroy target caster's creature.~Sacrifice increases its caster's Fire,~Water, Air and Earth powers by 3.^
+^Ritual of Glory^
+^Sorcery spell^, ^cost^ 5~^Ritual of Glory completely heals~each of its caster's creatures,~then increases their attack by 3~until end of turn (except walls).^
+^Mana Burn^
+^Sorcery spell^, ^cost^ 6~^Mana Burn deals an amount of damage~to each of the opponent's creatures~equal to the opponent's highest power type,~then decreases that opponent's power by 3.^
+^Sonic Boom^
+^Sorcery spell^, ^cost^ 7~^Sonic Boom deals 11 damage to~the opponent and to each of~the opponent's creatures. Those~creatures skip their attack next turn.^
+^Disintegrate^
+^Sorcery spell^, ^cost^ 8~^Destroy target opponent's creature.~Disintegrate deals 11 damage to each~of the opponent's other creatures.^
+^Magic Hamster^
+^Beast^, ^cost^ 1, ^attack^ 3, ^life^ 9~^When Magic Hamster is summoned it heals~10 life to each of its neighboring creatures.^~^Activated ability^ (^cost^ 3)~^Magic Hamster heals 18 life to all~of its owner's creatures.^
+^Scorpion^
+^Beast^, ^cost^ 2, ^attack^ 5, ^life^ 18~^When Scorpion is summoned it causes~the creature in the opposing slot~to skip its attack next turn.^~^Activated ability^ (^cost^ 2)~^Scorpion deals 14 damage~to target opponent's creature.^
+^Wolverine^
+^Beast^, ^cost^ 3, ^attack^ 6, ^life^ 25~^Activated ability^ (^cost^ 2)~^Wolverine completely heals itself and~its attack is increased by 2 permanently.^
+^Energy Beast^
+^Beast^, ^cost^ 4, ^attack^ 6, ^life^ 34~^Activated ability^ (^cost^ 1)~^Energy Beast increases its owner's Fire,~Water, Air and Earth powers by 1.^
+^Death Falcon^
+^Beast^, ^cost^ 5, ^attack^ 7, ^life^ 45~^Activated ability^ (^cost^ 1)~^Death Falcon moves to target empty slot~and deals 4 damage to each of~the opponent's creatures.^
+^White Elephant^
+^Beast^, ^cost^ 6, ^attack^ 8, ^life^ 40~^All damage that would be dealt to its~owner is dealt to White Elephant instead.^~^Activated ability^ (^cost^ 0)~^White Elephant increases~its owner's Beast power by 1.^
+^Basilisk^
+^Beast^, ^cost^ 7, ^attack^ 6, ^life^ 54~^At the end of its owner's turn Basilisk~deals 4 damage to each of the opponent's~creatures with 8 or less life.^~^Activated ability^ (^cost^ 0)~^Deals 6 damage to target creature.^
+^Ancient Dragon^
+^Beast^, ^cost^ 8, ^attack^ 8, ^life^ 45~^When Ancient Dragon is summoned it~increases each of its owner's powers by 1.^~^Activated ability^ (^cost^ 3)~^Ancient Dragon deals 10 damage~to the opponent and to each of~the opponent's creatures.^
+^Natural Healing^
+^Hamster's ability^, ^cost^ 3~^Magic Hamster heals 18 life to all~of its owner's creatures.^
+^Poison^
+^Scorpions's ability^, ^cost^ 2~^Scorpion deals 14 damage~to target opponent's creature.^
+^Enrage^
+^Wolverine's ability^, ^cost^ 2~^Wolverine completely heals itself and~its attack is increased by 2 permanently.^
+^Pump Energy^
+^Energy Beast's ability^, ^cost^ 1~^Energy Beast increases its owner's Fire,~Water, Air and Earth powers by 1.^
+^Move Falcon^
+^Falcon's ability^, ^cost^ 1~^Death Falcon moves to target empty slot~and deals 4 damage to each of~the opponent's creatures.^
+^Trumpet^
+^Elephant's ability^, ^cost^ 0~^White Elephant increases~its owner's Beast power by 1.^
+^Gaze^
+^Basilisk's ability^, ^cost^ 0~^Deals 6 damage to target creature.^
+^Breathe Fire^
+^Dragon's ability^, ^cost^ 3~^Ancient Dragon deals 10 damage~to the opponent and to each of~the opponent's creatures.^
+^Demon Apostate^
+^Demonic creature^, ^cost^ 7~^Attack^ 2, ^life^ 25~^At the beginning of its owner's turn~Demon Apostate heals 2 life to its owner~and to each of its owner's creatures.^
+^Mana Storm^
+^Special creature^, ^cost^ 4~^Attack^ 3, ^life^ 40~^Each time owner uses a card~of his specialty power type,~his elemental power amounts~are redistributed randomly.^
+^Living Tornado^
+^Special creature^, ^cost^ 4~^Attack^ 3, ^life^ 40~^Each time owner uses an Air card,~Living Tornado moves to random slot~and its attack permanently increases by 1.^
+^Niggling Imp^
+^Special creature^, ^cost^ 2~^Attack^ 2, ^life^ 14~^Each turn Niggling Imp moves~to a random slot.~While Niggling imp remains in play~owner can't use Demonic cards.^
+^Vampiric Cloud^
+^Special creature^, ^cost^ 2~^Attack^ 1, ^life^ 20~^Each time Vampiric Cloud attacks~its attack increases by 1~and its life by 2 permanently.^
+^Sorceror's Apprentice^
+^Special creature^, ^cost^ 5~^Attack^ 2, ^life^ 17~^Sorceror's Apprentice increases the growth~of owner's Sorcery power by 2.^
+^Solid Echo^
+^Special creature^,~^Cost^ 1, ^Life^ 1.~^Solid Echo dies after its attack.^
+^Beehive^
+^Special creature^, ^cost^ 4~^Attack^ 4, ^life^ 30~^Each turn Beehive stuns the opponent's~creature with the highest life.^
+^Dark Troll^
+^Special creature^, ^cost^ 4~^Attack^ 6, ^life^ 20~^Dark Troll decreases the growth~of owner's Earth power by 1.~Dark Troll regererates 3 life~to itself each turn.^
+^Toothed Stone^
+^Special creature^, ^cost^ 6~^Attack^ 8, ^life^ 99~^Toothed Stone is immune to spells.~Toothed Stone moves one slot to~the right each turn.~Toothed Stone deals no damage to creatures.^
+^Rescue operation^
+^Goblin's spell^, ^cost^ 0~^Move target creature to a random~empty slot. If that creature is owned~by this spell's caster, Rescue Operation~heals 5 life to it.^
+^Goblin Hero^
+^Goblin^, ^cost^ 1~^Attack^ 3, ^life^ 14~^Goblin Hero's attack is increased by 2~for each neighbouring creature.~Each time the opponent summons a creature~in the opposing slot, Goblin Hero moves~to a random empty slot.^
+^Goblin Saboteur^
+^Goblin^, ^cost^ 2~^Attack^ 5, ^life^ 20~^Each time Goblin Saboteur deals damage to~the opponent, the opponent loses the~cheapest card of a random power type.^
+^Army of Rats^
+^Goblin's spell^, ^cost^ 3~^Army of Rats deals 12 damage to each~of the opponent's creatures, then deals~12 damage to a random caster's creature.^
+^Portal Jumper^
+^Goblin^, ^cost^ 4~^Attack^ 5, ^life^ 28~^At the end of its owner's turn Portal Jumper~stuns the creature in the opposing slot,~preventing it from attacking for one turn,~then moves to a random slot.^
+^Goblin Looter^
+^Goblin^, ^cost^ 5~^Attack^ 5, ^life^ 28~^Each time any creature dies~Goblin Looter increases a random~power of its owner by 1.^
+^Goblin Raider^
+^Goblin^, ^cost^ 6~^Attack^ 4, ^life^ 24~^When Goblin Raider is summoned,~it puts two other Goblin Raiders~into random empty slots.^
+^Ratmaster^
+^Goblin^, ^cost^ 7~^Attack^ 7, ^life^ 47~^At the beginning of its owner's turn~Ratmaster deals 6 damage to each of~the opponent's creatures and decreases~a random owner's power by 3.^
+^Magic Rabbit^
+^Forest creature^, ^cost^ 3~^Attack^ 1, ^life^ 10~^Each turn Mad Hermit summons~Magic Rabbit as a passive class ability.~There can be only one Magic Rabbit in play.~At the beginning of its owner's turn Magic~Rabbit's attack increases by 1 permanently.^
+^Crazy Squirrel^
+^Forest creature^, ^cost^ 1~^Attack^ 2, ^life^ 2~^When Crazy Squirrel is summoned~it deals 8 damage to the creature~in the opposing slot.^
+^Forest Wolf^
+^Forest creature^, ^cost^ 2, ^life^ 24~^Forest Wolf must be summoned onto~Magic Rabbit. Magic Rabbit is killed.~The attack of Forest Wolf is equal~to the attack of the killed Rabbit.^
+^Vindictive Raccoon^
+^Forest creature^, ^cost^ 3~^Attack^ 4, ^life^ 14~^When Vindictive Raccoon is summoned it~deals damage to the opponent equal to the~attack of the creature in the opposing slot.^
+^Enraged Beaver^
+^Forest creature^, ^cost^ 4~^Attack^ 3, ^life^ 10~^When Enraged Beaver is summoned it deals~X damage to the opponent and to each of~the opponent's creatures where X~is equal to the attack of Magic Rabbit.^
+^Ritual of the Forest^
+^Forest spell^, ^cost^ 5~^Ritual of the Forest heals X+5 life~to its caster and to each of its~caster's creatures where X is~equal to the attack of Magic Rabbit.^
+^Treefolk Protector^
+^Forest creature^, ^cost^ 6~^Attack^ 4, ^life^ 25~^Treefolk Protector decreases by 3~damage dealt by the opponent's spells.^
+^Bee Queen^
+^Forest creature^, ^cost^ 7~^Attack^ 3, ^life^ 14~^When Bee Queen is summoned it puts~a 2/8 Bee Soldier into each of its empty~neighbouring slots. When Bee Queen or~a Bee Soldier dies it deals 3 damage~to the opponent.^
+^Angry Angry Bear^
+^Forest creature^, ^cost^ 8~^Attack^ 5, ^life^ 30~^Each time Angry Angry Bear~receives damage its attack~increases by 1 permanently.^
+^Bee Soldier^
+^Forest creature^~^Attack^ 2, ^life^ 8~^When Bee Soldier dies~it deals 3 damage to opponent.^
+^Chrono Hunter^
+^Time creature^, ^cost^ 1~^Attack^ 4, ^life^ 11~^Each time Chrono Hunter kills~an opponent's creature it increases~its owner's Time power by 2.^
+^Timeblazer^
+^Time creature^, ^cost^ 2~^Attack^ 5, ^life^ 17~^When Timeblazer is summoned each of~its neighbouring creatures attack~the opponent this turn instead~of the creature in the opposing slot.^
+^Hasten^
+^Time spell^, ^cost^ 3~^Target caster's creature with attack 9~or less immediately attacks the opponent~and all the opponent's creatures.^
+^Time Stop^
+^Time spell^, ^cost^ 4~^Time Stop deals 4 damage to each of~the opponent's creatures and forces~the opponent to skip their next turn.^
+^Timeweaver^
+^Time creature^, ^cost^ 5~^Attack^ 5, ^life^ 24~^When Timeweaver is summoned its owner~is able to cast an additional spell this~turn. Timeweaver decreases the cost of~its owner's spells by 1.^
+^Priestess of Moments^
+^Time creature^, ^cost^ 6~^Attack^ 4, ^life^ 35~^Priestess of Moments performs an additional~attack in each of its owner's turns,~and allows its owner's other creatures~to attack the turn they enter play.^
+^Chrono Engine^
+^Time creature^, ^cost^ 7~^Attack^ 3, ^life^ 33~^Chrono Engine allows its owner to use~an additional card each turn. Each time~its owner skips a turn Chrono Engine~increases its owner's Time power by 1.^
+^Time Dragon^
+^Time creature^, ^cost^ 8~^Attack^ 8, ^life^ 40~^When Time Dragon is summoned~its owner may use an additional~card this turn. Time Dragon attacks~the turn it enters play.^
+^Goblin Berserker^
+^Fire creature^, ^cost^ 1~^Attack^ 4, ^life^ 16~^At the beginning of its owners turn,~Goblin Berserker deals 1 damage~to its neighboring creatures.^
+^Wall of Fire^
+^Fire creature^, ^cost^ 2~^Attack^ 0, ^life^ 5~^When Wall of Fire is summoned~it deals 5 damage to each of~the opponent's creatures.^~^Deals 2 damage to the opponent each turn^.
+^Priest of Fire^
+^Fire creature^, ^cost^ 3~^Attack^ 3, ^life^ 13~^Priest of Fire increases by 1~the growth of owner's Fire power.^
+^Fire Drake^
+^Fire creature^, ^cost^ 4~^Attack^ 4, ^life^ 20~^Fire Drake attacks the turn~it enters play.^
+^Orc Chieftain^
+^Fire creature^, ^cost^ 5~^Attack^ 4, ^life^ 17~^Orc Chieftan increases the attack~of its neighboring creatures by 2~(except walls).^
+^Flame Wave^
+^Fire spell^, ^cost^ 6~^Deals 9 damage to opponent's creatures.^~^Deals 3 damage to opponent^.
+^Minotaur Commander^
+^Fire creature^, ^cost^ 7~^Attack^ 7, ^life^ 20~^Minotaur Commander increases by 1~the attack of all other owner's creatures~(except walls).^
+^Bargul^
+^Fire creature^, ^cost^ 8~^Attack^ 7, ^life^ 26~^When Bargul is summoned it deals~4 damage to each other creature.^~^Bargul's attack is increased~by 1 each turn^.
+^Inferno^
+^Fire spell^, ^cost^ 9~^Inferno deals 22 damage to target~opponent's creature and 10 damage to~each of the opponent's other creatures.^
+^Fire Elemental^
+^Fire creature^, ^cost^ 10, ^attack is equal~to its owner's Fire power, life^ 36~^When Fire Elemental is summoned~it deals 4 damage to the opponent~and to each of the opponent's creatures.~Fire Elemental increases the growth~of its owner's Fire power by 1.^
+^Armageddon^
+^Fire spell^, ^cost^ 11~^Deals (8+caster's Fire Power) damage~to each creature and to the opponent.^~^Reduces the opponent's Earth power by 2^.
+^Dragon^
+^Fire creature^, ^cost^ 12~^Attack^ 10, ^life^ 41~^Dragon increases the damage~its owner's spells deal by 50%~(total damage will be rounded up).^
+^Meditation^
+^Water spell^, ^cost^ 1~^Meditation increases its caster's~Fire, Air and Earth powers by 1.^~^Heals 2 life to its caster^.
+^Sea Sprite^
+^Water creature^, ^cost^ 2~^Attack^ 2, ^life^ 22~^At the beginning of its owner's turn,~Sea Sprite deals 2 damage to the opponent.^
+^Merfolk Apostate^
+^Water creature^, ^cost^ 3~^Attack^ 3, ^life^ 12~^When Merfolk Apostate is summoned~it increases its owner's Fire power by 2.^
+^Ice Golem^
+^Water creature^, ^cost^ 4~^Attack^ 4, ^life^ 12~^Ice Golem receives no damage~from spells and abilites.^~^Heals 2 life to self each time~owner cast any spell^.
+^Merfolk Elder^
+^Water creature^, ^cost^ 5~^Attack^ 3, ^life^ 16~^Merfolk Elder increases the growth~of owner's Air power by 1.^
+^Ice Guard^
+^Water creature^, ^cost^ 6~^Attack^ 4, ^life^ 20~^Ice Guard reduces all damage~dealt to its owner by 50%~(total damage will be rounded up).^
+^Giant Turtle^
+^Water creature^, ^cost^ 7~^Attack^ 5, ^life^ 17~^Damage dealt to Giant Turtle~is reduced by 5.^~^Reduces by 1 cost of all~its owner's water cards^.
+^Acidic Rain^
+^Water spell^, ^cost^ 8~^Acidic Rain deals 17 damage~to each creature, then decreases~each of the opponent's powers by 1.^
+^Merfolk Overlord^
+^Water creature^, ^cost^ 9~^Attack^ 8, ^life^ 35~^Merfolk Overlord allows creatures~in its neighboring slots to attack~the turn they enter play.^
+^Water Elemental^
+^Water creature^, ^cost^ 10, ^attack is equal~to its owner's Water power, life^ 37~^When Water Elemental is summoned~it heals 12 life to its owner.~Water Elemental increases the growth~of its owner's Water power by 1.^
+^Mind Master^
+^Water creature^, ^cost^ 11~^Attack^ 6, ^life^ 25~^Mind Master increases the growth~of each of its owner's powers by 1.^
+^Astral Guard^
+^Water creature^, ^cost^ 12~^Attack^ 4, ^life^ 18~^Astral Guard decreases the growth~of each of the opponent's powers by 1.^
+^Faerie Apprentice^
+^Air creature^, ^cost^ 1~^Attack^ 4, ^life^ 14~^Faerie Apprentice increases the damage~its owner's spells deal by 1.^
+^Griffin^
+^Air creature^, ^cost^ 2~^Attack^ 4, ^life^ 15~^When Griffin is summoned,~if its owner's Air power is 5 or more,~it deals 5 damage to the opponent.^
+^Call to Thunder^
+^Air spell^, ^cost^ 3~^Call to Thunder deals 7 damage~to target opponent's creature~and 7 damage to the opponent.^
+^Faerie Sage^
+^Air creature^, ^cost^ 4~^Attack^ 5, ^life^ 19~^When Faerie Sage is summoned~it heals an amount of life to its owner~equal to its owner's Earth power,~but not more than 10.^
+^Wall of Lightning^
+^Air creature^, ^cost^ 5~^Attack^ 0, ^life^ 32~^At the beginning of its owner's turn,~Wall of Lightning deals 4 damage~to the opponent.^
+^Lightning Bolt^
+^Air spell^, ^cost^ 6~^Lightning Bolt deals~(5+its caster's Air power) damage~to the opponent.^~^Deals 2 damage to the opponent's creatures^.
+^Phoenix^
+^Air creature^, ^cost^ 7~^Attack^ 7, ^life^ 16~^Each time Phoenix dies~if its owner's Fire power is 10 or greater~Phoenix rebirth and deals~3 damage to the opponent.^
+^Chain Lightning^
+^Air spell^, ^cost^ 8~^Chain Lightning deals 10 damage~to the opponent and to each~of the opponent's creatures.^
+^Lightning Cloud^
+^Air creature^, ^cost^ 9~^Attack^ 4, ^life^ 22~^Lightning Cloud's attack damages~the opponent and each of~the opponent's creatures.^
+^Tornado^
+^Air spell^, ^cost^ 10~^Destroy target opponent's creature.^~^Reduces opponent's air power by 1^.
+^Air Elemental^
+^Air creature^, ^cost^ 11, ^attack is equal~to its owner's Air power, life^ 44~^When Air Elemental is summoned~it deals 10 damage to the opponent.~Air Elemental increases the growth~of its owner's Air power by 1.^
+^Titan^
+^Air creature^, ^cost^ 12~^Attack^ 9, ^life^ 40~^When Titan is summoned~it deals 20 damage to the creature~in the opposing slot.^
+^Elven Healer^
+^Earth creature^, ^cost^ 1~^Attack^ 2, ^life^ 12~^At the beginning of its owner's turn,~Elvish Healer heals 4 life to its owner.^
+^Nature's Ritual^
+^Earth spell^, ^cost^ 2~^Nature's Ritual heals 9 life~to target caster's creature~and to its caster.^
+^Forest Sprite^
+^Earth creature^, ^cost^ 3~^Attack^ 1, ^life^ 24~^Forest Sprite's attack damages~the opponent and each of~the opponent's creatures.^
+^Rejuvenation^
+^Earth spell^, ^cost^ 4~^Rejuvenation heals an amount of life~to its caster equal to twice~its caster's Earth power.^~^Heals 2 life to each caster's creature^.
+^Elf Hermit^
+^Earth creature^, ^cost^ 5~^Attack^ 1, ^life^ 13~^Elf Hermit increases the growth~of owner's Earth power by 2.^
+^Nature's Fury^
+^Earth spell^, ^cost^ 6~^Nature's Fury deals an amount of damage~to the opponent equal to the total~attack of its caster's two creatures~with the highest attack.^ ^Deals 3 damage~to blocked opponent's creatures^.
+^Giant Spider^
+^Earth creature^, ^cost^ 7~^Attack^ 4, ^life^ 27~^When Giant Spider is summoned,~it puts a 2/11 Forest Spider into~each of its empty neighboring slots.^
+^Troll^
+^Earth creature^, ^cost^ 8~^Attack^ 6, ^life^ 26~^At the beginning of its owner's turn,~Troll heals 4 life to itself.^~^Receives +2 Attack when unblocked^.
+^Stone Rain^
+^Earth spell^, ^cost^ 9~^Stone Rain deals 25 damage~to each creature.^~^Reduces opponent's air power by 2^.
+^Earth Elemental^
+^Earth creature^, ^cost^ 10, ^attack is equal~to its owner's Earth power^, ^life^ 54~^Earth Elemental increases the growth~of its owner's Earth power by 1.^
+^Master Healer^
+^Earth creature^, ^cost^ 11~^Attack^ 4, ^life^ 34~^At the beginning of its owner's turn,~Master Healer heals 3 life to its owner~and to each of its owner's creatures.^
+^Hydra^
+^Earth creature^, ^cost^ 12~^Attack^ 3, ^life^ 40~^Hydra's attack damages the opponent~and each of the opponent's creatures.~At the beginning of its owner's turn,~Hydra heals 5 life to itself.^
+^Crusader^
+^Holy creature^, ^cost^ 1~^Attack^ 4, ^life^ 15~^When Crusader is summoned it heals~2 life to each of its owner's creatures.^
+^Holy Avenger^
+^Holy creature^, ^cost^ 2~^Attack^ 4, ^life^ 23~^Each time a neighboring creature dies,~Holy Avenger's attack increases~by 2 permanently.^
+^Templar^
+^Holy creature^, ^cost^ 3~^Attack^ 4, ^life^ 26~^Each time its owner summons a creature~into a neighboring slot, Templar deals~4 damage to the opponent.^
+^Divine Justice^
+^Holy spell^, ^cost^ 4~^Divine Justice heals 12 life~to target caster's creature and~deals 12 damage to each other creature.^
+^Divine Meddling^
+^Holy spell^, ^cost^ 5~^Divine Meddling increases its caster's~Fire, Water, Air and Earth powers by 2,~then deals 10 damage to the opponent.^
+^Rage of God^
+^Holy spell^, ^cost^ 6~^Rage of God deals 12 damage to each of~the opponent's creatures, then deals~3 damage to the opponent for each of~the opponent's creatures that did not die.^
+^Angel^
+^Holy creature^, ^cost^ 7~^Attack^ 8, ^life^ 42~^When Angel is summoned it increases~its owner's Holy power by 3.^
+^Angel of War^
+^Holy creature^, ^cost^ 8~^Attack^ 8, ^life^ 37~^When Angel of War is summoned~it deals 8 damage to each of~the opponent's creatures and heals~8 life to each of its owner's creatures.^
+^Blood Boil^
+^Blood spell^, ^cost^ 1 ^blood`2^ ^and^ 2 ^life`2^~^Blood Boil deals 4 damage to each of~the opponent's creatures, then increases~its owner's Blood power by 1 for each~creature killed by this spell.^
+^Ghoul^
+^Blood creature^, ^cost^ 2 ^blood`2^ ^and^ 4 ^life`2^~^Attack^ 4, ^life^ 25~^Each time an opponent's creature dies~Ghoul's attack increases by 1 permanently.^
+^Devoted Servant^
+^Blood creature^, ^cost^ 3 ^blood`2^ ^and^ 6 ^life`2^~^Attack^ 1, ^life^ 19~^At the beginning of its owner's turn,~Devoted Servant's attack increases by 1~permanently. When Devoted Servant dies~it increases its owner's Blood power~by an amount equal to its attack.^
+^Vampire Mystic^
+^Blood creature^, ^cost^ 4 ^blood`2^ ^and^ 8 ^life`2^~^Attack^ 5, ^life^ 46~^Each time the opponent receives~damage, Vampire Mystic's attack~increases by 2 until end of turn.^
+^Justicar^
+^Blood creature^, ^cost^ 5 ^blood`2^ ^and^ 10 ^life`2^~^Attack^ 3, ^life^ 49~^The opposing creature receives double~damage from all sources.~While Justicar is unblocked all damage~done to the opponent is increased by 2.^
+^Chastiser^
+^Blood creature^, ^cost^ 6 ^blood`2^ ^and^ 12 ^life`2^~^Attack^ 9, ^life^ 51~^Each time its owner receives damage~Chastiser's attack increases by 2~until after its next attack.^
+^Vampire Elder^
+^Blood creature^, ^cost^ 7 ^blood`2^ ^and^ 14 ^life`2^~^Attack^ 5, ^life^ 27~^When Vampire Elder is summoned it puts~a 5/14 Initiate into each of its empty~neighboring slots. While Vampire Elder~is in play Initiates receive no damage.^
+^Magister of Blood^
+^Blood creature^, ^cost^ 8 ^blood`2^ ^and^ 16 ^life`2^~^Attack^ 8, ^life^ 33~^When Magister of Blood is summoned it~deals 16 damage to the opponent and to~each of the opponent's blocked creatures.^
+^Initiate^
+^Blood creature^, ^cost^ 0~^Attack^ 5, ^life^ 14~^While Vampire Elder is in play~Initiates receive no damage.^
+^Fanatic^
+^Cult creature^, ^cost^ 1~^Attack^ 4, ^life^ 26~^Fanatic receives double damage~from the opponent's spells.^
+^Call to Ancient Spirits^
+^Cult spell^, ^cost^ 2~^Call to Ancient Spirits deals 10 damage~to each of the opponent's creatures,~then deals 5 damage to each of its~caster's creatures.^
+^Zealot^
+^Cult creature^, ^cost^ 3~^Attack^ 3, ^life^ 42~^At the beginning of its owner's turn,~Zealot's attack increases by 2 permanently.~Each time Zealot deals damage~it loses an equal amount of life.^
+^Monument to Rage^
+^Cult creature^, ^cost^ 4~^Attack^ 0, ^life^ 63~^Owner's creatures perform~an additional attack each turn.~Each time an owner's creature deal~damage by attacking, Monument to Rage~loses an equal amount of life.^
+^Cursed Unicorn^
+^Cult creature^, ^cost^ 5~^Attack^ 6, ^life^ 53~^While Cursed Unicorn is blocked, it~lose 5 life each turn but all spell damage~done to Cursed Unicorn is redirected~to the opposite creature.^
+^Blind Prophet^
+^Cult creature^, ^cost^ 6~^Attack^ 5, ^life^ 27~^Blind Prophet increases the growth of its~owner's Fire, Water, Air and Earth powers~by 1 and decreases the growth of its~owner's Worship power by 1.^
+^Reaver^
+^Cult creature^, ^cost^ 7~^Attack^ 8, ^life^ 56~^All damage that would be dealt to~its owner's other creatures is redirected~to Reaver instead. While Reaver is in play,~its owner can't cast spells.^
+^Greater Bargul^
+^Cult creature^, ^cost^ 8~^Attack^ 13, ^life^ 58~^When Greater Bargul is summoned it~deals 20 damage to each other creature.~At the beginning of its owner's turn~Greater Bargul deals 3 damage to its owner.^
+^Golem^
+^Creature^, ^cost^ 3~^Attack^ 3, ^life^ 10~^Golem receives no damage from spells and~abilities. When Golem dies Golem is put~into another random empty slot~(with full life) and its owner loses 10 life.^
+^Golem's Frenzy^
+^Golem spell^, ^cost^ 1~^Golem's Frenzy deals 3 damage to each of~the opponent's creatures. For each creature~killed by this spell, Golem's attack~is increased by 3 until end of turn.^
+^Guardian Statue^
+^Golem creature^, ^cost^ 2~^Attack^ 4, ^life^ 10~^Guardian Statue receives no damage~until it performs its first attack.^
+^Golem's Justice^
+^Golem spell^, ^cost^ 3~^Golem's Justice deals 4 damage~to each of the opponent's creatures,~then heals 4 life to Golem's neighbours.^
+^Army Upgrade^
+^Golem spell^, ^cost^ 4~^Army Upgrade heals 3 life to each of~its caster's creatures. Golem's attack is~increased by 2 permanently; this bonus~remains even after Golem is killed.^
+^Golem Instructor^
+^Golem creature^, ^cost^ 5, ^attack is equal~to number of owner's creatures^, ^life^ 22~^Golem Instructor increases~Golem's attack by 2.^
+^Dark Sculptor^
+^Golem creature^, ^cost^ 6~^Attack^ 2, ^life^ 8~^When Dark Sculptor is summoned~it deals X damage to each of the~opponent's creatures, where X is equal~to the number of creatures in play.^
+^Golem Guide^
+^Golem creature^, ^cost^ 7~^Attack^ 7, ^life^ 32~^When Golem Guide is summoned it swaps~positions with Golem and increases~Golem's attack by 3 until end of turn.^
+^Golem Handler^
+^Golem creature^, ^cost^ 8~^Attack^ 5, ^life^ 40~^While Golem Handler is in play,~Golem performs an additional attack~during each of its owner's turns.^
+100
+v 1.34
+2016
+143

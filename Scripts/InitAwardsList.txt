@@ -1,0 +1,28 @@
+UseParent AwardsList\WND
+
+Create UIlabel AwardsList\CaptionLabel
+caption=^Obtained Awards^
+x=100
+y=125
+width=385
+height=36
+align=center
+color=$D8301000
+style=0
+font=3
+
+Create UIButton AwardsList\Ok
+caption=^Ok^
+x=235
+y=480
+width=123
+height=29
+style=1
+font=2
+styleinfo=CombatResultbtn
+
+Use AwardsList\Scroll
+x=464
+y=157
+width=22
+height=312

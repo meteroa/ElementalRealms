@@ -1,0 +1,17 @@
+useParent Draft
+
+Create UIButton Draft\Exit
+caption=""
+hint="^Exit^"
+x=5
+y=276
+width=50
+height=55
+style=1
+styleinfo=ExitDraft
+
+customstyle.ExitDraft\image=Buttons\Draft\Exit
+customstyle.ExitDraft\imageOver=Buttons\Draft\Exit_over
+customstyle.ExitDraft\imageDown=Buttons\Draft\Exit_down
+customstyle.ExitDraft\timeDown=120
+

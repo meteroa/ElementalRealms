@@ -1,0 +1,107 @@
+UseParent Activation\WND
+
+DefaultWidth 270
+DefaultHeight 20
+DefaultX 66
+DefaultColor $E0220000
+
+Create UIButton Activation\BuyCode
+x=42
+y=260
+width=384
+height=24
+caption=^Click here to buy an activation code online!^
+style=1
+styleinfo=Link
+
+Create UIButton Activation\EnterCode
+x=42
+y=288
+width=384
+height=24
+caption=^Already purchased? Click to enter your code.^
+style=1
+styleinfo=Link
+
+Create UIlabel Activation\Title
+caption=^Purchase^
+font=3
+x=90
+y=30
+width=285
+height=30
+align=center
+style=0
+Color=$D0002200
+
+
+#Create UIlabel Activation\label1
+#caption=^Purchase Spectromancer^
+#font=3
+#x=82
+#y=120
+#width=240
+#height=30
+#align=center
+#style=0
+#Color=$D0220000
+
+
+use Activation\Input
+x=70
+y=288
+visible=OFF
+width=160
+height=22
+color=$F0200000
+backgnd=$60787878
+font=1
+
+DefaultWidth 103
+DefaultHeight 29
+
+Create UIButton Activation\Close
+caption=^Close^
+x=180
+y=334
+style=1
+styleinfo=UsualBtn
+
+Create UIButton Activation\Enter
+caption=^Enter^
+visible=OFF
+x=232
+y=286
+width=82
+height=28
+style=1
+styleinfo=ActBTN
+
+Create UIButton Activation\Cancel
+caption=^Cancel^
+visible=OFF
+x=315
+y=286
+width=82
+height=28
+style=1
+styleinfo=ActBTN
+
+
+customstyle.ActBTN\image=Buttons\Chat\SendButton
+customstyle.ActBTN\imageOver=Buttons\Chat\SendButton_Over
+customstyle.ActBTN\imageDown=Buttons\Chat\SendButton_Down
+customstyle.ActBTN\color=$C0F0E080
+customstyle.ActBTN\shadow=$80302000
+customstyle.ActBTN\colorOver=$E0FFE890
+customstyle.ActBTN\colorDown=$A0D0C070
+customstyle.ActBTN\colorDisabled=$E0404040
+customstyle.ActBTN\textoffsetY=-2
+customstyle.ActBTN\ImageColor=$FF889080
+customstyle.ActBTN\ImageColorOver=$FF889080
+customstyle.ActBTN\ImageColorDown=$FF889080
+
+customstyle.Link\Color=$FF080848
+customstyle.Link\ColorOver=$FF000080
+customstyle.Link\ColorDown=$FF000080
+customstyle.Link\Underline=yes

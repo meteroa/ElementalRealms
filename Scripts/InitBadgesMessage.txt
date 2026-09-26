@@ -1,0 +1,11 @@
+UseParent BadgesMessage\WND
+
+Create UIButton BADGESMESSAGE\OK
+caption=^Ok^
+x=197
+y=206
+width=103
+height=29
+style=1
+font=2
+styleinfo=usualbtn

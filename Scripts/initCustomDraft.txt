@@ -1,0 +1,89 @@
+defaultfont 2
+
+Use CustomDraft\PlayerName
+x=240
+y=160
+width=120
+height=21
+color=$D0FFE8A0
+
+UseParent CustomDraft\wnd
+
+DefaultY 122
+DefaultWidth 18
+DefaultHeight 127
+
+
+Create UIButton CustomDraft\FaceLeft
+x=57
+style=1
+styleinfo=HeroLeftBTN
+
+Create UIButton CustomDraft\FaceRight
+x=194
+style=1
+styleinfo=HeroRightBTN
+
+DefaultY 209
+DefaultWidth 18
+DefaultHeight 28
+
+
+Create UIButton CustomDraft\SpecLeft
+x=218
+style=1
+styleinfo=MiniLeftBTN
+
+Create UIButton CustomDraft\SpecRight
+x=355
+style=1
+styleinfo=MiniRightBTN
+
+DefaultY 287
+
+Create UIButton CustomDraft\DifficultyLeft
+x=218
+style=1
+styleinfo=MiniLeftBTN
+
+Create UIButton CustomDraft\DifficultyRight
+x=355
+style=1
+styleinfo=MiniRightBTN
+
+Create UIButton CustomDraft\NumberLeft
+x=57
+style=1
+styleinfo=MiniLeftBTN
+
+Create UIButton CustomDraft\NumberRight
+x=194
+style=1
+styleinfo=MiniRightBTN
+
+defaulty 340
+defaultwidth 103
+defaultheight 29
+
+Create UIButton CustomDraft\Create
+caption=^Create^
+x=110
+style=1
+styleinfo=usualbtn
+
+Create UIButton CustomDraft\Back
+caption=^Close^
+x=218
+style=1
+styleinfo=usualbtn
+
+Create UIButton CustomDraft\Configure
+caption=""
+hint="^Configure^"
+x=335
+y=210
+width=19
+height=22
+style=1
+styleinfo=Configure
+

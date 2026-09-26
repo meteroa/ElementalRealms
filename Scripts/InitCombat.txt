@@ -1,0 +1,221 @@
+DefaultX -1
+DefaultWidth 76
+DefaultHeight 80
+
+UseParent Combat
+
+Create UIButton Combat\ViewHelp
+caption=^View Help^
+y=5
+style=1
+styleinfo=HelpBTN
+font=2
+customstyle.HelpBTN\image=Buttons\Combat\HelpButton
+customstyle.HelpBTN\imageOver=Buttons\Combat\HelpButton_Over
+customstyle.HelpBTN\imageDown=Buttons\Combat\HelpButton_Down
+customstyle.HelpBTN\color=$B0000000
+customstyle.HelpBTN\colorOver=$E0303030
+customstyle.HelpBTN\colorDown=$E0000000
+customstyle.HelpBTN\offsetY=10
+customstyle.HelpBTN\offsetX=7
+customstyle.HelpBTN\textoffsetY=25
+
+Create UIButton Combat\Options
+caption=^Options^
+y=85
+style=1
+font=2
+styleinfo=OptionsBTN
+customstyle.OptionsBTN\image=Buttons\Combat\OptionsButton
+customstyle.OptionsBTN\imageOver=Buttons\Combat\OptionsButton_Over
+customstyle.OptionsBTN\imageDown=Buttons\Combat\OptionsButton_Down
+customstyle.OptionsBTN\color=$B0000000
+customstyle.OptionsBTN\colorOver=$E0303030
+customstyle.OptionsBTN\colorDown=$E0000000
+customstyle.OptionsBTN\offsetY=10
+customstyle.OptionsBTN\offsetX=7
+customstyle.OptionsBTN\textoffsetY=25
+
+Create UIButton Combat\MainMenu
+caption=^Main Menu`duel^
+y=165
+font=2
+style=1
+styleinfo=MainMenuBTN
+customstyle.MainMenuBTN\image=Buttons\Combat\MainMenuButton
+customstyle.MainMenuBTN\imageOver=Buttons\Combat\MainMenuButton_Over
+customstyle.MainMenuBTN\imageDown=Buttons\Combat\MainMenuButton_Down
+customstyle.MainMenuBTN\color=$B0000000
+customstyle.MainMenuBTN\colorOver=$E0303030
+customstyle.MainMenuBTN\colorDown=$E0000000
+customstyle.MainMenuBTN\offsetY=10
+customstyle.MainMenuBTN\offsetX=8
+customstyle.MainMenuBTN\textoffsetY=24
+
+Create UIButton Combat\Surrender
+caption=^Surrender^
+y=245
+font=2
+style=1
+styleinfo=SurrenderBTN
+customstyle.SurrenderBTN\image=Buttons\Combat\SurrenderButton
+customstyle.SurrenderBTN\imageOver=Buttons\Combat\SurrenderButton_Over
+customstyle.SurrenderBTN\imageDown=Buttons\Combat\SurrenderButton_Down
+customstyle.SurrenderBTN\color=$B0000000
+customstyle.SurrenderBTN\colorOver=$E0303030
+customstyle.SurrenderBTN\colorDown=$E0000000
+customstyle.SurrenderBTN\offsetY=10
+customstyle.SurrenderBTN\offsetX=6
+customstyle.SurrenderBTN\textoffsetY=22
+
+Use Combat\MessageScroll
+x=474
+y=549
+height=162
+style=3
+width=20
+color=$FF808050
+
+Create UIButton Combat\GetAdvice
+caption=^Get Advice^
+x=30
+y=725
+width=220
+height=32
+style=1
+styleinfo=CombatBtn
+
+Create UIButton Combat\ScenarioDescription
+caption=^Scenario Description^
+x=248
+y=725
+width=220
+height=32
+style=1
+styleinfo=CombatBtn
+
+customstyle.CombatBTN\image=Buttons\Combat\CombatButton
+customstyle.CombatBTN\imageOver=Buttons\Combat\CombatButton_Over
+customstyle.CombatBTN\imageDown=Buttons\Combat\CombatButton_Down
+customstyle.CombatBTN\color=$E0747468
+customstyle.CombatBTN\colorOver=$FF808080
+customstyle.CombatBTN\colorDown=$E0707068
+customstyle.CombatBTN\shadow=$8000000
+customstyle.CombatBTN\textoffsetY=2
+customstyle.CombatBTN\imagecolor=$FF706060
+customstyle.CombatBTN\imagecolorOver=$FF706460
+customstyle.CombatBTN\imagecolorDown=$FF6E6058
+
+Create UIButton Combat\EndTurn
+x=83
+y=145
+width=48
+height=48
+style=1
+styleinfo=EndTurnBtn
+hint=^End turn^
+hintDuration=30000
+
+customstyle.EndTurnBTN\image=Buttons\Combat\EndTurnButton
+customstyle.EndTurnBTN\imageOver=Buttons\Combat\EndTurnButton_Over
+customstyle.EndTurnBTN\imageDown=Buttons\Combat\EndTurnButton_Down
+customstyle.EndTurnBTN\imageDisabled=Buttons\Combat\EndTurnButton_Disabled
+customstyle.EndTurnBTN\color=$C0202000
+customstyle.EndTurnBTN\colorOver=$E0404000
+customstyle.EndTurnBTN\colorDown=$E04040C0
+
+Create UIButton Combat\ShowEnemyCards
+x=150
+y=145
+width=48
+height=48
+style=1
+styleinfo=ShowCardsBtn
+hint=^Show enemy cards^
+hintDuration=30000
+
+Create UIButton Combat\ShowYourCards
+x=150
+y=145
+width=48
+height=48
+style=1
+styleinfo=ShowCardsBtn
+hint=^Show your cards^
+hintDuration=30000
+
+customstyle.ShowCardsBTN\image=Buttons\Combat\ShowCardsButton
+customstyle.ShowCardsBTN\imageOver=Buttons\Combat\ShowCardsButton_Over
+customstyle.ShowCardsBTN\imageDown=Buttons\Combat\ShowCardsButton_Down
+customstyle.ShowCardsBTN\color=$C0202000
+customstyle.ShowCardsBTN\colorOver=$E0404000
+customstyle.ShowCardsBTN\colorDown=$E04040C0
+
+
+DefaultX 76
+DefaultWidth 120
+DefaultHeight 120
+
+Create UIButton Combat\ViewProfile1
+y=6
+style=1
+styleinfo=ProfileBtn
+customstyle.ProfileBTN\image=Buttons\Combat\ProfileButton
+customstyle.ProfileBTN\imageOver=Buttons\Combat\ProfileButton_Over
+customstyle.ProfileBTN\imageDown=Buttons\Combat\ProfileButton_Over
+
+Create UIButton Combat\ViewProfile2
+y=208
+style=1
+styleinfo=ProfileBtn
+
+Use Combat\ChatBox
+x=60
+y=734
+width=372
+noborder=ON
+height=20
+color=$FFE8E0D0
+
+
+DefaultX 214
+DefaultWidth 44
+DefaultHeight 48
+DefaultColor $E0F0E880
+
+Create UILabel Combat\Life1Label
+y=4
+hint=^If opponent's Life is reduced to zero,~he is defeated and the duel ends.^
+hintDuration=30000
+
+Create UILabel Combat\Life2Label
+y=280
+hint=^If your Life is reduced to zero,~you are defeated and the duel ends.^
+hintDuration=30000
+
+Create UiButton Combat\ChatPlayers
+x=449
+y=731
+width=30
+height=30
+style=1
+styleinfo=ChatListBTN2
+customstyle.ChatListBTN2\image=Buttons\Chat\Chatplayers
+customstyle.ChatListBTN2\imageOver=Buttons\Chat\Chatplayers_Over
+customstyle.ChatListBTN2\imageDown=Buttons\Chat\Chatplayers_Down
+customstyle.ChatListBTN2\imageDisabled=Buttons\Chat\Chatplayers_Disabled
+
+
+DefaultY 733
+DefaultWidth 24
+DefaultHeight 22
+
+Create UIButton Combat\SpeedLeft
+x=205
+style=1
+styleinfo=MiniLeftBTN
+
+Create UIButton Combat\SpeedRight
+x=340
+style=1
+styleinfo=MiniRightBTN

@@ -1,0 +1,11 @@
+UseParent ScenarioDesc\Wnd
+
+Create UIButton ScenarioDesc\OK
+caption=^Ok^
+x=205
+y=342
+width=123
+height=29
+style=1
+font=2
+styleinfo=CombatResultbtn

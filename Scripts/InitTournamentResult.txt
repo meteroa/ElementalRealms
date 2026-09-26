@@ -1,0 +1,11 @@
+UseParent TournamentResult\WND
+
+Create UIButton TournamentResult\Ok
+caption=^Ok^
+x=125
+y=340
+width=123
+height=29
+font=2
+style=1
+styleinfo=CombatResultbtn

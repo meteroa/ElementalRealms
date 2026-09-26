@@ -1,0 +1,71 @@
+UseParent CreateTournament\WND
+
+#Create UILabel CreateTournament\Title
+#width=200
+#x=148
+#y=65
+#caption="^New Tournament:^"
+#align=center
+#color=$80000000
+#font=3
+#height=40
+
+create UILabel CreateTournament\TourType
+style=0
+font=3
+width=225
+height=50
+x=90
+y=64
+align=center
+caption="^Choose tournament type:^"
+color=$D0402000
+
+DefaultX 110
+DefaultWidth 200
+DefaultHeight 22
+
+Create UIButton CreateTournament\Standard
+y=96
+caption="^Standard duels^"
+btnStyle=item
+style=1
+styleinfo=radiobox
+color=$D0000000
+
+Create UIButton CreateTournament\Powered
+y=118
+caption="^Draft tournament^"
+btnStyle=item
+style=1
+styleinfo=radiobox
+color=$D0000000
+
+Create UIButton CreateTournament\Spectro
+y=140
+caption="^Duels of spectromancers^"
+btnStyle=item
+style=1
+styleinfo=radiobox
+color=$D0000000
+#enabled=false
+
+Create UIButton CreateTournament\Ok
+caption=^Ok^
+x=94
+y=192
+width=103
+height=29
+font=2
+style=1
+styleinfo=usualbtn
+
+Create UIButton CreateTournament\Cancel
+caption=^Cancel^
+x=202
+y=192
+width=103
+height=29
+font=2
+style=1
+styleinfo=usualbtn

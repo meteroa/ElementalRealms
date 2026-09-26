@@ -1,0 +1,33 @@
+DefaultX 893
+DefaultWidth 132
+DefaultHeight 38
+
+UseParent DraftTournament
+
+Create UIButton DraftTournament\Start
+caption=^Start combat^
+y=593
+font=2
+style=1
+styleinfo=campaignbtn
+
+Create UIButton DraftTournament\Help
+caption=^Help^
+Y=631
+font=2
+style=1
+styleinfo=campaignbtn
+
+Create UIButton DraftTournament\Options
+caption=^Options^
+Y=669
+font=2
+style=1
+styleinfo=campaignbtn
+
+Create UIButton DraftTournament\MainMenu
+caption=^Main Menu^
+Y=707
+font=2
+style=1
+styleinfo=campaignbtn

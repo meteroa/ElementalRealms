@@ -1,0 +1,162 @@
+DefaultColor $FF506A80
+DefaultStyle 1
+
+UseParent StartMenu
+
+DefaultX 790
+DefaultWidth 166
+DefaultHeight 40
+DefaultFont 8
+
+Create UIButton StartMenu\B11
+caption=^Single Duel^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B12
+caption=^Campaign^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B13
+caption=^League of Heroes^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B14
+caption=^Custom Decks^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B15
+caption=^Draft Tournament^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B21
+caption=^Online League^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B22
+caption=^Local Network^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B23
+caption=^Hotseat^
+y=290
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B31
+caption=^View Replay^
+y=390
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B32
+caption=^Rewards^
+y=390
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B33
+caption=^Options^
+y=390
+style=5
+styleinfo=MenuBTN2
+
+Create UIButton StartMenu\B34
+caption=^Help^
+y=390
+style=5
+styleinfo=MenuBTN2
+
+
+
+DefaultWidth 210
+DefaultHeight 67
+DefaultFont 8
+DefaultX 765
+
+Create UIButton StartMenu\B10
+caption=^Singleplayer^
+y=290
+style=5
+styleinfo=MenuBTN
+
+Create UIButton StartMenu\B20
+caption=^Multiplayer^
+y=344
+style=5
+styleinfo=MenuBTN
+
+Create UIButton StartMenu\B30
+caption=^More...^
+y=398
+style=5
+styleinfo=MenuBTN
+
+Create UIButton StartMenu\B40
+caption=^Exit^
+y=614
+style=5
+styleinfo=MenuBTN
+
+customstyle.MenuBTN\color=$FFFFFFFF
+customstyle.MenuBTN\glow=50
+customstyle.MenuBTN\glowBoost=10
+customstyle.MenuBTN\glowcolor=$FF000000
+customstyle.MenuBTN\colorOver=$FFFFFFFF
+customstyle.MenuBTN\colorDown=$FFE0E0E0
+customstyle.MenuBTN\colorDisabled=$FFFFF0C0
+customstyle.MenuBTN\textoffsetY=-1
+customstyle.MenuBTN\textoffsetX=1
+customstyle.MenuBTN\timeDown=200
+
+customstyle.MenuBTN2\image=Buttons\MenuBTN2
+customstyle.MenuBTN2\imageOver=Buttons\MenuBTN2_over
+customstyle.MenuBTN2\imageDown=Buttons\MenuBTN2_down
+customstyle.MenuBTN2\color=$FFF0E0C0
+customstyle.MenuBTN2\glow=30
+customstyle.MenuBTN2\glowBoost=10
+customstyle.MenuBTN2\glowcolor=$FF000000
+customstyle.MenuBTN2\colorOver=$FFFFFFFF
+customstyle.MenuBTN2\colorDown=$FFE0D0C0
+customstyle.MenuBTN2\colorDisabled=$E0404040
+customstyle.MenuBTN2\textoffsetY=0
+customstyle.MenuBTN2\textoffsetX=-2
+customstyle.MenuBTN2\offsetY=3
+customstyle.MenuBTN2\offsetX=4
+customstyle.MenuBTN2\timeDown=150
+
+
+Create UIButton StartMenu\Purchase
+caption=^Click to purchase or unlock^
+height=35
+width=250
+x=380
+y=-2
+style=1
+styleinfo=LinkBTN
+
+customstyle.LinkBTN\color=$FFE0F0FF
+customstyle.LinkBTN\glow=20
+customstyle.LinkBTN\glowBoost=5
+customstyle.LinkBTN\image=Buttons\MenuBar
+customstyle.LinkBTN\imageOver=Buttons\MenuBar_over
+customstyle.LinkBTN\imageDown=Buttons\MenuBar
+customstyle.LinkBTN\glowcolor=$FF000000
+customstyle.LinkBTN\colorOver=$FFFFFFC0
+customstyle.LinkBTN\colorDown=$FFE0E0E0
+customstyle.LinkBTN\colorDisabled=$E0404040
+customstyle.LinkBTN\textoffsetY=-1
+customstyle.LinkBTN\timeDown=100

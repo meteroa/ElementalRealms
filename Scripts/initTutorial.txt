@@ -1,0 +1,18 @@
+USE Tutorial\OK
+caption=^Next^
+x=148
+y=160
+width=92
+height=26
+style=1
+font=2
+styleinfo=hintbtn
+
+customstyle.hintBTN\image=Buttons\hint\hintBtn
+customstyle.hintBTN\imageOver=Buttons\hint\hintBtn_over
+customstyle.hintBTN\imageDown=Buttons\hint\hintBtn_down
+customstyle.hintBTN\timeDown=140
+customstyle.hintBTN\color=$E0280000
+customstyle.hintBTN\shadow=$50000000
+customstyle.hintBTN\colorOver=$E0502000
+customstyle.hintBTN\colorDown=$E0200000
