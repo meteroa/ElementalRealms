@@ -5,6 +5,41 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.1] - 2026-09-26
+
+### Changed
+- **项目目录结构全面整理重构（Repository Architecture Reorganization）**：
+  - **PC 端项目归集（`pc/`）**：将原根目录下散落的 PC 原版游戏资源与可执行程序（包括 `Audio`、`Campaign`、`Fonts`、`Help`、`Images`、`Inf`、`Saves`、`Scripts` 目录及 `Spectromancer.exe`、DLL 运行库、配置文件、游戏日志与指南文本）统一归整至独立的 `pc/` 文件夹。
+  - **安卓端项目归集（`android/`）**：将原本的 `mobile_game` 目录更名为 `android/`，作为正式的原生安卓独立 App（Capacitor + Vite + TypeScript）项目根目录，并同步重构了脚本中的路径引用与包名规范。
+
+### Removed
+- **清理历史测试目录与临时碎片文件（Test & Scratch Cleanup）**：
+  - 彻底清理早期基于 Winlator 模拟器的过渡安装目录 `Android_Deployment/`。
+  - 彻底清理包含对战录屏视频的 `test/` 目录及解压的临时电子书 `temp_epub/` 目录。
+  - 清除项目根目录及各子模块中残留的测试截图和临时图片（如 `battle_hand_crop.jpg` 等）。
+
+## [2.5.0] - 2026-09-26
+
+### Added
+- **左侧操控区重构为单列控制条（Far-Left Vertical Action Strip）**：
+  - 将当前回合状态胶囊（你的回合/敌方行动）、看对手（切换手牌）、设置、投降、获得建议、结束回合 6 大战术操控项全部规整归集到最左侧垂直单列（`.combat-actions-strip`）。
+  - 右侧紧邻英雄信息柱（敌我头像、红/绿巨额血量）与双层羊皮纸（卡牌检视器与实况记录），并将 `.combat-left-panel` 宽度适度拓宽至 `clamp(350px, 32vw, 420px)`，更符合横屏手持大拇指触控操作习惯。
+
+### Changed
+- **主菜单模式选项全面水平与垂直居中（Main Menu Mode Options Centering）**：
+  - 修复图 1 中启动页菜单卡片向右偏斜的问题，改由弹性居中容器约束（`justify-content: center; align-items: center; margin: 0 auto;`），在各种横屏分辨率下均严格居中呈现。
+- **牌桌战场零重叠与留白呼吸布局（Zero-Overlap Centered 6-Slot Arena）**：
+  - 彻底消除图 2 中战场卡槽与双方元素能量条发生空间挤压重叠的缺陷：槽位区域宽度约束至 76%（上限 740px），卡槽采用 `max-width: 84px; max-height: 106px; aspect-ratio: 3/4` 严谨尺寸，与顶部敌方能量条及底部玩家能量条之间预留充裕的呼吸间隔，绝不遮盖对战牌桌背景。
+  - 彻底移除双方能量条上多余的“己方能量”和“敌方能量”侧标文字徽章，纯粹保留 5 块拱形元素玄石神坛与霓虹晶石法力值，整体更加通透干练。
+  - 调优战场背景亮度和色彩饱和度（`brightness(1.2) contrast(1.05) saturate(1.15)`），呈现更为明亮通透的苍穹奇幻对决景致。
+- **卡牌原画顶部对齐裁剪与攻防费用全量明示（Top-Cropped Card Art & Full Stat Visibility）**：
+  - 随从与手牌立绘统一切换为顶部向下裁剪渲染（`object-position: top center; object-fit: cover;`），完整呈现角色头部、神冠、容貌与上半身，消除被腰斩的问题。
+  - 费用晶石（右上角）、攻击红方块（左下角）与生命绿方块（右下角）统一提升至顶层 `z-index: 10`，并采用高对比度雕纹与阴影，保证卡牌攻防费用 100% 清晰直观、绝不遮挡。
+
+### Fixed
+- **修复 12 处资源文件名大小写 404 导致卡牌损坏的问题（Case-Sensitive Asset Loader Fix）**：
+  - 彻底修复 `KeeperofDeath.jpg` / `KeeperOfDeath.jpg` 等 12 处因移动端大小写敏感导致原画加载失败的问题，补齐资源镜像与数据对应。
+
 ## [2.4.0] - 2026-09-26
 
 ### Added

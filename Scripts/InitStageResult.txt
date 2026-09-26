@@ -1,9 +1,0 @@
-USE StageResult\OK
-caption=^Ok^
-x=120
-y=255
-width=123
-height=29
-style=1
-font=2
-styleinfo=CombatResultbtn
