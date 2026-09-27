@@ -89,8 +89,8 @@ const cards = [
     image: 'FlameWave',
     desc: '【火焰波浪】对对方所有生物造成9点伤害。',
     spellEffect: 'damage_all_enemy_creatures_9',
-    imgUrl: '/cards/FlameWave.jpg',
-    imgBigUrl: '/cards/FlameWaveBig.jpg'
+    imgUrl: '/cards/FlameWave.png',
+    imgBigUrl: '/cards/FlameWaveBig.png'
   },
   {
     id: 'fire_minotaur_commander',
@@ -133,8 +133,8 @@ const cards = [
     requiresTarget: true,
     desc: '【炼狱爆轰】对对方目标生物造成18点伤害，并对对方所有其它生物造成10点伤害。',
     spellEffect: 'inferno_18_10',
-    imgUrl: '/cards/Inferno.jpg',
-    imgBigUrl: '/cards/InfernoBig.jpg'
+    imgUrl: '/cards/Inferno.png',
+    imgBigUrl: '/cards/InfernoBig.png'
   },
   {
     id: 'fire_dragon',
@@ -178,8 +178,8 @@ const cards = [
     image: 'Meditation',
     desc: '【冥想】使施法者的火系、气系和土系能量各+1。',
     spellEffect: 'meditation_boost',
-    imgUrl: '/cards/Meditation.jpg',
-    imgBigUrl: '/cards/MeditationBig.jpg'
+    imgUrl: '/cards/Meditation.png',
+    imgBigUrl: '/cards/MeditationBig.png'
   },
   {
     id: 'water_merfolk_apostate',
@@ -266,8 +266,8 @@ const cards = [
     image: 'AcidicRain',
     desc: '【酸雨术】对全场所有生物造成15点伤害，然后使对方各系能量-1。',
     spellEffect: 'acidic_rain_15',
-    imgUrl: '/cards/AcidicRain.jpg',
-    imgBigUrl: '/cards/AcidicRainBig.jpg'
+    imgUrl: '/cards/AcidicRain.png',
+    imgBigUrl: '/cards/AcidicRainBig.png'
   },
   {
     id: 'water_merfolk_overlord',
@@ -344,8 +344,8 @@ const cards = [
     requiresTarget: true,
     desc: '【落雷术】对对方目标生物和对方本体各造成6点伤害。',
     spellEffect: 'call_to_thunder_6',
-    imgUrl: '/cards/CalltoThunder.jpg',
-    imgBigUrl: '/cards/CalltoThunderBig.jpg'
+    imgUrl: '/cards/CalltoThunder.png',
+    imgBigUrl: '/cards/CalltoThunderBig.png'
   },
   {
     id: 'air_faerie_sage',
@@ -388,8 +388,8 @@ const cards = [
     image: 'LightningBolt',
     desc: '对敌方英雄造成 (5 + 气系能量) 点雷霆伤害。',
     spellEffect: 'lightning_bolt_scaled',
-    imgUrl: '/cards/LightningBolt.jpg',
-    imgBigUrl: '/cards/LightningBoltBig.jpg'
+    imgUrl: '/cards/LightningBolt.png',
+    imgBigUrl: '/cards/LightningBoltBig.png'
   },
   {
     id: 'air_phoenix',
@@ -417,8 +417,8 @@ const cards = [
     image: 'ChainLightning',
     desc: '【连锁闪电】对敌方英雄及全场所有敌方生物各造成9点闪电伤害。',
     spellEffect: 'chain_lightning_9',
-    imgUrl: '/cards/ChainLightning.jpg',
-    imgBigUrl: '/cards/ChainLightningBig.jpg'
+    imgUrl: '/cards/ChainLightning.png',
+    imgBigUrl: '/cards/ChainLightningBig.png'
   },
   {
     id: 'air_lightning_cloud',
@@ -479,8 +479,8 @@ const cards = [
     requiresTarget: true,
     desc: '【自然仪式】使己方目标生物和施法者本体各回复8点生命。',
     spellEffect: 'natures_ritual_heal_8',
-    imgUrl: '/cards/NaturesRitual.jpg',
-    imgBigUrl: '/cards/NaturesRitualBig.jpg'
+    imgUrl: '/cards/NaturesRitual.png',
+    imgBigUrl: '/cards/NaturesRitualBig.png'
   },
   {
     id: 'earth_forest_sprite',
@@ -508,8 +508,8 @@ const cards = [
     image: 'Rejuvenation',
     desc: '【活力恢复】使施法者本体回复等同于当前土系能量×2的生命。',
     spellEffect: 'rejuvenation_scaled',
-    imgUrl: '/cards/Rejuvenation.jpg',
-    imgBigUrl: '/cards/RejuvenationBig.jpg'
+    imgUrl: '/cards/Rejuvenation.png',
+    imgBigUrl: '/cards/RejuvenationBig.png'
   },
   {
     id: 'earth_elf_hermit',
@@ -567,8 +567,8 @@ const cards = [
     image: 'StoneRain',
     desc: '【石雨术】从天降下巨石雨，对全场所有生物造成25点毁灭性伤害。',
     spellEffect: 'stone_rain_25',
-    imgUrl: '/cards/StoneRain.jpg',
-    imgBigUrl: '/cards/StoneRainBig.jpg'
+    imgUrl: '/cards/StoneRain.png',
+    imgBigUrl: '/cards/StoneRainBig.png'
   },
   {
     id: 'earth_master_healer',
@@ -615,8 +615,8 @@ const cards = [
     requiresTarget: true,
     desc: '【雾疗术】使己方目标生物回复9点生命，并使其相邻生物各回复6点生命。',
     spellEffect: 'healing_spray_9_6',
-    imgUrl: '/cards/HealingSpray.jpg',
-    imgBigUrl: '/cards/HealingSprayBig.jpg'
+    imgUrl: '/cards/HealingSpray.png',
+    imgBigUrl: '/cards/HealingSprayBig.png'
   },
   {
     id: 'spec_fireball',
@@ -630,8 +630,8 @@ const cards = [
     requiresTarget: true,
     desc: '【火球术】对对方目标生物造成9点伤害，并对其相邻生物各造成6点溅射伤害。',
     spellEffect: 'fireball_9_6',
-    imgUrl: '/cards/Fireball.jpg',
-    imgBigUrl: '/cards/FireballBig.jpg'
+    imgUrl: '/cards/Fireball.png',
+    imgBigUrl: '/cards/FireballBig.png'
   },
   {
     id: 'spec_steal_essence',
@@ -645,8 +645,8 @@ const cards = [
     requiresTarget: true,
     desc: '对目标生物造成5点伤害。若此生物被击杀，施法者的巫术能量增加4点。',
     spellEffect: 'steal_essence_5',
-    imgUrl: '/cards/StealEssence.jpg',
-    imgBigUrl: '/cards/StealEssenceBig.jpg'
+    imgUrl: '/cards/StealEssence.png',
+    imgBigUrl: '/cards/StealEssenceBig.png'
   },
   {
     id: 'spec_sorcerors_apprentice',
@@ -675,8 +675,8 @@ const cards = [
     image: 'ManaBurn',
     desc: '【法力燃烧】对对方所有生物造成等同于对方最高系能量的伤害，并使该系能量-3。',
     spellEffect: 'mana_burn_effect',
-    imgUrl: '/cards/ManaBurn.jpg',
-    imgBigUrl: '/cards/ManaBurnBig.jpg'
+    imgUrl: '/cards/ManaBurn.png',
+    imgBigUrl: '/cards/ManaBurnBig.png'
   },
   {
     id: 'spec_disintegrate',
@@ -690,8 +690,8 @@ const cards = [
     requiresTarget: true,
     desc: '直接摧毁敌方目标生物，并对敌方其它所有生物造成11点法术震波伤害。',
     spellEffect: 'disintegrate_kill_and_11',
-    imgUrl: '/cards/Disintegrate.jpg',
-    imgBigUrl: '/cards/DisintegrateBig.jpg'
+    imgUrl: '/cards/Disintegrate.png',
+    imgBigUrl: '/cards/DisintegrateBig.png'
   },
   {
     id: 'spec_ritual_of_glory',
@@ -704,8 +704,8 @@ const cards = [
     image: 'RitualOfGlory',
     desc: '【光荣仪式】使己方所有生物生命回满，并使攻击力永久+3（墙体除外）。',
     spellEffect: 'ritual_of_glory_buff',
-    imgUrl: '/cards/RitualOfGlory.jpg',
-    imgBigUrl: '/cards/RitualOfGloryBig.jpg'
+    imgUrl: '/cards/RitualOfGlory.png',
+    imgBigUrl: '/cards/RitualOfGloryBig.png'
   },
 
   // ==================== NECROMANCER (死灵) ====================
@@ -720,8 +720,8 @@ const cards = [
     image: 'DarkRitual',
     desc: '对敌方所有生物造成3点暗影伤害，并使己方所有生物回复3点生命。',
     spellEffect: 'dark_ritual_3',
-    imgUrl: '/cards/DarkRitual.jpg',
-    imgBigUrl: '/cards/DarkRitualBig.jpg'
+    imgUrl: '/cards/DarkRitual.png',
+    imgBigUrl: '/cards/DarkRitualBig.png'
   },
   {
     id: 'death_banshee',
@@ -751,8 +751,8 @@ const cards = [
     image: 'CursedFog',
     desc: '【诅咒之雾】对全场所有生物造成12点伤害，并对对方本体造成3点伤害。',
     spellEffect: 'cursed_fog_12',
-    imgUrl: '/cards/CursedFog.jpg',
-    imgBigUrl: '/cards/CursedFogBig.jpg'
+    imgUrl: '/cards/CursedFog.png',
+    imgBigUrl: '/cards/CursedFogBig.png'
   },
   {
     id: 'death_vampire',
@@ -799,8 +799,8 @@ const cards = [
     requiresTarget: true,
     desc: '摧毁己方目标生物，随后对敌方全场生物造成等同于该生物生命的致命伤害（最高32点）。',
     spellEffect: 'blood_ritual_sacrifice',
-    imgUrl: '/cards/BloodRitual.jpg',
-    imgBigUrl: '/cards/BloodRitualBig.jpg'
+    imgUrl: '/cards/BloodRitual.png',
+    imgBigUrl: '/cards/BloodRitualBig.png'
   },
   {
     id: 'death_master_lich',
@@ -881,8 +881,8 @@ const cards = [
     requiresTarget: true,
     desc: '使己方目标生物回复12点生命，并对场上所有其它生物降下12点神圣制裁伤害。',
     spellEffect: 'divine_justice_heal_12_blast',
-    imgUrl: '/cards/DivineJustice.jpg',
-    imgBigUrl: '/cards/DivineJusticeBig.jpg'
+    imgUrl: '/cards/DivineJustice.png',
+    imgBigUrl: '/cards/DivineJusticeBig.png'
   },
   {
     id: 'holy_divine_intervention',
@@ -895,8 +895,8 @@ const cards = [
     image: 'DivineIntervention',
     desc: '【神圣干预】使施法者的火、水、气、土能量各+2，并使施法者本体回复10点生命。',
     spellEffect: 'divine_intervention_boost',
-    imgUrl: '/cards/DivineIntervention.jpg',
-    imgBigUrl: '/cards/DivineInterventionBig.jpg'
+    imgUrl: '/cards/DivineIntervention.png',
+    imgBigUrl: '/cards/DivineInterventionBig.png'
   },
   {
     id: 'holy_angel',
@@ -1028,8 +1028,8 @@ const cards = [
     image: 'Cannonade',
     desc: '【列炮齐发】引导基地重炮矩阵全屏轰炸，对敌方全场生物造成19点毁灭性炮火伤害！',
     spellEffect: 'cannonade_19',
-    imgUrl: '/cards/Cannonade.jpg',
-    imgBigUrl: '/cards/CannonadeBig.jpg'
+    imgUrl: '/cards/Cannonade.png',
+    imgBigUrl: '/cards/CannonadeBig.png'
   },
   {
     id: 'mech_steam_tank',
@@ -1076,8 +1076,8 @@ const cards = [
     image: 'Weakness',
     desc: '【虚弱诅咒】抽干敌方所有系的能量各1点，并对敌方英雄本体造成3点精神刺痛伤害。',
     spellEffect: 'weakness_curse',
-    imgUrl: '/cards/Weakness.jpg',
-    imgBigUrl: '/cards/WeaknessBig.jpg'
+    imgUrl: '/cards/Weakness.png',
+    imgBigUrl: '/cards/WeaknessBig.png'
   },
   {
     id: 'ctrl_damping_tower',
@@ -1205,8 +1205,8 @@ const cards = [
     image: 'DoomBolt',
     desc: '【混沌死棘】释放不可预知的混沌毁灭之箭，对敌方随机一个生物造成25点秒杀级伤害！',
     spellEffect: 'doom_bolt_25',
-    imgUrl: '/cards/DoomBolt.jpg',
-    imgBigUrl: '/cards/DoomBoltBig.jpg'
+    imgUrl: '/cards/DoomBolt.png',
+    imgBigUrl: '/cards/DoomBoltBig.png'
   },
   {
     id: 'chaos_wave',
@@ -1219,8 +1219,8 @@ const cards = [
     image: 'ChaoticWave',
     desc: '【混沌波浪】对敌方全场生物造成2-12点随机伤害，同时使己方全场生物回复2-12点生命。',
     spellEffect: 'chaotic_wave_effect',
-    imgUrl: '/cards/ChaoticWave.jpg',
-    imgBigUrl: '/cards/ChaoticWaveBig.jpg'
+    imgUrl: '/cards/ChaoticWave.png',
+    imgBigUrl: '/cards/ChaoticWaveBig.png'
   },
   {
     id: 'chaos_shaman',
@@ -1350,8 +1350,8 @@ const cards = [
     image: 'Madness',
     desc: '【入狂幻术】操控心智，对敌方每一个生物造成等同于其自身攻击力的反噬伤害！',
     spellEffect: 'madness_attack_damage',
-    imgUrl: '/cards/Madness.jpg',
-    imgBigUrl: '/cards/MadnessBig.jpg'
+    imgUrl: '/cards/Madness.png',
+    imgBigUrl: '/cards/MadnessBig.png'
   },
   {
     id: 'illus_oracle',
@@ -1416,8 +1416,8 @@ const cards = [
     requiresTarget: true,
     desc: '【自爆】献祭摧毁己方目标生物，并对对格生物造成28点同归于尽的巨额爆炸伤害。',
     spellEffect: 'demon_explosion_28',
-    imgUrl: '/cards/Explosion.jpg',
-    imgBigUrl: '/cards/ExplosionBig.jpg'
+    imgUrl: '/cards/Explosion.png',
+    imgBigUrl: '/cards/ExplosionBig.png'
   },
   {
     id: 'demon_ergodemon',
@@ -1447,8 +1447,8 @@ const cards = [
     requiresTarget: true,
     desc: '【能量锁链】对对方火/水/气/土元素生物造成12点伤害，并封印剥夺对方该系3点能量。',
     spellEffect: 'demon_power_chains_12',
-    imgUrl: '/cards/PowerChains.jpg',
-    imgBigUrl: '/cards/PowerChainsBig.jpg'
+    imgUrl: '/cards/PowerChains.png',
+    imgBigUrl: '/cards/PowerChainsBig.png'
   },
   {
     id: 'demon_quartermaster',
@@ -1477,8 +1477,8 @@ const cards = [
     image: 'Hellfire',
     desc: '【地狱烈焰】对对方所有生物造成13点狱火伤害，每击杀一个生物，施法者火系能量+1。',
     spellEffect: 'demon_hellfire_13',
-    imgUrl: '/cards/Hellfire.jpg',
-    imgBigUrl: '/cards/HellfireBig.jpg'
+    imgUrl: '/cards/Hellfire.png',
+    imgBigUrl: '/cards/HellfireBig.png'
   },
   {
     id: 'demon_three_headed',
@@ -1693,8 +1693,8 @@ const cards = [
     requiresTarget: true,
     desc: '【时空跃迁】使己方目标生物（攻击<=9）突破时空界限，立刻对敌方英雄及全场生物发起一次额外全力攻击！',
     spellEffect: 'haste_creature_extra_attack',
-    imgUrl: '/cards/Hasten.jpg',
-    imgBigUrl: '/cards/HastenBig.jpg'
+    imgUrl: '/cards/Hasten.png',
+    imgBigUrl: '/cards/HastenBig.png'
   },
   {
     id: 'time_time_stop',
@@ -1707,8 +1707,8 @@ const cards = [
     image: 'TimeStop',
     desc: '【时间停止】定格敌方时空流转，对敌方全场生物造成4点时空震荡伤害，并强制敌方失去下一个出牌回合！',
     spellEffect: 'time_stop_freeze',
-    imgUrl: '/cards/TimeStop.jpg',
-    imgBigUrl: '/cards/TimeStopBig.jpg'
+    imgUrl: '/cards/TimeStop.png',
+    imgBigUrl: '/cards/TimeStopBig.png'
   },
   {
     id: 'time_timeweaver',
@@ -1774,8 +1774,8 @@ const cards = [
     requiresTarget: true,
     desc: '【救援行动】将目标己方生物瞬间战术转移至场上随机空格处，并为其治愈5点生命。',
     spellEffect: 'goblin_rescue_heal_5',
-    imgUrl: '/cards/RescueOperation.jpg',
-    imgBigUrl: '/cards/RescueOperationBig.jpg'
+    imgUrl: '/cards/RescueOperation.png',
+    imgBigUrl: '/cards/RescueOperationBig.png'
   },
   {
     id: 'goblin_hero',
@@ -1820,8 +1820,8 @@ const cards = [
     image: 'ArmyOfRats',
     desc: '【鼠疫入侵】召唤疯狂鼠群，对敌方全场生物造成12点伤害，同时对己方随机一个生物造成12点误伤。',
     spellEffect: 'army_of_rats_12',
-    imgUrl: '/cards/ArmyOfRats.jpg',
-    imgBigUrl: '/cards/ArmyOfRatsBig.jpg'
+    imgUrl: '/cards/ArmyOfRats.png',
+    imgBigUrl: '/cards/ArmyOfRatsBig.png'
   },
   {
     id: 'goblin_portal_jumper',
