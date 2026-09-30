@@ -311,8 +311,20 @@ async function animateCardToSlot(
 function setupEngineCallbacks() {
   engine.onCardAnnouncement = async (_who, card) => {
     aiAnnouncedCard = card;
-    render();
-    sound.play('click');
+    if (card.type === 'spell') {
+      const spellSounds: Record<string, string> = {
+        air_call_to_thunder: 'thunder',
+        air_lightning_bolt: 'lightning',
+        air_chain_lightning: 'lightning',
+        fire_flame_wave: 'flamewave',
+        fire_fireball: 'flamewave',
+        fire_inferno: 'boom',
+        water_acidic_rain: 'boom',
+      };
+      sound.play(spellSounds[card.id] || 'summon');
+    } else {
+      sound.play('summon');
+    }
     await new Promise<void>((resolve) => {
       let done = false;
       const t = setTimeout(() => {
@@ -724,7 +736,7 @@ function renderAiAnnouncementModal(card: CardDef): string {
         <div class="ai-announcement-card-frame">
           <!-- Left: Card in slot -->
           <div class="ai-announcement-card-slot">
-            <img src="${card.imgUrl}" class="ai-announcement-card-art" alt="${card.nameCn}" />
+            <img src="${card.imgBigUrl || card.imgUrl}" class="ai-announcement-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
             <div class="ai-card-cost">${card.cost}</div>
             <div class="ai-card-name">${card.nameCn}</div>
             ${card.type === 'creature' ? `
@@ -838,7 +850,7 @@ function renderCombatScreen(): string {
         <div class="combat-info-column">
           <!-- Top: Heroes Stack -->
           <div class="combat-heroes-stack">
-            <!-- Opponent Hero Card: Sinister Demonic Theme -->
+            <!-- Opponent Hero Card: Sinister Demonic Theme with Integrated Mana Bar -->
             <div class="combat-hero-row opponent">
               <div class="combat-hero-portrait-wrap">
                 <img src="${e.face}" class="combat-hero-avatar combat-hero-portrait-frame top" alt="${e.name}" />
@@ -849,12 +861,26 @@ function renderCombatScreen(): string {
                 <div class="combat-hero-name-plate">
                   <span class="combat-hero-hp enemy">${e.hp}</span>
                   <span class="combat-hero-name" title="${e.name}">${e.name}</span>
+                  <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
                 </div>
-                <div class="combat-hero-sub">${eSpecialName}法师 · 敌方</div>
+                <div class="hero-mana-bar">
+                  ${['fire', 'water', 'air', 'earth', e.specialElement].map((elem, idx) => {
+                    const label = idx === 4 ? eSpecialName : elemNames[elem as ElementType];
+                    const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🪞', sorcery: '🔮' };
+                    const icon = elemIcons[elem] || '🔮';
+                    const manaVal = e.mana[elem as ElementType] || 0;
+                    return `
+                      <div class="hero-mana-chip elem-${elem}" title="${label}能量: ${manaVal}">
+                        <span class="chip-icon">${icon}</span>
+                        <span class="chip-val">${manaVal}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               </div>
             </div>
 
-            <!-- Player Hero Card: Radiant Celestial Theme -->
+            <!-- Player Hero Card: Radiant Celestial Theme with Integrated Mana Bar -->
             <div class="combat-hero-row player">
               <div class="combat-hero-portrait-wrap">
                 <img src="${p.face}" class="combat-hero-avatar combat-hero-portrait-frame bottom" alt="${p.name}" />
@@ -865,8 +891,22 @@ function renderCombatScreen(): string {
                 <div class="combat-hero-name-plate">
                   <span class="combat-hero-hp player">${p.hp}</span>
                   <span class="combat-hero-name" title="${p.name}">${p.name}</span>
+                  <span class="combat-hero-class-tag player">${pSpecialName}</span>
                 </div>
-                <div class="combat-hero-sub">${pSpecialName}法师 · 己方</div>
+                <div class="hero-mana-bar">
+                  ${['fire', 'water', 'air', 'earth', p.specialElement].map((elem, idx) => {
+                    const label = idx === 4 ? pSpecialName : elemNames[elem as ElementType];
+                    const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🪞', sorcery: '🔮' };
+                    const icon = elemIcons[elem] || '🔮';
+                    const manaVal = p.mana[elem as ElementType] || 0;
+                    return `
+                      <div class="hero-mana-chip elem-${elem}" title="${label}能量: ${manaVal}">
+                        <span class="chip-icon">${icon}</span>
+                        <span class="chip-val">${manaVal}</span>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
               </div>
             </div>
           </div>
@@ -877,7 +917,7 @@ function renderCombatScreen(): string {
             <div class="combat-inspect-parchment">
               ${previewCard ? `
                 <div class="parchment-card-top-row">
-                  <img src="${previewCard.imgBigUrl || previewCard.imgUrl}" class="parchment-card-art" alt="${previewCard.nameCn}" />
+                  <img src="${previewCard.imgBigUrl || previewCard.imgUrl}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
                   <div class="parchment-card-meta">
                     <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费)</div>
                     <div class="parchment-card-sub">
@@ -917,32 +957,9 @@ function renderCombatScreen(): string {
 
       <!-- 2. RIGHT PANEL: UPPER BATTLEFIELD + LOWER 20-CARD HAND -->
       <div class="combat-right-panel">
-        <!-- UPPER BATTLEFIELD: Multiple selectable scenic vistas + 6 Centered Slots -->
+        <!-- UPPER BATTLEFIELD: Clean, Unobstructed 6-Slot Table -->
         <div class="combat-battlefield-section combat-center-battlefield" style="background-image: url('${battlefieldBgs[currentBattlefieldTheme] || battlefieldBgs.citadel}');">
-          <!-- Enemy Arched Elemental Mana Bar (Clean 5 Tablets, No Redundant Side Badge) -->
-          <div class="combat-mana-altar enemy-altar">
-            <div class="mana-altar-shrines-row">
-              ${['fire', 'water', 'air', 'earth', e.specialElement].map((elem, idx) => {
-                const label = idx === 4 ? eSpecialName : elemNames[elem as ElementType];
-                const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🪞' };
-                const icon = elemIcons[elem] || '🔮';
-                const manaVal = e.mana[elem as ElementType] || 0;
-                return `
-                  <div class="mana-altar-tablet elem-${elem}" title="${label}能量: ${manaVal}">
-                    <div class="mana-altar-glyph">
-                      <span class="mana-altar-icon">${icon}</span>
-                      <span class="mana-altar-name">${label}</span>
-                    </div>
-                    <div class="mana-altar-gem">
-                      <span class="mana-altar-num">${manaVal}</span>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-
-          <!-- Prompt Banner -->
+          <!-- Prompt Banner (Floating Top) -->
           <div class="battlefield-prompt-banner ${selectedCard ? 'active' : ''}">
             ${selectedCard
               ? (selectedCard.type === 'creature'
@@ -997,52 +1014,59 @@ function renderCombatScreen(): string {
           </div>
         </div>
 
-        <!-- LOWER HAND SECTION: Player Mana Altar + 5 Columns of 4 Vertical Cards -->
+        <!-- LOWER HAND SECTION: 5 Columns of 4 Tall Vertical CCG Cards with Elemental Framing -->
         <div class="combat-hand-section">
-          <!-- Player (or Viewed Opponent) Arched Elemental Mana Bar (Aligned 1-to-1 Above Columns) -->
-          <div class="combat-mana-altar ${showOpponentHand ? 'viewing-enemy' : 'player-altar'}">
-            <div class="mana-altar-shrines-row">
-              ${elementsOrder.map((elem, idx) => {
-                const currentManaMap = showOpponentHand ? e.mana : p.mana;
-                const currentSpecialName = showOpponentHand ? eSpecialName : pSpecialName;
-                const label = idx === 4 ? currentSpecialName : elemNames[elem];
-                const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🪞' };
-                const icon = elemIcons[elem] || '🔮';
-                const manaVal = currentManaMap[elem] || 0;
-                return `
-                  <div class="mana-altar-tablet elem-${elem}" title="${showOpponentHand ? '敌方' : '己方'}${label}能量: ${manaVal}">
-                    <div class="mana-altar-glyph">
-                      <span class="mana-altar-icon">${icon}</span>
-                      <span class="mana-altar-name">${label}</span>
-                    </div>
-                    <div class="mana-altar-gem">
-                      <span class="mana-altar-num">${manaVal}</span>
-                    </div>
-                  </div>
-                `;
-              }).join('')}
-            </div>
-          </div>
-
-          <!-- 5-Column 20-Card Grid (Original Vertical CCG Cards) -->
+          <!-- 5-Column 20-Card Grid (Framed with Elemental Borders) -->
           <div class="combat-hand-grid">
-            ${elementsOrder.map((elem) => {
+            ${elementsOrder.map((elem, idx) => {
               const targetHand = showOpponentHand ? e.hand : p.hand;
               const targetSpecialElem = showOpponentHand ? e.specialElement : p.specialElement;
+              const currentSpecialName = showOpponentHand ? eSpecialName : pSpecialName;
               const cardsOfElem = targetHand.filter((c) => c.element === elem || (elem === targetSpecialElem && c.element === 'special'));
+              const colLabel = idx === 4 ? currentSpecialName : elemNames[elem];
+              const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🪞', sorcery: '🔮' };
+              const icon = elemIcons[elem] || '🔮';
 
               return `
-                <div class="hand-column">
-                  ${cardsOfElem.map((card) => {
-                    const cardImg = card.imgBigUrl || card.imgUrl;
-                    if (showOpponentHand) {
-                      const isRevealed = engine.enemyRevealedCardIds.has(card.id);
-                      const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
+                <div class="hand-column elem-${elem}">
+                  <div class="hand-column-header elem-${elem}">
+                    <span class="col-icon">${icon}</span>
+                    <span class="col-label">${colLabel}</span>
+                  </div>
+                  <div class="hand-column-cards">
+                    ${cardsOfElem.map((card) => {
+                      const cardImg = card.imgBigUrl || card.imgUrl;
+                      if (showOpponentHand) {
+                        const isRevealed = engine.enemyRevealedCardIds.has(card.id);
+                        const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
 
-                      if (isRevealed) {
+                        if (isRevealed) {
+                          return `
+                            <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
+                              <img src="${cardImg}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+                              <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
+                              ${card.type === 'creature' ? `
+                                <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+                                <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                              ` : ''}
+                            </div>
+                          `;
+                        } else {
+                          return `
+                            <div class="combat-hand-card-item hand-card-cell vertical elem-${elem} face-down ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true" title="敌方手牌（未明示）">
+                              <div class="face-down-inner">
+                                <div class="face-down-dragon-seal">${icon}</div>
+                                <div class="face-down-label">未知</div>
+                              </div>
+                            </div>
+                          `;
+                        }
+                      } else {
+                        const canAfford = p.mana[card.element] >= card.cost;
+                        const isSelected = selectedCard?.id === card.id;
                         return `
-                          <div class="combat-hand-card-item hand-card-cell vertical revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
-                            <img src="${cardImg}" class="hand-card-art" alt="${card.nameCn}" />
+                          <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
+                            <img src="${cardImg}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                             <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
                             ${card.type === 'creature' ? `
                               <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
@@ -1050,31 +1074,9 @@ function renderCombatScreen(): string {
                             ` : ''}
                           </div>
                         `;
-                      } else {
-                        return `
-                          <div class="combat-hand-card-item hand-card-cell vertical face-down ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true" title="敌方手牌（未明示）">
-                            <div class="face-down-inner">
-                              <div class="face-down-dragon-seal">${elem === 'fire' ? '🔥' : elem === 'water' ? '💧' : elem === 'air' ? '⚡' : elem === 'earth' ? '🌿' : '✨'}</div>
-                              <div class="face-down-label">未知</div>
-                            </div>
-                          </div>
-                        `;
                       }
-                    } else {
-                      const canAfford = p.mana[card.element] >= card.cost;
-                      const isSelected = selectedCard?.id === card.id;
-                      return `
-                        <div class="combat-hand-card-item hand-card-cell vertical ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
-                          <img src="${cardImg}" class="hand-card-art" alt="${card.nameCn}" />
-                          <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
-                          ${card.type === 'creature' ? `
-                            <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
-                            <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
-                          ` : ''}
-                        </div>
-                      `;
-                    }
-                  }).join('')}
+                    }).join('')}
+                  </div>
                 </div>
               `;
             }).join('')}

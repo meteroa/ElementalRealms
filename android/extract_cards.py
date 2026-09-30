@@ -282,18 +282,30 @@ for card in cards_def:
             found_big = pb
     
     if found_std:
-        std_out = os.path.join(dest_cards_dir, img_base + '.jpg')
-        im = Image.open(found_std).convert('RGB')
-        im.save(std_out, 'JPEG', quality=90)
-        card['imgUrl'] = f'/cards/{img_base}.jpg'
+        if found_std.lower().endswith('.tga'):
+            std_out = os.path.join(dest_cards_dir, img_base + '.png')
+            im = Image.open(found_std)
+            im.save(std_out, 'PNG')
+            card['imgUrl'] = f'/cards/{img_base}.png'
+        else:
+            std_out = os.path.join(dest_cards_dir, img_base + '.jpg')
+            im = Image.open(found_std).convert('RGB')
+            im.save(std_out, 'JPEG', quality=90)
+            card['imgUrl'] = f'/cards/{img_base}.jpg'
     else:
         print(f'Warning: Std image not found for {img_base}')
 
     if found_big:
-        big_out = os.path.join(dest_cards_dir, img_base + 'Big.jpg')
-        im = Image.open(found_big).convert('RGB')
-        im.save(big_out, 'JPEG', quality=95)
-        card['imgBigUrl'] = f'/cards/{img_base}Big.jpg'
+        if found_big.lower().endswith('.tga'):
+            big_out = os.path.join(dest_cards_dir, img_base + 'Big.png')
+            im = Image.open(found_big)
+            im.save(big_out, 'PNG')
+            card['imgBigUrl'] = f'/cards/{img_base}Big.png'
+        else:
+            big_out = os.path.join(dest_cards_dir, img_base + 'Big.jpg')
+            im = Image.open(found_big).convert('RGB')
+            im.save(big_out, 'JPEG', quality=95)
+            card['imgBigUrl'] = f'/cards/{img_base}Big.jpg'
     else:
         card['imgBigUrl'] = card.get('imgUrl', '')
 

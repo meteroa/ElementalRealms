@@ -5,6 +5,50 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.3] - 2026-09-27
+
+### Fixed
+- **魔法卡牌透明通道与全景法球展示（Spell Cards Full PNG Transparency & Centered Framing）**：
+  - 彻底修复落雷术、火焰波浪等 33 张法术卡在提取时因转存为 JPEG 导致透明边缘变为刺眼白块的问题，全量重新导出为保留完整 RGBA Alpha 通道的高清 PNG 格式。
+  - 法术卡牌立绘改用无裁剪居中展示（`object-fit: contain; object-position: center;`），底层融入奥术紫晶暗色星海，卡面法术圆球与雷电光芒 100% 完整展示，消除了底部被截断和白色背景缺陷。
+- **牌桌卡槽增宽调扁与防遮挡优化（Wider, Flatter & Unobstructed 6-Slot Arena）**：
+  - 牌桌槽位调整为更加宽厚、适度压低高度的黄金比例（宽度由 84px 增至 94px，高度由 106px 适度缩至 90px，宽高比 4:3.9）。
+  - 牌桌下沿留白边距增至 12px，使己方下排卡槽下沿金雕与外框彻底脱离手牌区顶端边缘，杜绝被遮盖现象。
+
+### Added
+- **全套战场战斗微动效与打击反馈闭环（Comprehensive Combat & Entrance Animations）**：
+  - **生物攻击突刺（Attack Lunges）**：生物攻击时触发动态向前突刺动画，玩家随从向上突刺冲击敌阵（`lungePlayer`），敌方随从向下威压突刺（`lungeEnemy`），配合刀剑劈砍与雷击音效。
+  - **受击震颤与红光爆发（Impact Shake & Flare）**：目标随从或英雄受到攻击伤害时剧烈震颤并爆发出血红辉光（`card-impact-hit`），同时向上跃升立体飘动伤害数值（`floating-combat-text.damage`）。
+  - **对方使用卡牌特写放大（Opponent Card Magnification）**：敌方出牌时触发金色横幅与黑曜石背景的卡牌放大展屏特写（`ai-announcement-overlay`），并播放对应法术音效。
+  - **卡牌入场凌空飞行与落位冲击（Card Entrance Flight & Settle）**：出牌召唤时生成带有发光法力尾迹的实体幽灵卡（`flying-card-ghost`）沿抛物线凌空飞入目标槽位，槽位爆发炫目落位金光（`slot-landing-flash`）、法力波纹扩散（`slot-summon-ripple`）及卡牌弹性就位微动效（`card-summon-settle`）。
+
+## [2.5.2] - 2026-09-26
+
+### Added
+- **五系手牌列专属元素边框与彩带标题（Distinct Elemental Column Framing & Banners）**：
+  - 手牌区 5 列卡牌（火、水、气、土、特殊专精）均外嵌独立的元素主题发光边框与半透明暗色背景底衬，色彩鲜明极易辨识：
+    - 🔥 **火系**：烈焰绯红边框与熔岩红辉光（`#ef4444`）
+    - 💧 **水系**：碧海蔚蓝边框与深海蓝辉光（`#0ea5e9`）
+    - ⚡ **气系**：雷霆金黄边框与闪电金辉光（`#eab308`）
+    - 🌿 **土系**：大地翡翠边框与森林绿辉光（`#22c55e`）
+    - 🔮 **特殊系**：奥术紫晶边框与秘法紫辉光（`#a855f7`）
+  - 每列顶部新增 20px 紧凑的专属元素标题栏（`.hand-column-header`），标有元素图腾与系列中文名称（如“🔥 火系”、“💧 水系”、“👁️ 支配法师”等）。
+
+### Changed
+- **元素能量条无缝整合进英雄头像区块（Elemental Mana Embedded Inside Hero Cards）**：
+  - 彻底移除原本悬浮于牌桌上方（敌方）及手牌区上方（己方）的独立能量条，完全消除能量条遮挡或挤压 6 槽位牌桌战场的空间冲突。
+  - 将双方的 5 系元素能量（🔥火、💧水、⚡气、🌿土、🔮特技）分别无缝整合进对手与玩家的头像区块内，位于英雄名称/血量下方；职业专精（如“巫术法师”、“支配法师”）则转化为名称旁紧凑的法师徽章标签，既直观紧凑又时刻可见双方全系法力储备。
+- **手牌区大幅增高（58vh）与卡牌大幅展屏（Taller CCG Hand Cards）**：
+  - 得益于移除原本占用垂直高度的手牌上方能量条，手牌区纵向高度由 52vh 扩展至 58vh，4 行卡牌单张高度跃升至 ~95px–110px（相较此前压缩高度翻倍）。
+  - 卡牌画面可展现更为丰富完整的立绘细节（头部、躯干、武器与施法特效尽收眼底）。
+- **彻底消除卡费、生命、攻击数值叠加遮挡（Zero-Overlap Card Badges Layout）**：
+  - 费用圆形晶石严格锚定于卡牌**右上角**（`top: 3px; right: 3px;`）；
+  - 攻击力红色方块严格锚定于卡牌**左下角**（`bottom: 3px; left: 3px;`）；
+  - 生命值绿色方块严格锚定于卡牌**右下角**（`bottom: 3px; right: 3px;`）；
+  - 随着卡牌高度翻倍，右上角卡费与右下角生命值之间拥有超过 60px 的纵向充裕净空，左下角攻击力与右下角生命值拥有约 60px 的横向净空，彻底解决此前卡面数值互相叠压、无法看清的缺陷。
+- **牌桌战场高度与留白优化（Refined 42vh Battlefield Arena）**：
+  - 牌桌战场调整为 42vh 居中排布，上方仅保留半透明金纹行动提示横幅，中央 6 槽位对阵阵线更加通透开阔，四周背景雪山与苍穹视野完全解放。
+
 ## [2.5.1] - 2026-09-26
 
 ### Changed
