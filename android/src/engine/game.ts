@@ -2,6 +2,23 @@ import type { CardDef, BoardCreature, PlayerState, ElementType, HeroClass, Battl
 import cardsData from '../data/cards.json';
 import { sound } from './sound';
 
+export interface ReplayStep {
+  turn: number;
+  side: 'player' | 'enemy';
+  action: 'spell' | 'creature' | 'pass' | 'attack_phase' | 'init';
+  cardName?: string;
+  cardId?: string;
+  cardImg?: string;
+  targetSlot?: number;
+  desc: string;
+  playerHp: number;
+  enemyHp: number;
+  playerMana: Record<ElementType, number>;
+  enemyMana: Record<ElementType, number>;
+  playerBoard: (BoardCreature | null)[];
+  enemyBoard: (BoardCreature | null)[];
+}
+
 export class SpectromancerEngine {
   public player: PlayerState;
   public enemy: PlayerState;
@@ -14,6 +31,7 @@ export class SpectromancerEngine {
   public winner: 'player' | 'enemy' | null = null;
   public logs: BattleLogEntry[] = [];
   public currentCampaign: CampaignLevel | null = null;
+  public replaySteps: ReplayStep[] = [];
 
   // Animation & Visual Feedback Callbacks
   public onStateChange?: () => void;
@@ -30,6 +48,8 @@ export class SpectromancerEngine {
   // Turn skip / extra actions
   public skipNextTurn: { player: boolean; enemy: boolean } = { player: false, enemy: false };
   public extraActionRemaining: { player: number; enemy: number } = { player: 0, enemy: 0 };
+  public leagueRule?: string;
+  public campaignLevel?: CampaignLevel;
 
   constructor(
     playerClass: HeroClass = 'sorcery',
@@ -41,6 +61,8 @@ export class SpectromancerEngine {
       enemyFace?: string;
       enemyClass?: HeroClass;
       enemyHp?: number;
+      customDeck?: CardDef[];
+      leagueRule?: string;
     }
   ) {
     this.currentCampaign = campaign || null;
@@ -59,7 +81,35 @@ export class SpectromancerEngine {
     this.player = this.createPlayer('player', playerName, playerFace, playerClass, 60);
     this.enemy = this.createPlayer('enemy', enemyName, enemyFace, enemyClass, enemyHp);
 
+    if (customConfig?.customDeck && customConfig.customDeck.length === 20) {
+      this.player.hand = [...customConfig.customDeck];
+    }
+
+    this.campaignLevel = campaign;
+    this.leagueRule = customConfig?.leagueRule;
+
+    if (customConfig?.leagueRule) {
+      this.log(`【联赛规则生效】${customConfig.leagueRule.replace(/\r?\n/g, ' ')}`, 'heal');
+    }
+
     this.startTurn('player');
+
+    this.replaySteps = [{
+      turn: 1,
+      side: 'player',
+      action: 'init',
+      desc: '战斗开始，双方就位',
+      playerHp: this.player.hp,
+      enemyHp: this.enemy.hp,
+      playerMana: { ...this.player.mana },
+      enemyMana: { ...this.enemy.mana },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+    }];
+  }
+
+  public cloneBoard(board: (BoardCreature | null)[]): (BoardCreature | null)[] {
+    return board.map((c) => (c ? { ...c, card: { ...c.card } } : null));
   }
 
   private delay(ms: number): Promise<void> {
@@ -500,7 +550,9 @@ export class SpectromancerEngine {
         card,
         owner: who,
         slotIndex: targetSlot,
+        baseAttack: card.attack || 0,
         currentAttack: card.attack || 0,
+        buffedAttack: false,
         currentLife: card.life || 1,
         maxLife: card.life || 1,
         isWall: !!card.isWall,
@@ -513,6 +565,7 @@ export class SpectromancerEngine {
 
       this.lastSummonedUid = creature.uid;
       board[targetSlot] = creature;
+      this.recalculateBoardStats();
       this.log(`${actor.name} 在 [${targetSlot + 1}号位] 召唤了【${card.nameCn}】！`, 'summon');
       this.notify();
 
@@ -542,6 +595,25 @@ export class SpectromancerEngine {
       await this.resolveSpell(who, card, targetSlot);
     }
 
+    this.replaySteps.push({
+      turn: this.turnCount,
+      side: who,
+      action: card.type === 'creature' ? 'creature' : 'spell',
+      cardName: card.nameCn,
+      cardId: card.id,
+      cardImg: card.imgUrl,
+      targetSlot,
+      desc: card.type === 'creature'
+        ? `${actor.name} 在 [${(targetSlot ?? 0) + 1}号位] 召唤了【${card.nameCn}】`
+        : `${actor.name} 施放了法术【${card.nameCn}】`,
+      playerHp: this.player.hp,
+      enemyHp: this.enemy.hp,
+      playerMana: { ...this.player.mana },
+      enemyMana: { ...this.enemy.mana },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+    });
+
     this.cleanupDead();
     this.checkWinner();
 
@@ -564,10 +636,21 @@ export class SpectromancerEngine {
 
   private resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number) {
     const actor = who === 'player' ? this.player : this.enemy;
+    const opponent = who === 'player' ? this.enemy : this.player;
     const opposingSide = who === 'player' ? 'enemy' : 'player';
     const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
     const myBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
-    const opponent = who === 'player' ? this.enemy : this.player;
+    if (card.ability === 'all_friendly_attack_1') {
+      sound.play('strenghtening');
+      this.recalculateBoardStats();
+      this.log(`【牛头人指挥官】战意昂扬，赋予己方所有其它生物攻击力 +1！`, 'heal');
+      this.notify();
+    } else if (card.ability === 'neighbor_attack_2') {
+      sound.play('strenghtening');
+      this.recalculateBoardStats();
+      this.log(`【兽人酋长】狂怒战吼，赋予两侧相邻生物攻击力 +2！`, 'heal');
+      this.notify();
+    }
 
     switch (card.onSummon) {
       case 'damage_all_enemies_5': {
@@ -653,7 +736,9 @@ export class SpectromancerEngine {
               },
               owner: who,
               slotIndex: sIdx,
+              baseAttack: 2,
               currentAttack: 2,
+              buffedAttack: false,
               currentLife: 11,
               maxLife: 11,
               isWall: false,
@@ -821,7 +906,9 @@ export class SpectromancerEngine {
               },
               owner: who,
               slotIndex: sIdx,
+              baseAttack: 3,
               currentAttack: 3,
+              buffedAttack: false,
               currentLife: 15,
               maxLife: 15,
               isWall: false,
@@ -856,9 +943,6 @@ export class SpectromancerEngine {
 
     switch (card.spellEffect) {
       case 'damage_all_enemy_creatures_9': {
-        if (this.onSpellVfx) this.onSpellVfx('flamewave');
-        sound.play('flamewave');
-        await this.delay(350);
         const dmg = Math.ceil(9 * spellAmp);
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
@@ -870,8 +954,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'inferno_18_10': {
-        sound.play('flamewave');
-        await this.delay(300);
         const mainDmg = Math.ceil(18 * spellAmp);
         const aoeDmg = Math.ceil(10 * spellAmp);
         if (targetSlot !== undefined && opposingBoard[targetSlot]) {
@@ -894,14 +976,10 @@ export class SpectromancerEngine {
         actor.mana.fire += 1;
         actor.mana.air += 1;
         actor.mana.earth += 1;
-        sound.play('heal');
         this.log(`【${card.nameCn}】宁神静气，火、气、土三系能量各 +1！`, 'heal');
         break;
       }
       case 'acidic_rain_15': {
-        if (this.onSpellVfx) this.onSpellVfx('acidic');
-        sound.play('acidicrain');
-        await this.delay(350);
         const dmg = Math.ceil(15 * spellAmp);
         [...myBoard, ...opposingBoard].forEach((c) => {
           if (c && !c.spellImmune) {
@@ -915,8 +993,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'call_to_thunder_6': {
-        sound.play('thunder');
-        await this.delay(200);
         const dmg = Math.ceil(6 * spellAmp);
         if (targetSlot !== undefined && opposingBoard[targetSlot]) {
           const t = opposingBoard[targetSlot]!;
@@ -931,8 +1007,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'lightning_bolt_scaled': {
-        sound.play('lightning');
-        await this.delay(250);
         const base = 5 + actor.mana.air;
         const dmg = Math.ceil(base * spellAmp);
         opponent.hp -= dmg;
@@ -941,9 +1015,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'chain_lightning_9': {
-        if (this.onSpellVfx) this.onSpellVfx('lightning');
-        sound.play('lightning');
-        await this.delay(350);
         const dmg = Math.ceil(9 * spellAmp);
         opponent.hp -= dmg;
         this.triggerDamage(opposingSide, 'hero', dmg);
@@ -963,7 +1034,6 @@ export class SpectromancerEngine {
         }
         actor.hp = Math.min(actor.maxHp, actor.hp + 8);
         this.triggerHeal(who, 'hero', 8);
-        sound.play('heal');
         this.log(`【${card.nameCn}】生机焕发，为目标生物与 ${actor.name} 各恢复 8 点生命！`, 'heal');
         break;
       }
@@ -971,13 +1041,10 @@ export class SpectromancerEngine {
         const healAmt = actor.mana.earth * 2;
         actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
         this.triggerHeal(who, 'hero', healAmt);
-        sound.play('heal');
         this.log(`【${card.nameCn}】大地回春，为 ${actor.name} 恢复 ${healAmt} 点生命！`, 'heal');
         break;
       }
       case 'stone_rain_25': {
-        sound.play('stonerain');
-        await this.delay(350);
         const dmg = Math.ceil(25 * spellAmp);
         [...myBoard, ...opposingBoard].forEach((c) => {
           if (c && !c.spellImmune) {
@@ -998,12 +1065,10 @@ export class SpectromancerEngine {
             }
           });
         }
-        sound.play('heal');
         this.log(`【${card.nameCn}】清泉喷涌，为主目标治愈 9 点生命，溅射相邻生物治愈 6 点生命！`, 'heal');
         break;
       }
       case 'fireball_9_6': {
-        sound.play('flamewave');
         const mainD = Math.ceil(9 * spellAmp);
         const subD = Math.ceil(6 * spellAmp);
         if (targetSlot !== undefined && opposingBoard[targetSlot]) {
@@ -1023,7 +1088,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'steal_essence_5': {
-        sound.play('boom');
         const dmg = Math.ceil(5 * spellAmp);
         if (targetSlot !== undefined && opposingBoard[targetSlot]) {
           const t = opposingBoard[targetSlot]!;
@@ -1039,7 +1103,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'mana_burn_effect': {
-        sound.play('boom');
         let maxVal = 0;
         let maxElem: ElementType = 'fire';
         (Object.keys(opponent.mana) as ElementType[]).forEach((e) => {
@@ -1060,8 +1123,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'disintegrate_kill_and_11': {
-        sound.play('disintegrate');
-        await this.delay(300);
         if (targetSlot !== undefined && opposingBoard[targetSlot]) {
           const t = opposingBoard[targetSlot]!;
           if (!t.spellImmune) {
@@ -1086,12 +1147,10 @@ export class SpectromancerEngine {
             c.currentAttack += 3;
           }
         });
-        sound.play('heal');
         this.log(`【${card.nameCn}】圣辉洗礼，己方全员生命回满且攻击力永久 +3！`, 'heal');
         break;
       }
       case 'dark_ritual_3': {
-        sound.play('ritual');
         const dmg = Math.ceil(3 * spellAmp);
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
@@ -1109,8 +1168,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'cursed_fog_12': {
-        sound.play('cursedfog');
-        await this.delay(300);
         const dmg = Math.ceil(12 * spellAmp);
         [...myBoard, ...opposingBoard].forEach((c) => {
           if (c && !c.spellImmune) c.currentLife -= dmg;
@@ -1121,7 +1178,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'blood_ritual_sacrifice': {
-        sound.play('bloodritual');
         if (targetSlot !== undefined && myBoard[targetSlot]) {
           const sac = myBoard[targetSlot]!;
           const sacLife = Math.min(32, sac.currentLife);
@@ -1138,8 +1194,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'divine_justice_heal_12_blast': {
-        sound.play('divinejustice');
-        await this.delay(250);
         if (targetSlot !== undefined && myBoard[targetSlot]) {
           myBoard[targetSlot]!.currentLife = Math.min(myBoard[targetSlot]!.maxLife, myBoard[targetSlot]!.currentLife + 12);
           this.triggerHeal(who, targetSlot, 12);
@@ -1160,13 +1214,10 @@ export class SpectromancerEngine {
         });
         actor.hp = Math.min(actor.maxHp, actor.hp + 10);
         this.triggerHeal(who, 'hero', 10);
-        sound.play('divineintervention');
         this.log(`【${card.nameCn}】四系能量各 +2，并为 ${actor.name} 恢复 10 点神圣生命！`, 'heal');
         break;
       }
       case 'cannonade_19': {
-        sound.play('cannonade');
-        await this.delay(350);
         const dmg = Math.ceil(19 * spellAmp);
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
@@ -1183,12 +1234,10 @@ export class SpectromancerEngine {
         });
         opponent.hp -= 3;
         this.triggerDamage(opposingSide, 'hero', 3);
-        sound.play('cursedfog');
         this.log(`【${card.nameCn}】夺取敌方全系能量各 1 点，并对 ${opponent.name} 造成 3 点精神重击！`, 'damage');
         break;
       }
       case 'doom_bolt_25': {
-        sound.play('thunder');
         const validTargets: number[] = [];
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) validTargets.push(idx);
@@ -1203,7 +1252,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'chaotic_wave_effect': {
-        sound.play('chaowave');
         const dmgRoll = Math.floor(Math.random() * 11) + 2;
         const healRoll = Math.floor(Math.random() * 11) + 2;
         opposingBoard.forEach((c, idx) => {
@@ -1222,7 +1270,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'madness_attack_damage': {
-        sound.play('chaowave');
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
             c.currentLife -= c.currentAttack;
@@ -1233,7 +1280,6 @@ export class SpectromancerEngine {
         break;
       }
       case 'demon_explosion_28': {
-        sound.play('boom');
         if (targetSlot !== undefined && myBoard[targetSlot]) {
           myBoard[targetSlot]!.currentLife = 0;
           const opp = opposingBoard[targetSlot];
@@ -1284,6 +1330,19 @@ export class SpectromancerEngine {
     if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return;
     const actor = who === 'player' ? this.player : this.enemy;
     this.log(`${actor.name} 选择了跳过本轮出牌。`, 'info');
+
+    this.replaySteps.push({
+      turn: this.turnCount,
+      side: who,
+      action: 'pass',
+      desc: `${actor.name} 跳过出牌`,
+      playerHp: this.player.hp,
+      enemyHp: this.enemy.hp,
+      playerMana: { ...this.player.mana },
+      enemyMana: { ...this.enemy.mana },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+    });
 
     await this.executeCombat(who);
   }
@@ -1439,6 +1498,20 @@ export class SpectromancerEngine {
     this.checkWinner();
     this.isCombatPhase = false;
 
+    const attackerHero = attackerSide === 'player' ? this.player : this.enemy;
+    this.replaySteps.push({
+      turn: this.turnCount,
+      side: attackerSide,
+      action: 'attack_phase',
+      desc: `${attackerHero.name} 回合战线攻击结算`,
+      playerHp: this.player.hp,
+      enemyHp: this.enemy.hp,
+      playerMana: { ...this.player.mana },
+      enemyMana: { ...this.enemy.mana },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+    });
+
     if (!this.gameOver) {
       if (attackerSide === 'player') {
         this.startTurn('enemy');
@@ -1509,6 +1582,53 @@ export class SpectromancerEngine {
 
     checkDeath(this.playerBoard, 'player');
     checkDeath(this.enemyBoard, 'enemy');
+    this.recalculateBoardStats();
+  }
+
+  public recalculateBoardStats(): void {
+    ['player', 'enemy'].forEach((sideKey) => {
+      const side = sideKey as 'player' | 'enemy';
+      const board = side === 'player' ? this.playerBoard : this.enemyBoard;
+
+      // 1. Calculate global aura bonuses on this side
+      let allFriendlyAtkBonus = 0;
+      board.forEach((c) => {
+        if (!c) return;
+        if (c.card.ability === 'all_friendly_attack_1') {
+          allFriendlyAtkBonus += 1;
+        }
+      });
+
+      // 2. Compute attack for each creature
+      board.forEach((c, slotIdx) => {
+        if (!c) return;
+
+        let totalAtk = c.baseAttack;
+
+        if (!c.isWall) {
+          // Minotaur Commander: all other friendly non-wall creatures
+          let myAllBonus = allFriendlyAtkBonus;
+          if (c.card.ability === 'all_friendly_attack_1') {
+            myAllBonus -= 1;
+          }
+          totalAtk += Math.max(0, myAllBonus);
+
+          // Orc Chieftain: neighbor bonus +2 to adjacent non-wall creatures
+          [-1, 1].forEach((offset) => {
+            const nIdx = slotIdx + offset;
+            if (nIdx >= 0 && nIdx < board.length) {
+              const neighbor = board[nIdx];
+              if (neighbor && neighbor.card.ability === 'neighbor_attack_2') {
+                totalAtk += 2;
+              }
+            }
+          });
+        }
+
+        c.currentAttack = Math.max(0, totalAtk);
+        c.buffedAttack = c.currentAttack > c.baseAttack;
+      });
+    });
   }
 
   public checkWinner() {
@@ -1634,6 +1754,18 @@ export class SpectromancerEngine {
     this.extraActionRemaining = { player: 0, enemy: 0 };
     this.enemyRevealedCardIds.clear();
     this.startTurn('player');
+    this.replaySteps = [{
+      turn: 1,
+      side: 'player',
+      action: 'init',
+      desc: '战斗开始，双方就位',
+      playerHp: this.player.hp,
+      enemyHp: this.enemy.hp,
+      playerMana: { ...this.player.mana },
+      enemyMana: { ...this.enemy.mana },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+    }];
   }
 
   public getAdvice(): { card: CardDef | null; targetSlot?: number; adviceText: string } {

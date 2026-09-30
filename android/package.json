@@ -4,9 +4,9 @@
   "version": "2.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview --port 5174"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",

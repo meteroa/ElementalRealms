@@ -5,6 +5,220 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-09-30
+
+### Added
+- **荣誉成就系统原版视觉重构与高对比度易读优化（Authentic PC Achievement Badges & Crystal-Clear High-Contrast UI）**：
+  - 彻底解决成就文字与暗色背景混淆模糊、难以辨识的问题。引入羊皮纸底框与清晰明朗的高对比度深墨褐文字与卡片容器。
+  - 从 PC 原版（`pc/Images/Rewards/`）完整提取并迁移 40 张官方成就徽章（`R1001.jpg` ~ `R6002.jpg`），替换原本单一的通用奖杯图标，呈现 12 大官方正统成就挑战与进度追踪。
+- **游戏帮助原版六章古籍宝典系统（Comprehensive 6-Chapter Help Codex & Lore Tome）**：
+  - 依据 PC/Flash 原版（`pc/Help/HowToPlay.help`、`pc/Help/Index.help`、`pc/Help/Credits.help` 及 `pc/指南.txt`）重塑为六大分类官方古籍宝典：
+    1. 【如何游戏】：游戏目标、生命值与胜负判定、五大元素法力增长机制详解；
+    2. 【战斗进阶】：6战斗槽对位规则、生物攻击力与生命值机制、特技发动、即时法术与穿透伤害；
+    3. 【卡组构筑】：20张卡组构筑黄金法则、元素配比策略、同系唯一性约束；
+    4. 【16大流派】：原版全16位法师专精特色与核心战术分析；
+    5. 【游戏模式】：单场决斗、战役模式、英雄联赛、自组卡牌与对战回放详细指引；
+    6. 【制作团队】：Richard Garfield、Skaff Elias、Alexey Stankevich 等原作者致谢与致敬。
+- **对战回放直通实况战斗全景播放器（Live Battlefield Direct Replay System）**：
+  - 依据 PC 原版（`InitCombat.txt` / `initChooseReplay.txt`）深度挖掘与还原回放运行模式：回放不再使用简易的文本战报窗口，而是**直接载入真实的对决战斗主画面（`renderCombatScreen`）**！
+  - 完整呈现双方英雄头像、即时生命值、5系元素法力增长、6个阵位生物召唤、法术出牌与攻防血量变动。
+  - 底部浮现专业回放控制器（`replay-battle-controller-dock`）：包含退出回放、开局（⏮）、上一步（◀）、自动播放/暂停（▶/⏸）、下一步（▶）、终局（⏭）及倍速调节（1x / 2x / 4x）。
+
+### Changed
+- **羊皮纸背景平铺重复消除与全景拉伸（Full-Bleed Stretched Parchment Texture）**：
+  - 全局移除羊皮纸背景的平铺重复（`repeat`），统一采用 `background: ... url('/ui/Paper.png') center / 100% 100% no-repeat !important` 进行整体拉伸贴合，消除拼接缝隙与错位杂色。
+- **主界面三大核心功能集成：对战回放、荣誉成就与游戏帮助（Replays, Achievements & Comprehensive Game Help）**：
+  - **对战回放馆（Battle Replay System）**：
+    - `SpectromancerEngine` 全程自动录制每场对局的每一个战术步骤（`ReplayStep`），记录回合数、行动方、卡牌名称、卡牌立绘、槽位、文字描述及双方生命值实时快照。
+    - 主界面顶部新增 `[📼 对战回放]` 按钮，支持保存最近 20 场对战录像并进入全交互式回放播放器（`replay_viewer`），具备步进翻页（第一步/上一步/下一步/最后一步）、自动连续播放/暂停以及 `1x / 2x / 4x` 动态倍速调节。
+  - **荣誉成就系统（Achievements System）**：
+    - 主界面顶部新增 `[🏆 荣誉成就]` 按钮，展示 10 大核心挑战（初出茅庐、战役先锋、领地征服者、联赛新秀、登顶冠军、构筑大师、坚如磐石、奥术狂潮、远古契约、星灵全才）。
+    - 战斗结束或特定条件达成时，自动触发屏幕右上角金色徽章成就提示横幅（`achievement-toast`）并播放胜利音效。
+  - **游戏玩法与规则秘典（Game Help Modal）**：
+    - 主界面顶部新增 `[📖 游戏帮助]` 按钮，涵盖基础对决规则与胜负判定、五大元素能量自动增长机制、生物特技与即时法术运用、四大精彩模式全景指引。
+- **英雄联赛多角色档案与多联赛创建/管理系统（Multi-Profile League Hub & Manager）**：
+  - 新增角色档案与联赛列表 Hub（`renderLeagueHubModal`），打破原先只能保留单一角色的限制。玩家可自由创建多个不同职业、不同难度的角色档案并开启独立的 8 轮大师排位赛，支持档案自由切换与确认删除。
+  - 8 轮排位赛主界面（`league_table`）右下角新增 `[角色档案]` 按钮，方便玩家在不退出比赛的情况下随时管理档案。
+
+### Changed
+- **战役模式大地图底部交互栏布局与比例缩放优化（Campaign Bottom Deck Auto-Fill & Responsive Fluid Typography）**：
+  - 彻底去除中间剧情介绍框（`.campaign-deck-center`）的固定最大宽度限制，设置 `flex: 1; min-width: 0;` 自适应填满中间区域，完全消除原先空出的 2/5 留白空间。
+  - 剧情框标题（`clamp(18px, 1.45vw, 23px)`）与故事正文（`clamp(15.5px, 1.3vw, 20px)`）全面升级为屏幕比例流式缩放，在不同屏幕与分辨率下均保持饱满易读。
+  - 右侧 4 个操作按钮（开始战斗、奖品、选项、主菜单）全面重构，双列网格饱满填充右侧操作区。
+- **战场特殊规则弹窗全屏比例缩放（Battlefield Rules Modal Responsive Scaling）**：
+  - 扩大 `.combat-rules-modal` 视窗至 `clamp(560px, 58vw, 840px)`，标题字号提升至 `clamp(17px, 1.4vw, 22px)`，正文与特殊战规高亮框提升至 `clamp(16px, 1.3vw, 20px)`，底部关闭按钮同步放大。
+- **英雄联赛排位赛排行榜字体全面放大（Enlarged League Standings Table）**：
+  - 扩充 `.league-table-container` 宽度至 `clamp(560px, 56vw, 840px)`，表头字号扩至 `clamp(16px, 1.3vw, 21px)`，数据单元格字号扩至 `clamp(15px, 1.25vw, 19.5px)`，玩家金色高亮行更加清晰。
+- **自组卡牌 20 张卡组编辑器杜绝重复与尺寸放大（Deck Builder No-Duplicate Enforcement & Scaled Controls）**：
+  - 严格限制 20 张卡组内每种卡牌仅能配置 1 张，备选卡池库中已在卡组内的卡牌半透明并打上鲜绿 `✓ 已配置` 徽章，点击已配卡牌提供防重拦截与警示。
+  - 顶部操作栏高度增至 `clamp(56px, 7.5vh, 76px)`，卡组名称输入框、职业选择器及 `清空`、`保存`、`退出` 按钮尺寸与字号显著放大。
+- **战斗界面左侧“战场规则”专用按钮与弹窗（Battlefield Rules Button & Modal Overlay）**：
+  - 在战斗界面左侧快捷功能栏新增“战场规则”卷轴按钮（`.combat-strip-item.btn-rules`）。
+  - 点击即可呼出羊皮纸质感的战场特殊战规弹窗（`.combat-rules-modal`），实时解析并展示联赛特殊战规（如敌方特性、随机洗牌惩罚）、战役关卡剧情与首领战规、自组牌组机制或单场快速决斗战规。
+- **战役模式世界大地图与分支自选关卡（Authentic Campaign World Map & Branching Stage Selection - 参考图1）**：
+  - 提取并引入原版战役大地图底图（`Campaign_Map1.jpg`）与古卷边框布局。
+  - 顶栏横幅呈现“选择下一个对手:”，地图上标绘各领地关卡法师头像与金色指针徽记。
+  - **首关通关后续关卡精细解锁**：击败第 1 个敌人（奥尔加德）后，精准解锁后续 3 个分支关卡领地（卡珊德拉、巴特拉斯、维特拉克），对齐参考图 1 选关设定。
+  - 底部操作栏深度重构：中间剧情介绍框宽度调窄、字体显著放大（字号提升至 17.5px、字重 700），右侧 4 个操作按钮按 2×2 双列布局并大幅放大（高度 48px），提升触控体验。
+- **英雄联盟排位赛模式与新角色创建系统（League of Heroes Tournament & Character Creator - 参考图2、图3）**：
+  - **“新角色”创建弹窗全面等比放大**：弹窗尺寸扩至 58vw（最大 760px），标题大字、头像视窗、输入栏及职业/难度切换器全面放大，按钮字号升至 21px。
+  - **山景排位赛背景重绘去硬编码**：使用真实平滑过渡算法完全消除 `Tournament_Bg.jpg` 原图中心硬编码烘焙的固定排行榜与俄中俄文字体，还原自然连贯的雪山远景与蓝天。
+  - **动态联赛排行榜替代原图**：由 DOM 动态生成的 `.league-table-container` 居中替换原背景图表，配备金属雕纹边框，动态计算 10 位竞争对手名次、胜场与积分，当前玩家高亮显示。
+- **自组卡牌模式与 20 张卡组编辑器（Custom Deck Mode Hub & 20-Card Deck Builder - 参考图4、图5）**：
+  - 搭建自组卡牌主界面（图 5），支持玩家自定义牌组切换、新建、编辑与删除，自由挑选职业、对手等级（学徒至宗师）与指定挑战对手。
+  - **移除“全部”标签并仅保留各系过滤**：右侧卡池库彻底移除“全部”通用标签，严格按火系、水系、气系、土系及职业专属系 5 个智能标签过滤。
+  - **同系卡牌替换强制约束**：点击卡槽智能切换至对应系别卡池；向卡组添加或替换卡牌时强制限定必须为同系别替换，严格杜绝水系替换火系等跨系错置。
+
+### Changed
+- **随从攻击音效 `attack.ogg` 增益回调至适度 1.5 倍（Calibrated Attack SFX Volume to 1.5x）**：
+  - 依据听感反馈将随从撞击与战斗攻击音量由 2.2 倍适度下调至 1.5 倍（`volume: 1.5`），既保证肉搏打击沉稳响亮，又避免过度过曝轰鸣。
+- **FHD 高分屏与动态分辨率全屏自适应放大（FHD Scaling for Menu & Battle Modals）**：
+  - 启动页各模式入口卡片全面应用流式 `clamp` 尺寸扩展，在大屏及 1080P/2K 分辨率下按钮面积与字体饱满舒展，消除小分辨率局促感。
+  - 对战结束后的胜负石雕结算弹窗（`.battle-result-stone-dialog`）尺寸大幅扩充，徽章、文字与按钮放大，提升操作便捷度。
+
+### Fixed
+- **生物进攻音效缺失修复（Creature Attack Sound & Web Audio API Engine）**：
+  - 针对视频 `20260930_133426.mp4` 反映的生物卡牌进攻时音效缺失问题，彻底重构 `SoundManager` 音频内核。
+  - 升级为 Web Audio API（`AudioContext`）与预解码 `AudioBuffer` 缓存池，通过用户首触手势全局解锁 AudioContext，彻底规避浏览器因异步延时导致手势令牌失效而静音异步战斗结算与 AI 回合攻击的底层限制。
+- **光环数值与战场增益高亮实时刷新（Minotaur / Orc Chieftain Aura & Visual Stat Highlighting）**：
+  - 解决牛头人指挥官（全场友军非墙生物攻击力 +1）和兽人酋长（相邻生物攻击力 +2）进场时其它生物攻击力未增加的显示问题。
+  - 在 `BoardCreature` 引入 `baseAttack` 与 `buffedAttack` 标识，召唤、死亡及位置变更时自动执行 `recalculateBoardStats()` 重新计算光环加成。
+  - 卡槽攻击力数值动态判定增益状态，以高亮鲜绿发光样式（`.card-stat-atk.buffed`）明确展示强化数值。
+- **魔法卡牌施法流程与原版“放大进入”对齐（Big Spell Card Presentation）**：
+  - 修复此前魔法卡牌缩放入槽的错误表现，重构 `onCardEnterSlot` 施法动画流程。
+  - 魔法卡牌施放时以 1.5 倍尺寸流线型放大飞入战场中央展示位（Big Spell Frame），顶部挂载原版 `usecardtextbar.png` 卷轴横幅明确播报 `施放法术：【卡牌名】`，并在法术特效播放完毕后柔和淡出。
+- **全系 33 张魔法卡牌专属动画与音效全面校准（Full Overhaul of All 33 Spell VFX & Audio）**：
+  - **落雷与闪电系**：重构程序化分支闪电算法（`triggerAuthenticLightning`），结合原版 `lparts.png` 爆裂粒子、全屏电光闪烁与 `lbolt.png` 纹理，还原 `20260930_133854.MP4` 和 Flash 原版的雷暴打击。
+  - **火系与恶魔系**：火焰波浪（槽位火柱喷涌）、炼狱爆轰（目标及相邻槽位爆燃）、火球术（飞弹弹道轨迹与爆炸）、地狱烈焰（全场熔岩裂缝地火喷发）、恶魔自爆（高能冲击波爆破）。
+  - **水系与治疗系**：冥想（英雄头像环绕湛蓝法能波纹）、酸雨术（全屏酸雾腐蚀环境与 18 道密集酸雨落滴）、雾疗术（相邻友军群裹水愈光盾）。
+  - **土系与自然系**：石雨术（利用 `stone.png` 真实 4 帧飞石自天际旋转坠落砸向全场敌方卡槽）、自然仪式（生长出世界之树 `ritforest.png` 与绿荫护盾）、活力恢复（英雄获得治愈古树灵光）。
+  - **圣职与惩戒系**：神圣审判（天降白金神圣天谴光柱 `wrath1.png` 与圣光地裂 `wrath2.png`）、神圣干预（英雄圣光壁障）、光荣仪式（己方全槽升起金色光辉天柱）。
+  - **死灵系**：黑暗仪式（幽魂幻影 `spirits.png` 盘旋吸取生命）、血祭仪式（绯红献祭光环与血魄飞流至英雄）、诅咒之雾（毒雾迷漫全场与幽魂哀鸣）。
+  - **特殊与职业专属系**：精华汲取（紫罗兰魔能光珠跨屏吸入施法者头像）、法力燃烧（敌方头像魔能电涌爆裂）、裂解射线（七彩棱光垂直贯穿目标并瓦解为尘埃）、入狂幻术（目标头上旋转紫色催眠眩晕波纹）、虚弱术（紫暗诅咒符文压制全场敌方生物）、时间停止（黄金时钟沙漏 `timestop.png` 浮空翻转与时空逆转负色波动）、加速术（目标生物脚下飞旋时钟光轨）、救援行动（绿色急救光阵飞升脱险）、鼠群侵袭（多只狂鼠 `rat.png` 沿卡槽列群奔突袭）、能量锁链（炽金锁链封锁槽位）、列炮齐发（连续轰鸣炮击爆破）。
+- **闪电魔法音画完全同步与多重冗余播放消除（Lightning VFX-SFX Sync & Deduplication）**：
+  - 修复闪电等魔法在 AI 预告弹窗（`onCardAnnouncement`）时过早播发战斗法术音效的问题，将弹窗音效恢复为原生揭示音 `showeff1.ogg`。
+  - 清理引擎底层 `resolveSpell` 内的历史遗留回放代码，彻底杜绝闪电法术（预告、动画、结算）重复播放 3 次的严重回音冗余，确保法术音效严格在雷电劈落瞬间单次精准响彻。
+- **对决英雄区块高度与视觉布局扩容（Hero Row Height & Layout Expansion）**：
+  - 针对玩家与对手英雄区块偏挤的问题，将 `.combat-hero-row` 基础高度由 `68-96px` 大幅调升至 `92-126px`（手机端由 `52px` 提至 `72px`）。
+  - 头像尺寸提升至 `62-86px`（内像 `52-74px`），血量大字字阶升至 `30-48px`，英雄名升至 `18-28px`，5 系能量芯片加高至 `28-38px`，全面解除压迫感与局促感。
+
+### Changed
+- `spectromancer_web-master` 前端（`index.html`、`app.js`）：将所有面向用户的俄文文本翻译为中文，包括界面标签、导航、游戏日志、提示文字等。
+
+## [2.5.5] - 2026-09-28
+
+### Added
+- **PC 原版战斗特效动画与音频管线深度挖掘与移植（Authentic PC Spectromancer Combat VFX & Sound Engine Port）**：
+  - **PC 原版音效完全对齐与音频池零延迟机制（100% Faithful PC Audio Alignment & Zero-Latency Audio Pooling）**：
+    - 深度挖掘 PC 端 `pc/Sounds.ctl` 核心配置定义，提取全部 91 款原生 `.ogg` 音频与真实音量比例权重（如地狱火 `inferno` 150%、落雷 `lightningbolt` 70%、冥想 `meditation` 35%、神圣干涉 `divineint` 25% 等）。
+    - 重构 `android/src/engine/sound.ts`，建立全量法术与生物卡牌 ID 直通音效词典（涵盖雷电、火浪、酸雨、地狱火、落雷、连环闪电、自然祈福、回春术、落石术、暗黑仪式、鲜血仪式、诅咒之雾、灵魂汲取、神圣正义、神圣干涉、加农炮击、虚弱术、末日闪电、混乱狂潮、狂乱术、自爆、锁链、地狱之火、治疗喷雾、火球术、精华窃取、法力燃烧、光辉仪式、音爆、瓦解射线、毒素、狂暴、充能、龙皇吐息、时空停滞、鼠群等 40+ 核心法术与战技原声）。
+    - 引入移动端专属 Audio Pool（音频复用池）与核心音频预加载机制，彻底消除移动端连续播放音效卡顿或延迟静音缺陷。
+  - **PC 原版战斗动画粒子纹理挖掘与 Web 格式转换（PC Combat Spritesheets & Textures Conversion）**：
+    - 从 PC 原版 `pc/Images/Combat` 目录挖掘 18 组核心战斗动画纹理，编写解码算法将原版 `.dds`（DXT3）与 `.tga`（RLE/TrueColor）高保真无损解码并转码为 Web 端可用的高精透明 PNG 保存在 `android/public/ui/vfx/`：
+      - `lbolt.png`：PC 原版雷霆闪电光柱纹理（256×64）。
+      - `lparts.png`：PC 原版闪电爆裂粒子 5 帧序列帧（320×64）。
+      - `wrath1.png`：PC 原版神之天谴降世光柱 4 帧序列帧（256×64）。
+      - `wrath2.png`：PC 原版圣光地裂爆破符文（66×94）。
+      - `shield.png`：PC 原版神圣护盾光幕（150×150）。
+      - `spirits.png`：PC 原版远古怨灵幽魂 3 帧序列帧（381×125）。
+      - `rat.png`：PC 原版疯狂鼠群原画（118×115）。
+      - `ritforest.png`：PC 原版森林古树生机繁茂图腾（110×134）。
+      - `timestop.png`：PC 原版时空停止黄金沙漏（58×83）。
+      - `stone.png`：PC 原版落石术崩碎飞石（128×32）。
+      - `stunned.png`：PC 原版眩晕飞旋金星（80×80）。
+      - `vampire.png`：PC 原版吸血蝙蝠汲血 2 帧序列帧（112×56）。
+      - `golem.png`：PC 原版魔像巨拳重砸 2 帧序列帧（112×56）。
+      - `rabbits.png`：PC 原版幻术兔子戏法（112×56）。
+      - `particles.png`：PC 原版魔法粒子光芒（512×128）。
+      - `usecardtextbar.png`：PC 原版操作提示卷轴彩带（308×26）。
+      - `forbidden.png`：PC 原版禁止出牌/目标无效印记（80×80）。
+  - **基于实战录像（20260928_230026.mp4）的像素级动画与音效还原（High-Fidelity Combat Video Matching）**：
+    - **操作提示彩带横幅（Floating Action Banner: 选择位置 / 选择目标）**：1:1 还原原版视频中点击手牌后浮现在槽位上方的古朴石刻彩带，精准根据卡牌类型显示 `选择位置 [生物名]` 或 `选择目标 [法术名]`，取消选择时自然淡出。
+    - **落雷术天人合一双重落雷（Call to Thunder Dual Strike）**：精准复刻视频 01:47 关键帧机制——落雷术施法时，一道垂直雷霆劈向目标卡槽生物，**另一道雷霆同时垂直轰击敌方英雄头像**，双槽电弧四溢迸发，雷鸣爆震。
+    - **火浪槽位内爆燃火柱（In-Slot Flame Pillars）**：复刻视频 00:36 关键帧——火焰波浪席卷时，**受击的每一个敌方槽位内部同时喷涌出炽烈的橙红烈焰火柱（`.vfx-slot-flame-pillar`）**，而非单纯的全屏蒙版，打击感震撼逼真。
+    - **连环闪电英雄贯穿与全场连劈（Chain Lightning Hero & Slot Strike）**：复刻视频 00:50 关键帧——雷电直贯敌方英雄头像并向全场 5 个槽位依次电光奔涌、粒子炸裂。
+    - **随从突刺与刀光斩击（Creature Lunge & Slash Impact）**：随从出击前探撞击时，目标受击卡牌或英雄正中心绽放锐利金白交织的斩击刀光（`.vfx-slash-impact`），精准同步 `attack.ogg`。
+    - **敌方出牌告示弹窗原版细节对齐（AI Announcement Scroll Modal）**：弹窗顶栏严格对齐视频格式 `[敌方名] 召唤/施法 [卡牌名]`，副标题规范为 `[系别][生物/魔法]，费用 [X]`，底栏统一为原版字样 `按任意键继续`。
+
+## [2.5.4] - 2026-09-28
+
+### Changed
+- **对决战场全屏要素高精调优：卡槽加高、英雄栏加宽加高、法术特效动画与移动端防截断（Grand Combat Refinements, Spell VFX, Taller Slots & Mobile Adaptation）**：
+  - **英雄信息栏加高与卡牌检视羊皮纸高度紧凑化（Taller Hero Rows & Compact Inspector）**：
+    - 英雄状态栏高度大幅提升至 `clamp(68px, calc(60px + 1.8vh), 96px)`，头像放大至 `44-62px`（外框 `52-72px`），血量大字跃升至 `26-42px`，英雄名字提升至 `17-26px`，5 系能量芯片加宽加高至 `24-34px`，数值字号达 `16-24px`。
+    - 卡牌检视详细信息羊皮纸高度适度压低至 `flex: 0.82`（最大高度 `140-230px`），大幅减少垂直空间占用，将更多视野留给英雄与战况记录。
+    - 战斗实况记录高度相应提升（`flex: 1.18`），标题升至 `16-24px`，播报文字字号升至 `clamp(15px, calc(13.8px + 0.42vw), 22px)`，字体大而清爽。
+  - **卡槽高度拉高与挺拔比例升级（Taller Battlefield Slots）**：
+    - 战场 6 卡槽由原本偏矮偏扁的 4:3.6 调整为黄金纵向长方形 `aspect-ratio: 3.8 / 4.4`，最大高度提升至 `205px`，槽位在战场上更加挺拔高大、气派恢弘。
+    - 卡牌上的费用宝石字阶显著增大至 `clamp(16px, calc(13.8px + 0.45vw), 23px)`（尺寸 `25-38px`）；攻击力（红框）与生命值（绿框）徽章字阶升至 `clamp(15px, calc(13.5px + 0.45vw), 23px)`（尺寸 `25-38px × 23-32px`）。
+    - 左侧快捷操作按钮栏宽度拓展至 `64-88px`，按钮图标放大至 `18-28px`，按钮文字放大至 `13-18px`（粗体 900）。
+  - **全套魔法卡牌施法特效动画（Full-Blown Spell Casting VFX System）**：
+    - 全面修复魔法卡牌施法仅有音效无视觉动画的缺陷，新增 `playSpellVFX` 视效驱动管线：
+      - **雷电系法术**：全屏白金色强雷落雷闪光 + 天谴雷霆穿透光柱（`.spell-vfx-bolt`）+ 全屏剧烈震颤（`screen-shake`）+ 目标受击槽位剧烈爆裂。
+      - **火焰系法术**：全屏烈焰冲击波爆散（`.spell-vfx-flamewave`）+ 目标受击灼烧爆破 + 震颤。
+      - **酸雨/剧毒法术**：从天而降的毒雾与酸蚀绿光雨幕（`.spell-vfx-acidic`）。
+      - **特殊/奥术法术**：深紫奥术符文星阵爆裂（`.spell-vfx-arcane`）。
+  - **牌桌自然光影色调恢复（Restored Natural Battlefield Lighting）**：
+    - 彻底移除战场区域原有的过曝滤镜（`filter: brightness/contrast/saturate`），完全恢复自然柔和的写实景深光效。
+  - **魔法卡牌检视原画尺寸与生物卡牌 1:1 统一（Unified Spell & Creature Art Box Scale）**：
+    - 彻底移除检视面板中魔法卡牌原画的放大变形（`scale(1.35)`），与生物卡牌统一使用相同的边框规格与投影尺寸，彻底消除两类卡牌图标尺寸不一致的视觉割裂。
+  - **小屏手机横屏自适应防截断（Small Mobile Responsive Layout Guard）**：
+    - 新增 `@media (max-height: 620px), (max-width: 900px)` 移动设备专属保护规则，自动缩小原画至 42px、标题至 13.5px、描述字号至 11.5px（行高 1.35），杜绝小屏手机下技能描述被裁切截断。
+- **FHD（1080P）与超宽大屏战斗界面全局大字号与饱满排版深度升级（Grand Typography & Fluid High-DPI Scaling for FHD/Ultrawide）**：
+  - **卡牌技能描述与羊皮纸检视大幅放大（Parchment Card Inspector Scaling）**：
+    - 将卡牌技能描述文本字号由原保守上限 18px 全面提升为 `clamp(15.5px, calc(14px + 0.55vw), 23px)`，行高优化至 `1.65` 并采用加粗中明度暖黑字色（`font-weight: 700; color: #231304`），文本在大屏下自然充盈整张羊皮纸，消灭大半张空旷黄底留白。
+    - 卡牌标题由最高 22px 提升至 `clamp(18px, calc(16px + 0.6vw), 26px)`；副标题英文提升至 `clamp(13.5px, calc(12px + 0.35vw), 19px)`。
+    - 检视原画立绘缩略图尺寸放大至 `clamp(62px, calc(52px + 1.8vw), 100px)`，攻防属性徽标提升至 `15-22px`。
+    - 战斗实况记录日志标题提升至 `15-22px`，滚动播报文字字号提升至 `clamp(14px, calc(13px + 0.35vw), 20px)`，远距离与大屏幕下观看战报清晰明朗。
+  - **英雄状态栏与能量面板醒目化（Hero Status & Mana Chips Grand Scale）**：
+    - 英雄血量数字字阶进一步放大至 `clamp(24px, calc(20px + 0.8vw), 38px)`，红绿神圣光泽更加醒目。
+    - 英雄姓名提升至 `clamp(16px, calc(14.5px + 0.45vw), 24px)`，流派标签提升至 `11.5-16px`。
+    - 5 系能量槽芯片尺寸增大至高度 `22-32px`，内嵌元素图标与能量数字字阶提升至 `15-22px`。
+  - **随从槽位、手牌数值徽章与战场提示（Board Slots, Cost Gems, Atk/Hp & Banner）**：
+    - 战场中央阶段提示 Banner 字阶由原 15px 上限跃升至 `clamp(13.5px, calc(12px + 0.45vw), 22px)`，内边距同步延展，阶段切换醒目威严。
+    - 战场 6 卡槽空槽编号由最高 24px 提升至 `clamp(20px, calc(16px + 0.7vw), 32px)`，槽位最大限制拓宽至 `220px × 160px`。
+    - 随从与手牌的费用水晶（Cost Gem）尺寸放大至 `22-34px`（字号 `14-20px`）；攻击力（ATK）与生命值（HP）徽章放大至 `22-34px × 20-28px`（字号 `13.5-20px`），攻防数值一目了然。
+    - 5 列手牌系别表头高度增至 `24-34px`，图标与文字字号提升至 `13.5-20px`。
+    - 侧边快捷功能栏按钮文字提升至 `11.5-16px`，图标提升至 `16-24px`。
+  - **全系统兼容特殊系 Emoji 呈现（Unicode Compatible Element Icons）**：
+    - 将幻术系（Illusion）图标由部分 Windows 字体缺失的单面镜替换为通用 Unicode 6.0 戏剧魅影 `🎭`，彻底根除在大屏或 Windows 环境下偶现的未识别字符白色方块（`▯`）问题。
+- **左侧面板 33vw 黄金比例拓宽、右侧战场 100% 满宽与全界面大字号升级（33vw Left Panel, 100% Full-Bleed Right Arena & Grand Typography）**：
+  - **右侧 100% 满宽消除水平空旷死区**：彻底移除此前固定 `max-width: 1180px` 导致右侧留出大面积空闲黑绿背景的缺陷。将牌桌槽位区 `.combat-slots-arena` 和手牌区 `.combat-hand-grid` 全面放开为 `width: 100%; max-width: 100%`，5 列手牌与 6 个随从槽位铺满右侧全部水平视宽，在 FHD（1920×1080）与超宽大屏（2000×900）下彻底消除右侧空旷无卡死区。
+  - **左侧面板拓宽至黄金三分之一（33vw / 最大 700px）**：左侧面板 `.combat-left-panel` 调整为 `clamp(330px, 33vw, 700px)`，在 1920px 屏幕上自适应展开至 633px、2000px 展开至 660px，形成完美的 1:3:6 黄金分割布局，左侧大幅扩容消除局促。
+  - **字号与立绘全面加大放大，解决字小与羊皮纸空旷**：
+    - 羊皮纸卡牌立绘缩略图跃升至 `clamp(52px, calc(44px + 1.5vw), 80px)`（FHD 下可达 73px+）。
+    - 卡牌标题跃升至 `clamp(16px, calc(14px + 0.4vw), 22px)`，技能描述提升至 `clamp(14px, calc(12.5px + 0.35vw), 18px)`（行高 1.6），丰满充实整张羊皮纸，消灭空旷空白。
+    - 英雄生命值升至 `clamp(22px, calc(18px + 0.6vw), 32px)`，能量芯片提升至 20-27px 高（数值 13-18px），字号大而清晰醒目。
+    - 卡牌费用水晶与攻防徽章增大至 `clamp(20px, calc(18px + 0.35vw), 28px)`（字号 12-16px），手牌列标题升至 12-16px。
+- **开发服务器默认端口固定为 5174（Dev Server Port Fixed to 5174）**：
+  - 新增 [vite.config.ts](file:///d:/sync/project/Spectromancer/android/vite.config.ts) 并同步更新 [package.json](file:///d:/sync/project/Spectromancer/android/package.json) 启动脚本，将本地开发服务器和预览端口统一绑定为 `5174`，彻底避免与本地其他服务（如 5173 占用的 SMS 管理系统）产生端口冲突。
+- **超宽屏（如 2000×900 / 20:9 比例）多分辨率响应式比例对齐与防过度拉伸约束（Widescreen Layout Alignment & Hand/Slot Cohesive Scaling）**：
+  - **左侧面板自适应占比显著拓宽（27vw / 最大 550px）**：将左侧面板 `.combat-left-panel` 宽度调整为 `clamp(310px, 27vw, 550px)`，在 2000px 屏幕上自适应展开至 540px（占屏比由 21% 提升至 27%），彻底解决左侧区域偏小偏窄、右侧留白空旷的问题；操作条相应微增至 56px。
+  - **英雄状态与能量芯片放大**：英雄头像放大至 38px（外框 44px），生命值数值字阶增至 22px，5 系能量芯片加宽增高（21px）且数值提升至 14px，更具大作感。
+  - **卡牌检视羊皮纸丰满化排版与去空旷**：检视原画缩略图由 44px 提升至 52px，标题提升至 16.5px，技能描述字号提升至 14.5px（行高 1.48）；双层羊皮纸分配比例调整为 0.95 : 1.15，将更多纵向净空留给实况记录滚动列表，消除了原本检视羊皮纸下方大块无文字黄底留白。
+  - **核心作战舞台（Playfield）扩展至 1180px**：将牌桌 `.combat-slots-arena` 与手牌区 `.combat-hand-grid` 统一最大宽度由 1080px 扩展至 1180px；单个卡槽最大尺寸由 138×120px 进一步优化至 148×124px，手牌与卡槽居中对称展开，两侧保留 ~140px 黄金留白，兼具视觉气势与克制比例。
+- **出牌入场飞行卡牌完整形态与等比缩放重构（Full Card Summoning Flight & Proportional Morphing）**：
+  - 彻底修复出牌就位动画（`.flying-card-ghost`）仅显示孤立攻防徽章截断碎片的问题：全面废弃旧版简易文本框结构，统一重构为与在场实体卡牌 100% 一致的完整卡牌（`.board-card.vertical`），完整包含高清全景立绘原画、右上角元素费用宝石与真实攻防数值徽章。
+  - 升级飞行形变插值算法：动画起始基于手牌真实尺寸，飞行入槽过程中基于 X/Y 轴分别独立插值缩放（`scale(scaleX, scaleY)`），从手牌起飞、弧线跃升到精准落入卡槽全过程完整缩放呈现，零突变零违和。
+- **战场与手牌纵向高度黄金比例微调（Battlefield 45vh & Hand 55vh Rebalance）**：
+  - 将上部牌桌战场（`.combat-battlefield-section`）高度上调至 `45vh`，下部手牌区适配调整至 `55vh`，牌桌景深与随从槽位更显宏大通透。
+  - 左侧面板（`.combat-left-panel`）宽度微调拓宽至 `clamp(295px, 26.5vw, 355px)`，为 `.combat-info-column`（英雄状态、卡牌检视羊皮纸与战况记录）进一步释放横向排版净空。
+- **左侧操作控制柱缩窄与信息展示区拓宽（Action Strip Narrowing & Info Column Widening）**：
+  - 将最左侧操作控制柱（`.combat-actions-strip`）宽度进一步缩窄至 `52px`，图标微调为 14px、文本微调为 9.5px（字距 -0.3px），更精致小巧且无横向溢出。
+  - 将手牌切换按钮文案由“看对手 / 看自己”优化升级为更直观规范的“对手卡牌 / 己方卡牌”。
+- **牌桌随从卡槽上下间距收窄（Tighter Arena Slot Vertical Gap）**：
+  - 将牌桌敌我双方 6 槽位之间的上下垂直间距（`.combat-slots-arena` 的 `gap`）由 7px 收紧至 3px，阵线对决感更强，槽位上下金雕装饰衔接更紧凑自然。
+- **左侧控制面板适度收缩与右侧主界面拓宽（Combat Left Panel Slimming & Arena Expansion）**：
+  - 将 `.combat-left-panel` 宽度由 `clamp(350px, 32vw, 420px)` 收窄调优至 `clamp(280px, 25vw, 335px)`，释放屏幕宽度给右侧核心游戏区域。
+  - 右侧战场牌桌（`.combat-slots-arena`）宽度上限扩展至 920px（占比 90%），单个生物槽位（`.combat-board-slot`）最大尺寸由 94×90px 放大至 108×98px，牌桌视觉更宽阔醒目。
+  - 手牌区 5 列卡牌随右侧拓宽自适应拉伸加宽，卡片展示面积增大，费用晶石与攻防数值徽标同步清晰化放大（20px/17px）。
+- **魔法卡片全景长方形自适应适配（Full-Bleed Rectangular Spell Cards Adaptation）**：
+  - 针对原透明圆形光球的 33 张法术卡牌立绘，采用全景铺满长方形适配方案（`object-fit: cover` 与 `scale(1.42)` 铺满卡框），消除原本圆形居中缩小缩进导致四周产生的大面积黑边与空旷感，使炫目魔法特效完整充满整张长方形卡牌，与生物卡牌保持一致的 CCG 卡面质感。
+  - 同步优化羊皮纸检视原画（`.parchment-card-art.spell-art`）与出牌特写展示。
+- **生物类卡片头部裁剪下移调优（Creature Head Positioning & Top Crop Shift）**：
+  - 将生物随从卡牌（手牌、牌桌场上、飞行幽灵卡及出牌特写）默认裁剪基准由 `top center`（0% 顶部）优化为 `center 20%`。
+  - 适度裁除插画顶端冗余的空旷天空/背景，使随从生物的面部与头顶更贴近卡牌顶端边框，下端呈现出更丰富的躯干与战斗姿态，大幅增强立绘饱满度。
+
 ## [2.5.3] - 2026-09-27
 
 ### Fixed

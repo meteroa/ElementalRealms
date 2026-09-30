@@ -32,7 +32,9 @@ export interface BoardCreature {
   card: CardDef;
   owner: 'player' | 'enemy';
   slotIndex: number;
+  baseAttack: number;
   currentAttack: number;
+  buffedAttack?: boolean;
   currentLife: number;
   maxLife: number;
   isWall: boolean;
