@@ -152,13 +152,18 @@ export class SpectromancerEngine {
   ): BoardCreature | null {
     if (slotIndex < 0 || slotIndex >= 6) return null;
     const board = side === 'player' ? this.playerBoard : this.enemyBoard;
+    const actor = side === 'player' ? this.player : this.enemy;
+    const initialAtk = (card.attack === -1 && card.ability === 'attack_equal_element_power')
+      ? (actor.mana[card.element as ElementType] || 0)
+      : (card.attack || 0);
+
     const creature: BoardCreature = {
       uid: Math.random().toString(36).substring(2, 9),
       card,
       owner: side,
       slotIndex,
-      baseAttack: card.attack || 0,
-      currentAttack: card.attack || 0,
+      baseAttack: initialAtk,
+      currentAttack: initialAtk,
       buffedAttack: false,
       currentLife: card.life || 1,
       maxLife: card.life || 1,
@@ -311,6 +316,20 @@ export class SpectromancerEngine {
       if (c.card.ability === 'mechanics_growth_1') extraMechGrowth += 1;
       if (c.card.ability === 'illusion_growth_1') extraIllusGrowth += 1;
       if (c.card.ability === 'demon_quartermaster_growth') extraSpecialGrowth += 1;
+      if (c.card.ability === 'time_growth_2') extraSpecialGrowth += 2;
+      if (c.card.ability === 'attack_equal_element_power') {
+        if (c.card.element === 'fire') extraFireGrowth += 1;
+        if (c.card.element === 'water') extraWaterGrowth += 1;
+        if (c.card.element === 'air') extraAirGrowth += 1;
+        if (c.card.element === 'earth') extraEarthGrowth += 1;
+      }
+      if (c.card.ability === 'mind_master_all_growth_1' || c.card.ability === 'astral_guard_drain_growth_1') {
+        extraFireGrowth += 1;
+        extraWaterGrowth += 1;
+        extraAirGrowth += 1;
+        extraEarthGrowth += 1;
+        extraSpecialGrowth += 1;
+      }
     });
 
     const activeElements: ElementType[] = ['fire', 'water', 'air', 'earth', actor.specialElement];
@@ -324,6 +343,16 @@ export class SpectromancerEngine {
       if (elem === 'mechanics') g += extraMechGrowth;
       if (elem === 'illusion') g += extraIllusGrowth;
       actor.mana[elem] += g;
+    });
+
+    // Astral Guard drain
+    board.forEach((c) => {
+      if (c && c.card.ability === 'astral_guard_drain_growth_1') {
+        activeElements.forEach((elem) => {
+          actor.mana[elem] = Math.max(0, actor.mana[elem] - 1);
+        });
+        this.log(`【${c.card.nameCn}】星界耗蚀，使拥有者每系能量 -1！`, 'damage');
+      }
     });
 
     // 2. Creature turn-start triggers
@@ -535,6 +564,61 @@ export class SpectromancerEngine {
         sound.play('gaze');
       }
 
+      // Insanian Lord: 6 damage to opposite creature
+      if (creature.card.ability === 'insanian_lord_strike_6') {
+        const opp = oppBoard[idx];
+        if (opp && !opp.spellImmune) {
+          opp.currentLife -= 6;
+          this.triggerDamage(who === 'player' ? 'enemy' : 'player', idx, 6);
+          sound.play('boom');
+          this.log(`【混沌领主】裂地重击对格【${opp.card.nameCn}】，造成 6 点震荡伤害！`, 'damage');
+        }
+      }
+
+      // Insanian King: summon 4/15 Insanian Guard on random empty slot
+      if (creature.card.ability === 'chaos_summon_soldier') {
+        const emptyIndices: number[] = [];
+        board.forEach((slot, sIdx) => {
+          if (slot === null) emptyIndices.push(sIdx);
+        });
+        if (emptyIndices.length > 0) {
+          const spawnIdx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+          board[spawnIdx] = {
+            uid: Math.random().toString(36).substring(2, 9),
+            card: {
+              id: 'chaos_soldier_extra',
+              element: 'chaos',
+              className: 'chaosmaster',
+              name: 'Insanian Guard',
+              nameCn: '混沌卫兵',
+              type: 'creature',
+              cost: 3,
+              attack: 4,
+              life: 15,
+              image: 'InsanianPeacekeeper',
+              desc: '混沌卫兵 (4/15)',
+              imgUrl: '/cards/InsanianPeacekeeper.jpg',
+              imgBigUrl: '/cards/InsanianPeacekeeperBig.jpg',
+            },
+            owner: who,
+            slotIndex: spawnIdx,
+            baseAttack: 4,
+            currentAttack: 4,
+            buffedAttack: false,
+            currentLife: 15,
+            maxLife: 15,
+            isWall: false,
+            flying: false,
+            spellImmune: false,
+            poison: 0,
+            regen: 0,
+            canAttack: false,
+          };
+          sound.play('summon');
+          this.log(`【混沌君王】号令全场，召唤了一名【混沌卫兵】(4/15) 入驻 [${spawnIdx + 1}号位]！`, 'summon');
+        }
+      }
+
       // Enable creature attack
       if (!creature.isWall) {
         creature.canAttack = true;
@@ -573,7 +657,7 @@ export class SpectromancerEngine {
     }
 
     if (card.requiresTarget) {
-      if (card.id.includes('rescue') || card.id.includes('glory') || card.id.includes('natures_ritual') || card.id.includes('healing_spray') || card.id.includes('haste') || card.id.includes('explosion') || card.id.includes('blood_ritual')) {
+      if (card.id.includes('rescue') || card.id.includes('glory') || card.id.includes('natures_ritual') || card.id.includes('healing_spray') || card.id.includes('haste') || card.id.includes('explosion') || card.id.includes('blood_ritual') || card.id.includes('sacrifice')) {
         return board.some((slot) => slot !== null);
       }
       const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
@@ -627,13 +711,17 @@ export class SpectromancerEngine {
         }
       });
 
+      const initialAtk = (card.attack === -1 && card.ability === 'attack_equal_element_power')
+        ? (actor.mana[card.element as ElementType] || 0)
+        : (card.attack || 0);
+
       const creature: BoardCreature = {
         uid: Math.random().toString(36).substring(2, 9),
         card,
         owner: who,
         slotIndex: targetSlot,
-        baseAttack: card.attack || 0,
-        currentAttack: card.attack || 0,
+        baseAttack: initialAtk,
+        currentAttack: initialAtk,
         buffedAttack: false,
         currentLife: card.life || 1,
         maxLife: card.life || 1,
@@ -780,6 +868,50 @@ export class SpectromancerEngine {
           }
         });
         sound.play('summon');
+        break;
+      }
+      case 'fire_elemental_summon': {
+        opponent.hp -= 3;
+        this.triggerDamage(opposingSide, 'hero', 3);
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= 3;
+            this.triggerDamage(opposingSide, idx, 3);
+          }
+        });
+        sound.play('flamewave');
+        this.log(`【${card.nameCn}】炽烈登场，对敌方英雄与全场敌军各造成 3 点烈焰灼烧！`, 'damage');
+        break;
+      }
+      case 'air_elemental_summon': {
+        opponent.hp -= 8;
+        this.triggerDamage(opposingSide, 'hero', 8);
+        sound.play('thunder');
+        this.log(`【${card.nameCn}】雷啸临空，对 ${opponent.name} 造成 8 点狂风重击！`, 'damage');
+        break;
+      }
+      case 'earth_elemental_growth': {
+        sound.play('stonerain');
+        this.log(`【${card.nameCn}】大地苏醒，使拥有者每回合土系能量成长率 +1！`, 'heal');
+        break;
+      }
+      case 'emissary_sacrifice': {
+        const validSacrifices: number[] = [];
+        myBoard.forEach((c, idx) => {
+          if (c && idx !== targetSlot) validSacrifices.push(idx);
+        });
+        if (validSacrifices.length > 0) {
+          const sacIdx = validSacrifices[0];
+          const sac = myBoard[sacIdx]!;
+          sac.currentLife = 0;
+          this.triggerDamage(who, sacIdx, 999);
+          sound.play('cursedfog');
+          this.log(`【${card.nameCn}】降临，吞噬献祭了友方【${sac.card.nameCn}】！`, 'damage');
+        } else if (myBoard[targetSlot]) {
+          myBoard[targetSlot]!.currentLife = 0;
+          this.triggerDamage(who, targetSlot, 999);
+          this.log(`【${card.nameCn}】由于缺少祭品，无法维持现世形体而湮灭！`, 'damage');
+        }
         break;
       }
       case 'damage_all_enemies_5': {
@@ -1508,6 +1640,215 @@ export class SpectromancerEngine {
         this.log(`【${card.nameCn}】疯狂鼠群肆虐，对敌方全员造成 12 点伤害！`, 'damage');
         break;
       }
+      case 'armageddon': {
+        const base = 8 + actor.mana.fire;
+        const dmg = Math.ceil(base * spellAmp);
+        opponent.hp -= dmg;
+        this.triggerDamage(opposingSide, 'hero', dmg);
+        [...myBoard, ...opposingBoard].forEach((c) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= dmg;
+            this.triggerDamage(c.owner, c.slotIndex, dmg);
+          }
+        });
+        sound.play('hellfire');
+        this.log(`【${card.nameCn}】末日降临，对全场所有生物和 ${opponent.name} 造成 ${dmg} 点毁灭伤害！`, 'damage');
+        break;
+      }
+      case 'tornado_destroy': {
+        if (targetSlot !== undefined && opposingBoard[targetSlot]) {
+          const t = opposingBoard[targetSlot]!;
+          if (!t.spellImmune) {
+            t.currentLife = 0;
+            this.triggerDamage(opposingSide, targetSlot, 999);
+            sound.play('thunder');
+            this.log(`【${card.nameCn}】狂暴旋风将敌方【${t.card.nameCn}】直接卷入虚空消灭！`, 'damage');
+          }
+        }
+        break;
+      }
+      case 'natures_fury': {
+        const attacks: number[] = [];
+        myBoard.forEach((c) => {
+          if (c && c.currentAttack > 0) attacks.push(c.currentAttack);
+        });
+        attacks.sort((a, b) => b - a);
+        const totalAtk = (attacks[0] || 0) + (attacks[1] || 0);
+        const dmg = Math.ceil(totalAtk * spellAmp);
+        opponent.hp -= dmg;
+        this.triggerDamage(opposingSide, 'hero', dmg);
+        sound.play('stonerain');
+        this.log(`【${card.nameCn}】汇聚全场至强力量，对 ${opponent.name} 造成 ${dmg} 点自然咆哮伤害！`, 'damage');
+        break;
+      }
+      case 'drain_souls': {
+        let killedCount = 0;
+        [...myBoard, ...opposingBoard].forEach((c) => {
+          if (c && !c.spellImmune) {
+            c.currentLife = 0;
+            this.triggerDamage(c.owner, c.slotIndex, 999);
+            killedCount++;
+          }
+        });
+        const heal = killedCount * 2;
+        actor.hp = Math.min(actor.maxHp, actor.hp + heal);
+        if (heal > 0) this.triggerHeal(who, 'hero', heal);
+        sound.play('cursedfog');
+        this.log(`【${card.nameCn}】收割灵魂消灭 ${killedCount} 个生物，为 ${actor.name} 恢复 ${heal} 点生命！`, 'damage');
+        break;
+      }
+      case 'wrath_of_god': {
+        const dmg = Math.ceil(12 * spellAmp);
+        let survivedCount = 0;
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= dmg;
+            this.triggerDamage(opposingSide, idx, dmg);
+            if (c.currentLife > 0) survivedCount++;
+          }
+        });
+        actor.mana.holy = (actor.mana.holy || 0) + survivedCount;
+        sound.play('divineintervention');
+        this.log(`【${card.nameCn}】神怒天裁对敌全场造成 ${dmg} 点伤害，存活的 ${survivedCount} 个生物使施法者神圣能量 +${survivedCount}！`, 'damage');
+        break;
+      }
+      case 'overtime': {
+        actor.mana.mechanics = (actor.mana.mechanics || 0) + 1;
+        sound.play('strenghtening');
+        this.log(`【${card.nameCn}】连夜赶制工坊轰鸣，机械系能量 +1！`, 'heal');
+        break;
+      }
+      case 'hypnosis': {
+        const enemies = opposingBoard
+          .filter((c): c is BoardCreature => c !== null && !c.spellImmune && c.currentAttack > 0)
+          .sort((a, b) => b.currentAttack - a.currentAttack)
+          .slice(0, 2);
+        let totalDmg = 0;
+        enemies.forEach((c) => {
+          totalDmg += c.currentAttack;
+          this.triggerDamage(opposingSide, 'hero', c.currentAttack);
+          this.log(`【${c.card.nameCn}】受到催眠心智反噬，转头痛击 ${opponent.name} 造成 ${c.currentAttack} 点伤害！`, 'damage');
+        });
+        opponent.hp -= totalDmg;
+        sound.play('magic');
+        break;
+      }
+      case 'poisonous_cloud': {
+        (['fire', 'water', 'air', 'earth', opponent.specialElement] as ElementType[]).forEach((e) => {
+          opponent.mana[e] = Math.max(0, opponent.mana[e] - 1);
+        });
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            const dmg = Math.ceil(c.currentLife * 0.5);
+            c.currentLife -= dmg;
+            this.triggerDamage(opposingSide, idx, dmg);
+          }
+        });
+        sound.play('poison');
+        this.log(`【${card.nameCn}】剧毒之云笼罩，敌方各系能量 -1，并对敌全场生物造成现存生命 50% 的剧毒重创！`, 'damage');
+        break;
+      }
+      case 'demon_power_chains_12': {
+        if (targetSlot !== undefined && opposingBoard[targetSlot]) {
+          const t = opposingBoard[targetSlot]!;
+          if (!t.spellImmune) {
+            const dmg = Math.ceil(12 * spellAmp);
+            t.currentLife -= dmg;
+            this.triggerDamage(opposingSide, targetSlot, dmg);
+            const targetElem = t.card.element;
+            if (targetElem in opponent.mana) {
+              opponent.mana[targetElem] = Math.max(0, opponent.mana[targetElem] - 3);
+            }
+            sound.play('boom');
+            this.log(`【${card.nameCn}】锁链缠绕敌方【${t.card.nameCn}】造成 ${dmg} 点伤害，并封印其 ${targetElem.toUpperCase()} 能量 3 点！`, 'damage');
+          }
+        }
+        break;
+      }
+      case 'demon_hellfire_13': {
+        const dmg = Math.ceil(13 * spellAmp);
+        let killedCount = 0;
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= dmg;
+            this.triggerDamage(opposingSide, idx, dmg);
+            if (c.currentLife <= 0) killedCount++;
+          }
+        });
+        actor.mana.fire = (actor.mana.fire || 0) + killedCount;
+        sound.play('hellfire');
+        this.log(`【${card.nameCn}】炼狱之火对敌全场造成 ${dmg} 点伤害，焚化 ${killedCount} 个生物转化施法者火系能量 +${killedCount}！`, 'damage');
+        break;
+      }
+      case 'sorcery_sacrifice': {
+        if (targetSlot !== undefined && myBoard[targetSlot]) {
+          const sac = myBoard[targetSlot]!;
+          sac.currentLife = 0;
+          this.triggerDamage(who, targetSlot, 999);
+          ['fire', 'water', 'air', 'earth'].forEach((e) => {
+            actor.mana[e as ElementType] = (actor.mana[e as ElementType] || 0) + 3;
+          });
+          sound.play('cursedfog');
+          this.log(`【${card.nameCn}】献祭友方【${sac.card.nameCn}】，施法者火、水、气、土能量各 +3！`, 'heal');
+        }
+        break;
+      }
+      case 'sonic_boom': {
+        const dmg = Math.ceil(11 * spellAmp);
+        opponent.hp -= dmg;
+        this.triggerDamage(opposingSide, 'hero', dmg);
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= dmg;
+            c.canAttack = false;
+            this.triggerDamage(opposingSide, idx, dmg);
+          }
+        });
+        sound.play('boom');
+        this.log(`【${card.nameCn}】震荡音波重创敌方英雄及全场生物 ${dmg} 点伤害，并使其震晕跳过下轮攻击！`, 'damage');
+        break;
+      }
+      case 'goblin_rescue_heal_5': {
+        if (targetSlot !== undefined && myBoard[targetSlot]) {
+          const t = myBoard[targetSlot]!;
+          t.currentLife = Math.min(t.maxLife, t.currentLife + 5);
+          this.triggerHeal(who, targetSlot, 5);
+          const emptyIndices: number[] = [];
+          myBoard.forEach((slot, idx) => {
+            if (slot === null && idx !== targetSlot) emptyIndices.push(idx);
+          });
+          if (emptyIndices.length > 0) {
+            const newSlot = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+            myBoard[newSlot] = t;
+            myBoard[targetSlot] = null;
+            t.slotIndex = newSlot;
+            this.log(`【${card.nameCn}】救援撤离【${t.card.nameCn}】至 [${newSlot + 1}号位]，并为其恢复 5 点生命！`, 'heal');
+          } else {
+            this.log(`【${card.nameCn}】为【${t.card.nameCn}】恢复 5 点生命！`, 'heal');
+          }
+          sound.play('heal');
+        }
+        break;
+      }
+      case 'haste_creature_extra_attack': {
+        if (targetSlot !== undefined && myBoard[targetSlot]) {
+          const t = myBoard[targetSlot]!;
+          if (t.currentAttack <= 9 && t.currentAttack > 0) {
+            const atk = t.currentAttack;
+            opponent.hp -= atk;
+            this.triggerDamage(opposingSide, 'hero', atk);
+            opposingBoard.forEach((c, idx) => {
+              if (c && !c.spellImmune) {
+                c.currentLife -= atk;
+                this.triggerDamage(opposingSide, idx, atk);
+              }
+            });
+            sound.play('hasten');
+            this.log(`【${card.nameCn}】时空加速！【${t.card.nameCn}】瞬影横扫，对敌方全军及英雄各造成 ${atk} 点突袭重击！`, 'attack');
+          }
+        }
+        break;
+      }
     }
   }
 
@@ -1544,6 +1885,16 @@ export class SpectromancerEngine {
     for (let slot = 0; slot < attackerBoard.length; slot++) {
       const attacker = attackerBoard[slot];
       if (!attacker || attacker.currentAttack <= 0 || !attacker.canAttack) continue;
+
+      // Ancient Horror check on defending side
+      let hasHorror = false;
+      defenderBoard.forEach((d) => {
+        if (d && d.card.ability === 'horror_fear_aura') hasHorror = true;
+      });
+      if (hasHorror && attacker.card.cost < (defenderHero.mana.control || 0)) {
+        this.log(`受到【远古惧像】威慑，【${attacker.card.nameCn}】费用过低恐惧战栗跳过攻击！`, 'info');
+        continue;
+      }
 
       const defender = defenderBoard[slot];
 
@@ -1590,6 +1941,13 @@ export class SpectromancerEngine {
             const attackerHeroObj = attackerSide === 'player' ? this.player : this.enemy;
             attackerHeroObj.mana.death = (attackerHeroObj.mana.death || 0) + 2;
             this.log(`【巫妖王】吸取死灵精粹，死灵能量 +2！`, 'heal');
+          }
+
+          if (attacker.card.ability === 'goblin_burn_card') {
+            const elems: ElementType[] = ['fire', 'water', 'air', 'earth', defenderHero.specialElement];
+            const chosen = elems[Math.floor(Math.random() * elems.length)];
+            defenderHero.mana[chosen] = Math.max(0, defenderHero.mana[chosen] - 2);
+            this.log(`【${attacker.card.nameCn}】突袭破坏，削减 ${defenderHero.name} 的 2 点 ${chosen.toUpperCase()} 能量！`, 'damage');
           }
         }
 
@@ -1685,6 +2043,13 @@ export class SpectromancerEngine {
             attackerHeroObj.mana.death = (attackerHeroObj.mana.death || 0) + 2;
             this.log(`【巫妖王】吸取死灵精粹，死灵能量 +2！`, 'heal');
           }
+
+          if (attacker.card.ability === 'goblin_burn_card') {
+            const elems: ElementType[] = ['fire', 'water', 'air', 'earth', defenderHero.specialElement];
+            const chosen = elems[Math.floor(Math.random() * elems.length)];
+            defenderHero.mana[chosen] = Math.max(0, defenderHero.mana[chosen] - 2);
+            this.log(`【${attacker.card.nameCn}】突袭破坏，削减 ${defenderHero.name} 的 2 点 ${chosen.toUpperCase()} 能量！`, 'damage');
+          }
         }
       }
 
@@ -1697,6 +2062,28 @@ export class SpectromancerEngine {
       this.notify();
       await this.delay(750);
     }
+
+    // End-of-combat triggers (e.g. Goblin Portal Jumper)
+    attackerBoard.forEach((c, slotIdx) => {
+      if (c && c.card.ability === 'portal_jumper_stun_jump') {
+        const opp = defenderBoard[slotIdx];
+        if (opp) {
+          opp.canAttack = false;
+          this.log(`【${c.card.nameCn}】虚空跃迁掷出闪光弹，使对格敌军致盲跳过下轮攻击！`, 'damage');
+        }
+        const emptySlots: number[] = [];
+        attackerBoard.forEach((s, idx) => {
+          if (s === null) emptySlots.push(idx);
+        });
+        if (emptySlots.length > 0) {
+          const newSlot = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+          attackerBoard[newSlot] = c;
+          attackerBoard[slotIdx] = null;
+          c.slotIndex = newSlot;
+          this.log(`【${c.card.nameCn}】跃迁移动至 [${newSlot + 1}号位]！`, 'heal');
+        }
+      }
+    });
 
     this.cleanupDead();
     this.checkWinner();
@@ -1769,7 +2156,15 @@ export class SpectromancerEngine {
             this.log(`【${creature.card.nameCn}】圆寂升华，圣职能量 +2！`, 'heal');
           }
 
-          // Keeper of Death (亡灵御守): death_power_on_kill -> opposite player gets +1 death mana
+          if (creature.card.ability === 'demon_drain_all_on_death') {
+            const oppHero = who === 'player' ? this.enemy : this.player;
+            (['fire', 'water', 'air', 'earth', oppHero.specialElement] as ElementType[]).forEach((e) => {
+              oppHero.mana[e] = Math.max(0, oppHero.mana[e] - 1);
+            });
+            this.log(`【${creature.card.nameCn}】恶果自爆，使对方全系能量各 -1！`, 'damage');
+          }
+
+          // Keeper of Death & Chrono Hunter kill triggers
           const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
           const oppHero = who === 'player' ? this.enemy : this.player;
           oppBoard.forEach((k) => {
@@ -1777,6 +2172,25 @@ export class SpectromancerEngine {
               oppHero.mana.death = (oppHero.mana.death || 0) + 1;
               this.log(`【${k.card.nameCn}】汲取亡魂，死灵能量 +1！`, 'heal');
             }
+            if (k && k.card.ability === 'time_gain_on_kill') {
+              oppHero.mana.special = (oppHero.mana.special || 0) + 2;
+              this.log(`【${k.card.nameCn}】收割时间猎物，时间系能量 +2！`, 'heal');
+            }
+          });
+
+          // Goblin Looter: looter_gain_power
+          ['player', 'enemy'].forEach((sideKey) => {
+            const s = sideKey as 'player' | 'enemy';
+            const sBoard = s === 'player' ? this.playerBoard : this.enemyBoard;
+            const sHero = s === 'player' ? this.player : this.enemy;
+            sBoard.forEach((looter) => {
+              if (looter && looter.card.ability === 'looter_gain_power') {
+                const elems: ElementType[] = ['fire', 'water', 'air', 'earth', sHero.specialElement];
+                const chosen = elems[Math.floor(Math.random() * elems.length)];
+                sHero.mana[chosen] = (sHero.mana[chosen] || 0) + 1;
+                this.log(`【${looter.card.nameCn}】拾荒搜刮，获得 1 点 ${chosen.toUpperCase()} 能量！`, 'heal');
+              }
+            });
           });
 
           if (creature.card.ability === 'phoenix_rebirth' && actor.mana.fire >= 10) {
@@ -1817,7 +2231,10 @@ export class SpectromancerEngine {
       board.forEach((c, slotIdx) => {
         if (!c) return;
 
-        let totalAtk = c.baseAttack;
+        const sideHero = side === 'player' ? this.player : this.enemy;
+        let totalAtk = (c.card.ability === 'attack_equal_element_power')
+          ? (sideHero.mana[c.card.element as ElementType] || 0)
+          : c.baseAttack;
 
         if (!c.isWall) {
           // Minotaur Commander: all other friendly non-wall creatures

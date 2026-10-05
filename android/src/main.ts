@@ -610,6 +610,11 @@ function renderCustomConfirmModal(): string {
 }
 
 
+function formatCardAtk(atk?: number): string {
+  if (atk === undefined || atk === null) return '0';
+  return atk === -1 ? '*' : String(atk);
+}
+
 function isFriendlyTargetSpell(card?: CardDef | null): boolean {
   if (!card || !card.requiresTarget) return false;
   return (
@@ -619,7 +624,8 @@ function isFriendlyTargetSpell(card?: CardDef | null): boolean {
     card.id.includes('healing_spray') ||
     card.id.includes('haste') ||
     card.id.includes('explosion') ||
-    card.id.includes('blood_ritual')
+    card.id.includes('blood_ritual') ||
+    card.id.includes('sacrifice')
   );
 }
 
@@ -1564,7 +1570,7 @@ async function animateCardToSlot(
     <div class="board-card vertical ${card.flying ? 'flying' : ''}">
       <img src="${toRel(cardImg)}" class="board-card-art" alt="${card.nameCn}" />
       <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
-      <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+      <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
       <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
     </div>
   `;
@@ -3009,7 +3015,7 @@ function renderCodexPageContent(tab: string): string {
                   <div class="codex-card-badge-cost" title="能量消耗: ${c.cost}">${c.cost}</div>
                   ${c.type === 'creature' ? `
                     <div class="codex-card-badges-row">
-                      <span class="codex-card-badge-atk" title="攻击力: ${c.attack}">⚔️ ${c.attack}</span>
+                      <span class="codex-card-badge-atk" title="攻击力: ${formatCardAtk(c.attack)}">⚔️ ${formatCardAtk(c.attack)}</span>
                       <span class="codex-card-badge-life" title="生命值: ${c.life}">❤️ ${c.life}</span>
                     </div>
                   ` : ''}
@@ -3490,7 +3496,7 @@ function renderAiAnnouncementModal(card: CardDef): string {
             <div class="ai-card-name">${card.nameCn}</div>
             ${isCreature ? `
               <div class="ai-card-footer">
-                <span class="badge-atk">${card.attack}</span>
+                <span class="badge-atk">${formatCardAtk(card.attack)}</span>
                 <span class="badge-hp">${card.life}</span>
               </div>
             ` : ''}
@@ -3500,7 +3506,7 @@ function renderAiAnnouncementModal(card: CardDef): string {
             <div class="ai-desc-title">${card.nameCn}</div>
             <div class="ai-desc-sub">${clsName}${isCreature ? '生物' : '魔法'}，费用 ${card.cost}</div>
             ${isCreature ? `
-              <div class="ai-desc-stats">攻击 ${card.attack}，生命 ${card.life}</div>
+              <div class="ai-desc-stats">攻击 ${formatCardAtk(card.attack)}，生命 ${card.life}</div>
             ` : ''}
             <div class="ai-desc-text">${card.desc}</div>
           </div>
@@ -3670,7 +3676,7 @@ function renderCombatScreen(): string {
                     </div>
                     ${previewCard.type === 'creature' ? `
                       <div class="parchment-card-stats-row">
-                        <span class="stat-badge atk">⚔️ 攻击: ${previewCard.attack}</span>
+                        <span class="stat-badge atk">⚔️ 攻击: ${formatCardAtk(previewCard.attack)}</span>
                         <span class="stat-badge hp">❤️ 生命: ${previewCard.life}</span>
                       </div>
                     ` : ''}
@@ -3802,7 +3808,7 @@ function renderCombatScreen(): string {
                               <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
                               ${card.type === 'creature' ? `
                                 <div class="card-stats-badges">
-                                  <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+                                  <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
                                   <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
                                 </div>
                               ` : ''}
@@ -3827,7 +3833,7 @@ function renderCombatScreen(): string {
                             <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
                             ${card.type === 'creature' ? `
                               <div class="card-stats-badges">
-                                <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+                                <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
                                 <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
                               </div>
                             ` : ''}
@@ -4605,7 +4611,7 @@ function renderCustomDeckBuilderScreen(): string {
                           <img src="${toRel(card.imgUrl)}" class="deck-slot-card-img" alt="${card.nameCn}" />
                           <div class="deck-slot-cost">${card.cost}</div>
                           ${card.type === 'creature' ? `
-                            <div class="deck-slot-atk">${card.attack}</div>
+                            <div class="deck-slot-atk">${formatCardAtk(card.attack)}</div>
                             <div class="deck-slot-life">${card.life}</div>
                           ` : ''}
                         ` : `
@@ -4648,7 +4654,7 @@ function renderCustomDeckBuilderScreen(): string {
                   <img src="${toRel(c.imgUrl)}" class="deck-slot-card-img" alt="${c.nameCn}" />
                   <div class="deck-slot-cost">${c.cost}</div>
                   ${c.type === 'creature' ? `
-                    <div class="deck-slot-atk">${c.attack}</div>
+                    <div class="deck-slot-atk">${formatCardAtk(c.attack)}</div>
                     <div class="deck-slot-life">${c.life}</div>
                   ` : ''}
                   ${isEquipped ? '<div class="deck-pool-badge">✓ 已配置</div>' : ''}

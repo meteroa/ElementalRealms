@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased] - 2026-10-05
 
 ### Fixed
+- **全量卡牌数据与机制 PC 原版 100% 严格对齐（PC Authentic Full 136 Cards Data & Mechanics Alignment）**：
+  - **核心费用与攻防生命值校准**：依据 PC 正版《Spectromancer》数据文件 `pc/Inf/Gd.spe` 与 `pc/Language.dic` 重新校准全量 136 张卡牌（4 大基础元素火/水/气/土各 12 张费用 1~12，11 大专精流派各 8 张费用 0~8），彻底纠正医疗大师（恢复 PC 原版 11 费用、3 攻击、34 生命值）、冰雪守卫、远古巨龙等卡牌费用与数值偏移；
+  - **正统官方中文译名与技能文本同步**：全量卡牌描述与技能说明均自动对接官方中文语言字典，杜绝非官方非正统描述；
+  - **元素使动态攻击力机制（Dynamic Elemental Power Scaling）**：火/水/气/土四大元素使攻击力随拥有者对应元素能量实时动态缩放（卡面标注 `*`，入场与每回合根据能量即时结算攻击力，且每回合提供对应元素能量成长率 +1）；
+  - **补全 14 种原版法术与 10 种专属生物特技引擎实现**：
+    - 实装末日审判（`armageddon`）、龙卷风（`tornado_destroy`）、自然之怒（`natures_fury`）、灵魂汲取（`drain_souls`）、神之裁决（`wrath_of_god`）、赶制（`overtime`）、催眠术（`hypnosis`）、剧毒之云（`poisonous_cloud`）、能量锁链（`demon_power_chains_12`）、地狱烈焰（`demon_hellfire_13`）、牺牲献祭（`sorcery_sacrifice`）、音爆（`sonic_boom`）、救援行动（`goblin_rescue_heal_5`）、加速（`haste_creature_extra_attack`）；
+    - 实装铎拉克使者吞噬献祭（`emissary_sacrifice`）、混沌领主震荡重击（`insanian_lord_strike_6`）、混沌君王卫兵号令（`chaos_summon_soldier`）、远古惧像攻击压制（`horror_fear_aura`）、哥布林爆破者能量破坏（`goblin_burn_card`）、哥布林跃迁者闪光致盲跃迁（`portal_jumper_stun_jump`）、恶果魔自爆扣除全系能量（`demon_drain_all_on_death`）、哥布林拾荒者搜刮充能（`looter_gain_power`）、时空猎人时间能量汲取（`time_gain_on_kill`）、心灵大师与星界守卫能量成长与耗蚀体系；
+  - **卡牌攻击力界面展示优化**：在战斗手牌、卡牌图鉴、卡牌构筑库、AI 出牌展示与羊皮纸属性详情中，对动态攻击力卡牌统一呈现为正统星号 `*`，避免出现 `-1` 异常显示。
 - **战场法则随从实装与卡牌 ID 校准（Battlefield Scenario Creature Deployment & ID Resolution）**：
   - 修复单局对战在选择场景法则（如“天界圣峰”6号位双方各预置【狮鹫】，“永恒密林”预置【巨型蜘蛛】，“熔岩炼狱”预置【火焰祭司】等）时开局未召唤随从的问题；
   - 校准随从卡牌 ID 映射（修复 `fire_priest_of_fire` 与 `fire_goblin_berserker` 拼写），在对决引擎启动时完整注入双方棋盘指定槽位，并实时记录战场随从入场日志；
