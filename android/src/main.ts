@@ -1,10 +1,11 @@
 import './style.css';
 import { SpectromancerEngine } from './engine/game';
-import type { CardDef, ElementType, HeroClass, CampaignLevel } from './types';
+import type { CardDef, ElementType, HeroClass, CampaignLevel, NetworkUserProfile, NetworkMessage } from './types';
 import campaignData from './data/campaign.json';
 import cardsData from './data/cards.json';
 import tournamentData from './data/tournament.json';
 import { sound } from './engine/sound';
+import { lanNetwork } from './engine/network';
 
 export function toRel(url: string | undefined): string {
   if (!url) return '';
@@ -46,7 +47,7 @@ let playerFaceIndex = 0; // Face1
 let playerClassIndex = 0; // 0 = 随机, 1..11 = classes
 let aiFaceIndex = 5; // Face6 (Archmage)
 let aiClassIndex = 0; // 0 = 随机
-let showClassGridPickerFor: 'player' | 'ai' | null = null;
+let showClassGridPickerFor: 'player' | 'ai' | 'lan' | null = null;
 let showHelpModal: boolean = false;
 let activeHelpTab: 'play' | 'combat' | 'deck' | 'classes' | 'modes' | 'cards' = 'play';
 let codexCardFilter: string = 'all';
@@ -760,23 +761,255 @@ let editingDeck: CustomDeck = {
 let selectedBuilderSlotIdx = 0;
 let builderPoolFilter: ElementType = 'fire';
 let hoveredBuilderCard: CardDef | null = null;
-let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' = 'duel';
+let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' = 'duel';
 let showRulesModal = false;
 
-const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; desc: string }[] = [
-  { id: 'random', nameCn: '随机', icon: '🎲', desc: '随机选择一个强大的法师流派' },
-  { id: 'sorcery', nameCn: '巫术', icon: '🔮', desc: '经典巫术大师，拥有控制与伤害法术，掌握冥想与心智震撼' },
-  { id: 'necromancer', nameCn: '死灵', icon: '💀', desc: '召唤哀嚎女妖、吸血鬼与巫妖领主，吸取敌人生命转化为己用' },
-  { id: 'cleric', nameCn: '战争牧师', icon: '✨', desc: '召唤圣骑士、十字军与大天使，擅长神圣护盾与群体圣疗' },
-  { id: 'mechanician', nameCn: '机械师', icon: '⚙️', desc: '部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
-  { id: 'dominator', nameCn: '支配者', icon: '👁️', desc: '操控萨满与阻尼塔削减敌方能量，召唤远古女巫与窃心魔' },
-  { id: 'chaosmaster', nameCn: '混沌大师', icon: '🌀', desc: '操控混沌维和者、狂战士、混沌投石机与死棘，极具爆发力' },
-  { id: 'illusionist', nameCn: '幻术师', icon: '🎭', desc: '操纵镜面反射之墙、幻像勇士与幽幻刺客，虚实转换制敌' },
-  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', desc: '役使劣魔、恶果魔与大恶魔，施放自爆与地狱烈焰' },
-  { id: 'beastmaster', nameCn: '驯兽师', icon: '🐺', desc: '统御魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全系野性灵能' },
-  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', desc: '操纵时空猎人、时间闪击者、时间停止与时间之龙，掌控额外行动回合' },
-  { id: 'goblin', nameCn: '地精幻术', icon: '👺', desc: '统御哥布林英雄、爆破者、鼠疫入侵与袭掠军，战术机动与牌库破坏' },
+const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; artImg: string; desc: string }[] = [
+  { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.jpg', desc: '随机选择一个强大的法师流派' },
+  { id: 'sorcery', nameCn: '巫术', icon: '🔮', artImg: './cards/Disintegrate.jpg', desc: '经典巫术大师，拥有控制与伤害法术，掌握冥想与心智震撼' },
+  { id: 'necromancer', nameCn: '死灵', icon: '💀', artImg: './cards/MasterLich.jpg', desc: '召唤哀嚎女妖、吸血鬼与巫妖领主，吸取敌人生命转化为己用' },
+  { id: 'cleric', nameCn: '战争牧师', icon: '✨', artImg: './cards/ArchAngel.jpg', desc: '召唤圣骑士、十字军与大天使，擅长神圣护盾与群体圣疗' },
+  { id: 'mechanician', nameCn: '机械师', icon: '⚙️', artImg: './cards/SteamTank.jpg', desc: '部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
+  { id: 'dominator', nameCn: '支配者', icon: '👁️', artImg: './cards/MindStealer.jpg', desc: '操控萨满与阻尼塔削减敌方能量，召唤远古女巫与窃心魔' },
+  { id: 'chaosmaster', nameCn: '混沌大师', icon: '🌀', artImg: './cards/InsanianLord.jpg', desc: '操控混沌维和者、狂战士、混沌投石机与死棘，极具爆发力' },
+  { id: 'illusionist', nameCn: '幻术师', icon: '🎭', artImg: './cards/PhantomWarrior.jpg', desc: '操纵镜面反射之墙、幻像勇士与幽幻刺客，虚实转换制敌' },
+  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', artImg: './cards/GreaterDemon.jpg', desc: '役使劣魔、恶果魔与大恶魔，施放自爆与地狱烈焰' },
+  { id: 'beastmaster', nameCn: '驯兽师', icon: '🐺', artImg: './cards/AncientDragon.jpg', desc: '统御魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全系野性灵能' },
+  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', artImg: './cards/ChronoHunter.jpg', desc: '操纵时空猎人、时间闪击者、时间停止与时间之龙，掌控额外行动回合' },
+  { id: 'goblin', nameCn: '地精幻术', icon: '👺', artImg: './cards/GoblinHero.jpg', desc: '统御哥布林英雄、爆破者、鼠疫入侵与袭掠军，战术机动与牌库破坏' },
 ];
+
+// ==========================================
+// LAN MULTIPLAYER DUEL STATE
+// ==========================================
+let showLanLobbyModal = false;
+let lanActiveTab: 'host' | 'join' = 'host';
+let lanPlayerName: string = (() => {
+  try { return localStorage.getItem('spectro_lan_name') || '奥术决斗者'; } catch { return '奥术决斗者'; }
+})();
+let lanPlayerFaceId: number = (() => {
+  try { return parseInt(localStorage.getItem('spectro_lan_face') || '1', 10); } catch { return 1; }
+})();
+let lanPlayerClassIdx: number = (() => {
+  try { return parseInt(localStorage.getItem('spectro_lan_class') || '1', 10); } catch { return 1; }
+})();
+let lanJoinCode: string = '';
+let lanStatusText: string = '';
+let lanIsConnecting: boolean = false;
+let lanVsMatchData: { host: NetworkUserProfile; guest: NetworkUserProfile; countdown: number } | null = null;
+let showLanDisconnectModal: boolean = false;
+let lanDisconnectReason: string = '';
+
+function getMyLanProfile(): NetworkUserProfile {
+  const chosenClass = HERO_CLASSES[lanPlayerClassIdx] || HERO_CLASSES[1];
+  let actualClass: HeroClass = 'sorcery';
+  if (chosenClass.id === 'random') {
+    const validClasses: HeroClass[] = [
+      'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin'
+    ];
+    actualClass = validClasses[Math.floor(Math.random() * validClasses.length)];
+  } else {
+    actualClass = chosenClass.id as HeroClass;
+  }
+  return {
+    name: lanPlayerName.trim() || '奥术决斗者',
+    face: `./faces/Face${lanPlayerFaceId}.jpg`,
+    className: actualClass,
+    classCn: chosenClass.nameCn,
+  };
+}
+
+function saveLanProfilePreferences() {
+  try {
+    localStorage.setItem('spectro_lan_name', lanPlayerName);
+    localStorage.setItem('spectro_lan_face', lanPlayerFaceId.toString());
+    localStorage.setItem('spectro_lan_class', lanPlayerClassIdx.toString());
+  } catch {}
+}
+
+function launchLanMatchWithCountdown(
+  host: NetworkUserProfile,
+  guest: NetworkUserProfile,
+  onComplete: () => void
+) {
+  sound.play('showeff1');
+  let count = 3;
+  lanVsMatchData = { host, guest, countdown: count };
+  render();
+
+  const timer = window.setInterval(() => {
+    count--;
+    if (count > 0) {
+      if (lanVsMatchData) {
+        lanVsMatchData.countdown = count;
+        sound.play('click');
+        render();
+      }
+    } else {
+      window.clearInterval(timer);
+      lanVsMatchData = null;
+      onComplete();
+    }
+  }, 800);
+}
+
+function setupLanNetworkCallbacks() {
+  lanNetwork.onStatusChange = (_status, msg) => {
+    lanStatusText = msg || '';
+    render();
+  };
+
+  lanNetwork.onPeerConnected = (peerProfile) => {
+    sound.play('click');
+    showToastNotice(`🤝 对手【${peerProfile.name}】已加入房间！`);
+    lanStatusText = `对手【${peerProfile.name}】已就绪`;
+    render();
+  };
+
+  lanNetwork.onPeerDisconnected = (reason) => {
+    if (currentView === 'battle' && engine.isLanGame) {
+      showLanDisconnectModal = true;
+      lanDisconnectReason = reason || '对手已退出游戏或网络连接中断';
+    } else {
+      lanStatusText = reason || '对手已断开连接';
+    }
+    render();
+  };
+
+  lanNetwork.onErrorOccurred = (errText) => {
+    lanStatusText = errText;
+    lanIsConnecting = false;
+    showToastNotice('⚠️ ' + errText);
+    render();
+  };
+
+  lanNetwork.onMessageReceived = async (msg: NetworkMessage) => {
+    if (msg.type === 'GAME_START') {
+      const { hostProfile, guestProfile, snapshot } = msg.payload;
+      launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+        engine = new SpectromancerEngine(guestProfile.className, undefined, {
+          playerName: guestProfile.name,
+          playerFace: guestProfile.face,
+          enemyName: hostProfile.name,
+          enemyFace: hostProfile.face,
+          enemyClass: hostProfile.className,
+        });
+        engine.isLanGame = true;
+        engine.isHost = false;
+        engine.isGuest = true;
+        setupEngineCallbacks();
+        engine.applyStateSnapshot(snapshot);
+        currentBattleSource = 'lan';
+        currentView = 'battle';
+        showLanLobbyModal = false;
+        render();
+      });
+      return;
+    }
+
+    if (msg.type === 'STATE_SYNC') {
+      if (engine.isLanGame && engine.isGuest) {
+        engine.applyStateSnapshot(msg.payload);
+        render();
+      }
+      return;
+    }
+
+    if (msg.type === 'VFX_EVENT') {
+      if (engine.isLanGame && engine.isGuest) {
+        const vfx = msg.payload;
+        const mappedSide = vfx.side === 'player' ? 'enemy' : 'player';
+        if (vfx.kind === 'damage') {
+          engine.onDamageEffect?.(mappedSide, vfx.slot, vfx.amount);
+        } else if (vfx.kind === 'heal') {
+          engine.onHealEffect?.(mappedSide, vfx.slot, vfx.amount);
+        } else if (vfx.kind === 'lunge') {
+          engine.onAttackLunge?.(mappedSide, vfx.slot);
+        } else if (vfx.kind === 'impact') {
+          engine.onCardImpact?.(mappedSide, vfx.slot);
+        }
+      }
+      return;
+    }
+
+    if (msg.type === 'ACTION_PLAY_CARD') {
+      if (engine.isLanGame && engine.isHost) {
+        const { cardId, targetSlot } = msg.payload;
+        const card = engine.enemy.hand.find((c) => c.id === cardId);
+        if (card && engine.canPlayCard('enemy', card)) {
+          await engine.playCard('enemy', card, targetSlot);
+        }
+      }
+      return;
+    }
+
+    if (msg.type === 'ACTION_PASS') {
+      if (engine.isLanGame && engine.isHost) {
+        await engine.passTurn('enemy');
+      }
+      return;
+    }
+
+    if (msg.type === 'SURRENDER') {
+      if (engine.isLanGame) {
+        engine.enemy.hp = 0;
+        engine.checkWinner();
+        showToastNotice('🏳️ 对手已投降！');
+        render();
+      }
+      return;
+    }
+  };
+}
+
+function startLanBattleAsHost() {
+  const hostProfile = getMyLanProfile();
+  const guestProfile = lanNetwork.getPeerProfile();
+  if (!guestProfile) {
+    showToastNotice('⚠️ 尚无对手加入房间');
+    return;
+  }
+
+  launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+    engine = new SpectromancerEngine(hostProfile.className, undefined, {
+      playerName: hostProfile.name,
+      playerFace: hostProfile.face,
+      enemyName: guestProfile.name,
+      enemyFace: guestProfile.face,
+      enemyClass: guestProfile.className,
+    });
+    engine.isLanGame = true;
+    engine.isHost = true;
+    engine.isGuest = false;
+    setupEngineCallbacks();
+
+    engine.onStateBroadcast = (snapshot) => {
+      lanNetwork.sendMessage({ type: 'STATE_SYNC', payload: snapshot });
+    };
+
+    engine.onVfxBroadcast = (vfx) => {
+      lanNetwork.sendMessage({ type: 'VFX_EVENT', payload: vfx });
+    };
+
+    const initialSnapshot = engine.exportStateSnapshot();
+    lanNetwork.sendMessage({
+      type: 'GAME_START',
+      payload: {
+        hostProfile,
+        guestProfile,
+        snapshot: initialSnapshot,
+      },
+    });
+
+    currentBattleSource = 'lan';
+    currentView = 'battle';
+    showLanLobbyModal = false;
+    render();
+  });
+}
+
+setupLanNetworkCallbacks();
 
 let engine = new SpectromancerEngine('sorcery');
 
@@ -855,18 +1088,18 @@ function saveCompletedBattleReplay(eng: SpectromancerEngine, mode: string) {
   if (!recordReplaysEnabled) return;
   const pName = eng.player.name || '玩家';
   const eName = eng.enemy.name || '对手';
-  const pFace = `./faces/Face${playerFaceIndex + 1}.jpg`;
+  const pFace = currentBattleSource === 'lan' ? (eng.player.face || `./faces/Face${lanPlayerFaceId}.jpg`) : `./faces/Face${playerFaceIndex + 1}.jpg`;
   const eFace = currentBattleSource === 'campaign' 
     ? (CAMPAIGN_MAP1_NODES.find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
     : (currentBattleSource === 'league'
       ? (activeLeague?.standings[(activeLeague.currentMatch - 1) % activeLeague.standings.length]?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
-      : `./faces/Face${aiFaceIndex + 1}.jpg`);
+      : (currentBattleSource === 'lan' ? (eng.enemy.face || `./faces/Face${aiFaceIndex + 1}.jpg`) : `./faces/Face${aiFaceIndex + 1}.jpg`));
 
   const replay: BattleReplay = {
     id: 'replay_' + Date.now(),
     timestamp: Date.now(),
     dateStr: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
-    mode: mode === 'campaign' ? '战役对决' : (mode === 'league' ? '联赛排位' : (mode === 'custom_deck' ? '自组卡牌' : '单局对战')),
+    mode: mode === 'campaign' ? '战役对决' : (mode === 'league' ? '联赛排位' : (mode === 'custom_deck' ? '自组卡牌' : (mode === 'lan' ? '局域网对决' : '单局对战'))),
     playerName: pName,
     playerFace: pFace,
     enemyName: eName,
@@ -2694,7 +2927,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">单局对战</div>
-              <div class="mode-card-desc">自定义 12 大流派与 78 款头像，人机快速博弈</div>
+              <div class="mode-card-desc">自定义 11 大流派与 78 款头像，人机快速博弈</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -2733,7 +2966,20 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">自组卡组</div>
-              <div class="mode-card-desc">查阅 120 张官方正版卡牌与特技秘典</div>
+              <div class="mode-card-desc">查阅 136 张官方正版卡牌与特技秘典</div>
+            </div>
+            <div class="mode-card-arrow">▶</div>
+          </div>
+
+          <!-- 5. LAN Wireless Duel -->
+          <div class="mobile-mode-card lan-duel" id="btn-menu-lan">
+            <div class="mode-card-badge cyan">无线对决</div>
+            <div class="mode-card-icon-wrap">
+              <span class="mode-card-icon">🌐</span>
+            </div>
+            <div class="mode-card-body">
+              <div class="mode-card-title">局域网对战</div>
+              <div class="mode-card-desc">同一 Wi-Fi 或热点下 4 位房间码即时双人对决</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -2746,6 +2992,226 @@ function renderMainMenu(): string {
           <span class="footer-tip">💡 提示：在战斗中轻触任意卡牌或生物，可在羊皮纸中查看详尽战术技能</span>
         </div>
         <div class="menu-version-text">v 1.0 Mobile · HD</div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLanLobbyModal(): string {
+  const currentRoomCode = lanNetwork.getRoomCode();
+  const isHost = lanActiveTab === 'host';
+  const isConnected = lanNetwork.isConnected();
+  const peerProfile = lanNetwork.getPeerProfile();
+  const currentClass = HERO_CLASSES[lanPlayerClassIdx] || HERO_CLASSES[1];
+
+  return `
+    <div class="modal-overlay" id="lan-lobby-modal-overlay">
+      <div class="lan-lobby-dialog">
+        <!-- HEADER -->
+        <div class="lan-header-banner">
+          <div class="lan-header-title-wrap">
+            <span class="lan-header-icon">🌐</span>
+            <div>
+              <div class="lan-header-title">局域网对决 · 实时联机</div>
+            </div>
+            <span class="lan-header-badge">Wi-Fi / 热点直连</span>
+          </div>
+          <button class="modal-close-btn" id="btn-lan-lobby-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="返回主菜单">×</button>
+        </div>
+
+        <!-- PROFILE CUSTOMIZATION BAR -->
+        <div class="lan-profile-bar">
+          <div class="lan-profile-face-wrap" id="btn-lan-cycle-face" title="点击切换英雄形象 (共78款)">
+            <img src="./faces/Face${lanPlayerFaceId}.jpg" class="hero-avatar" alt="Avatar" />
+            <div class="face-change-hint">换头像</div>
+          </div>
+          <div class="lan-profile-info">
+            <div class="lan-profile-name-row">
+              <input type="text" class="lan-profile-name-input" id="input-lan-player-name" value="${lanPlayerName}" maxlength="12" placeholder="输入玩家昵称" />
+              <div class="lan-class-stepper">
+                <button class="lan-class-step-btn" id="btn-lan-class-prev" title="上一个流派">◀</button>
+                <button class="lan-class-display-btn" id="btn-lan-open-class-picker" title="点击展开全流派石板选择">
+                  <img src="${toRel(currentClass.artImg)}" class="lan-class-avatar" alt="${currentClass.nameCn}" />
+                  <span class="lan-class-name">${currentClass.nameCn}</span>
+                  <span class="lan-class-badge-pill">切换</span>
+                </button>
+                <button class="lan-class-step-btn" id="btn-lan-class-next" title="下一个流派">▶</button>
+              </div>
+            </div>
+            <div style="font-size:11px; color:#94a3b8;">
+              当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 11 大流派及随机可选）
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB STRIP -->
+        <div class="lan-tab-strip">
+          <button class="lan-tab-btn ${lanActiveTab === 'host' ? 'active' : ''}" id="btn-lan-tab-host">
+            <span>👑 我要建房 (Host)</span>
+          </button>
+          <button class="lan-tab-btn ${lanActiveTab === 'join' ? 'active' : ''}" id="btn-lan-tab-join">
+            <span>⚔️ 我要加入 (Join)</span>
+          </button>
+        </div>
+
+        <!-- BODY -->
+        <div class="lan-lobby-body">
+          ${isHost ? `
+            <!-- HOST PANEL -->
+            <div class="lan-host-box">
+              <div class="lan-code-title">
+                <span>🔑 4 位局域网对决房间码</span>
+              </div>
+              <div class="lan-digit-display">
+                ${currentRoomCode ? currentRoomCode.split('').map(d => `<div class="lan-digit-box">${d}</div>`).join('') : `
+                  <div class="lan-digit-box placeholder">-</div>
+                  <div class="lan-digit-box placeholder">-</div>
+                  <div class="lan-digit-box placeholder">-</div>
+                  <div class="lan-digit-box placeholder">-</div>
+                `}
+              </div>
+
+              ${currentRoomCode ? `
+                <div style="display:flex; gap:10px; align-items:center;">
+                  <button class="lan-copy-btn" id="btn-lan-copy-code">
+                    <span>📋 复制房间码</span>
+                  </button>
+                  <button class="lan-copy-btn" id="btn-lan-recreate-room" style="color:#cbd5e1; border-color:#64748b;">
+                    <span>🔄 重新生成</span>
+                  </button>
+                </div>
+              ` : `
+                <button class="lan-action-btn primary" id="btn-lan-create-room">
+                  <span>⚡ 立即生成房间码</span>
+                </button>
+              `}
+            </div>
+
+            <!-- STATUS OR PEER CARD -->
+            ${isConnected && peerProfile ? `
+              <div class="lan-peer-card">
+                <img src="${peerProfile.face}" class="lan-peer-avatar" alt="${peerProfile.name}" />
+                <div class="lan-peer-info">
+                  <div class="lan-peer-name">${peerProfile.name}</div>
+                  <div class="lan-peer-class">流派: ${peerProfile.classCn} · 已进入对战席位</div>
+                </div>
+                <div style="font-size:12px; color:#4ade80; font-weight:800;">● 已就绪</div>
+              </div>
+            ` : `
+              <div class="lan-status-box">
+                ${currentRoomCode ? `
+                  <div class="lan-status-spinner"></div>
+                  <div class="lan-status-text">${lanStatusText || '等待局域网内好友输入此 4 位房间码加入...'}</div>
+                ` : `
+                  <div class="lan-status-text" style="color:#94a3b8;">点击上方按钮创建房间，好友即可在同一 Wi-Fi 或热点下加入对决</div>
+                `}
+              </div>
+            `}
+          ` : `
+            <!-- JOIN PANEL -->
+            <div class="lan-host-box">
+              <div class="lan-code-title">
+                <span>🔢 请输入房主的 4 位房间码</span>
+              </div>
+              <div class="lan-digit-display">
+                ${[0, 1, 2, 3].map(i => {
+                  const digit = lanJoinCode[i] || '';
+                  return `<div class="lan-digit-box ${digit ? '' : 'placeholder'}">${digit || '-'}</div>`;
+                }).join('')}
+              </div>
+            </div>
+
+            <!-- TOUCH NUMPAD -->
+            <div class="lan-keypad">
+              ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `
+                <button class="lan-keypad-btn btn-lan-key" data-key="${n}">${n}</button>
+              `).join('')}
+              <button class="lan-keypad-btn action-btn btn-lan-key-clear">清空</button>
+              <button class="lan-keypad-btn btn-lan-key" data-key="0">0</button>
+              <button class="lan-keypad-btn action-btn btn-lan-key-backspace">⌫</button>
+            </div>
+
+            <div class="lan-status-box">
+              ${lanIsConnecting ? `
+                <div class="lan-status-spinner"></div>
+                <div class="lan-status-text">${lanStatusText || '正在搜寻局域网对决房间...'}</div>
+              ` : `
+                <div class="lan-status-text" style="color:${lanStatusText.includes('失败') || lanStatusText.includes('超时') ? '#f87171' : '#94a3b8'};">
+                  ${lanStatusText || '提示：双方需处于同一无线局域网 Wi-Fi 或手机热点下'}
+                </div>
+              `}
+            </div>
+          `}
+        </div>
+
+        <!-- ACTIONS FOOTER -->
+        <div class="lan-actions-footer">
+          <button class="lan-action-btn secondary" id="btn-lan-footer-cancel">返回</button>
+          ${isHost ? `
+            <button class="lan-action-btn primary" id="btn-lan-start-duel" ${!isConnected || !peerProfile ? 'disabled' : ''}>
+              <span>⚔️ 开始对决 ▶</span>
+            </button>
+          ` : `
+            <button class="lan-action-btn primary" id="btn-lan-join-action" ${lanJoinCode.length !== 4 || lanIsConnecting ? 'disabled' : ''}>
+              <span>⚡ 立即加入房间</span>
+            </button>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLanVsOverlay(): string {
+  if (!lanVsMatchData) return '';
+  const { host, guest, countdown } = lanVsMatchData;
+  return `
+    <div class="lan-vs-overlay">
+      <div class="lan-vs-container">
+        <!-- HOST -->
+        <div class="lan-vs-combatant">
+          <div class="lan-vs-avatar-wrap">
+            <img src="${host.face}" class="lan-vs-avatar" alt="${host.name}" />
+          </div>
+          <div class="lan-vs-name">${host.name}</div>
+          <div class="lan-vs-class-badge">${host.classCn}</div>
+        </div>
+
+        <!-- LIGHTNING VS -->
+        <div class="lan-vs-center">
+          <div class="lan-vs-lightning">VS</div>
+          <div class="lan-vs-countdown">对决构筑中... ${countdown}</div>
+        </div>
+
+        <!-- GUEST -->
+        <div class="lan-vs-combatant">
+          <div class="lan-vs-avatar-wrap">
+            <img src="${guest.face}" class="lan-vs-avatar" alt="${guest.name}" />
+          </div>
+          <div class="lan-vs-name">${guest.name}</div>
+          <div class="lan-vs-class-badge">${guest.classCn}</div>
+        </div>
+      </div>
+      <div style="font-size:14px; color:#93c5fd; font-weight:700;">
+        📶 局域网 P2P 通道建立成功 · 双方状态同步就绪
+      </div>
+    </div>
+  `;
+}
+
+function renderLanDisconnectModal(): string {
+  if (!showLanDisconnectModal) return '';
+  return `
+    <div class="modal-overlay" style="z-index: 999999;">
+      <div class="stone-options-dialog" style="width:clamp(320px, 80vw, 480px); text-align:center; padding:24px;">
+        <div style="font-size:48px; margin-bottom:12px;">📡</div>
+        <div style="font-size:18px; font-weight:900; color:#ef4444; margin-bottom:8px;">局域网连接中断</div>
+        <p style="font-size:14px; color:#cbd5e1; margin-bottom:20px; line-height:1.5;">
+          ${lanDisconnectReason || '对方已退出游戏或网络信号中断。'}
+        </p>
+        <button class="lan-action-btn primary" id="btn-lan-disconnect-confirm" style="margin:0 auto;">
+          <span>返回主菜单</span>
+        </button>
       </div>
     </div>
   `;
@@ -2809,7 +3275,7 @@ function renderSingleDuelSetup(): string {
               <span class="duel-class-label">职业:</span>
               <button class="duel-mini-arrow" id="btn-player-class-prev">◀</button>
               <div class="duel-class-badge" id="btn-player-class-pick" title="点击切换职业">
-                ${pClassObj.icon} ${pClassObj.nameCn}
+                <img src="${toRel(pClassObj.artImg)}" class="duel-class-inline-img" alt="${pClassObj.nameCn}" /> ${pClassObj.nameCn}
               </div>
               <button class="duel-mini-arrow" id="btn-player-class-next">▶</button>
               <button class="duel-wrench-btn" id="btn-player-class-grid" title="打开职业列表">⚙</button>
@@ -2840,7 +3306,7 @@ function renderSingleDuelSetup(): string {
               <span class="duel-class-label">职业:</span>
               <button class="duel-mini-arrow" id="btn-ai-class-prev">◀</button>
               <div class="duel-class-badge" id="btn-ai-class-pick" title="点击切换职业">
-                ${aiClassObj.icon} ${aiClassObj.nameCn}
+                <img src="${toRel(aiClassObj.artImg)}" class="duel-class-inline-img" alt="${aiClassObj.nameCn}" /> ${aiClassObj.nameCn}
               </div>
               <button class="duel-mini-arrow" id="btn-ai-class-next">▶</button>
               <button class="duel-wrench-btn" id="btn-ai-class-grid" title="打开职业列表">⚙</button>
@@ -2850,23 +3316,25 @@ function renderSingleDuelSetup(): string {
         </div>
       </div>
     </div>
-    ${showClassGridPickerFor ? renderClassGridPickerModal(showClassGridPickerFor) : ''}
   `;
 }
 
-function renderClassGridPickerModal(target: 'player' | 'ai'): string {
-  const currentIdx = target === 'player' ? playerClassIndex : aiClassIndex;
+function renderClassGridPickerModal(target: 'player' | 'ai' | 'lan'): string {
+  const currentIdx = target === 'player' ? playerClassIndex : (target === 'ai' ? aiClassIndex : lanPlayerClassIdx);
+  const targetLabel = target === 'player' ? '玩家' : (target === 'ai' ? '电脑对手' : '局域网对决');
   return `
     <div class="class-grid-modal-overlay" id="class-grid-overlay">
       <div class="class-grid-card">
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(198,155,63,0.3); padding-bottom:8px;">
-          <h3 style="color:#ffd700; font-size:17px; font-weight:900;">选择【${target === 'player' ? '玩家' : '电脑对手'}】职业流派</h3>
+          <h3 style="color:#ffd700; font-size:17px; font-weight:900;">选择【${targetLabel}】职业流派</h3>
           <button class="modal-close-btn" id="btn-close-class-grid" style="position:static; width:28px; height:28px;">×</button>
         </div>
         <div class="class-grid-list">
           ${HERO_CLASSES.map((cls, idx) => `
             <div class="class-grid-item ${currentIdx === idx ? 'active' : ''}" data-target="${target}" data-class-index="${idx}">
-              <div class="class-grid-icon">${cls.icon}</div>
+              <div class="class-grid-thumb-wrap">
+                <img src="${toRel(cls.artImg)}" class="class-grid-thumb-img" alt="${cls.nameCn}" />
+              </div>
               <div class="class-grid-name">${cls.nameCn}</div>
               <div style="font-size:10px; color:#cbd5e1; text-align:center; line-height:1.3;">${cls.desc.substring(0, 22)}...</div>
             </div>
@@ -2913,24 +3381,40 @@ function renderCodexPageContent(tab: string): string {
     case 'classes':
       return `
         <div class="codex-section-card">
-          <div class="codex-section-title">✨ 六大经典法师专精</div>
+          <div class="codex-section-title">✨ 原版六大经典法术专精 (Base Game)</div>
           <div class="codex-section-body">
-            • <strong>神圣牧师 (Cleric)：</strong> 执掌圣职系。擅长团队圣光治愈、天使召唤与全场神圣审判。<br>
-            • <strong>死灵法师 (Necromancer)：</strong> 执掌死亡系。擅长牺牲献祭、亡者复苏、深渊怨灵与生命吸取。<br>
-            • <strong>机械师 (Mechanician)：</strong> 执掌机械系。擅长部署重炮、发条魔像、连环轰炸与机械装甲防线。<br>
-            • <strong>统御使 (Dominator)：</strong> 执掌控制系。擅长心智操纵、敌方奴役、驱逐反噬与窃取神识。<br>
-            • <strong>混沌之主 (Chaosmaster)：</strong> 执掌混沌系。擅长随机大额暴击、灵能剥夺与高爆发冲击。<br>
-            • <strong>幻像师 (Illusionist)：</strong> 执掌幻术系。擅长虚像幻影、反伤迷镜与精神震慑。
+            • <strong>🔮 巫术大师 (Sorcery)：</strong> 掌握纯粹奥术风暴、智力震撼与冥想，擅长直接法术伤害与强力单体控场。<br>
+            • <strong>💀 死灵术士 (Necromancer)：</strong> 役使深渊亡骸、哀嚎女妖与吸血鬼领主，擅长牺牲献祭、亡者复苏与生命汲取。<br>
+            • <strong>✨ 战争牧师 (Cleric)：</strong> 召唤神圣十字军、圣骑士与大天使，擅长神圣护盾、生命治愈与群体天谴审判。<br>
+            • <strong>⚙️ 机械师 (Mechanician)：</strong> 部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克，构筑钢铁阵地。<br>
+            • <strong>👁️ 支配者 (Dominator)：</strong> 操纵心智奴役、萨满祭司与能量阻尼塔，削减敌方能量并反转战局。<br>
+            • <strong>🌀 混沌大师 (Chaosmaster)：</strong> 操控混沌维和者、狂战士与混沌投石机，具备极高随机爆发与毁灭冲击力。
           </div>
         </div>
 
         <div class="codex-section-card">
-          <div class="codex-section-title">👑 英雄联盟与进阶流派</div>
+          <div class="codex-section-title">👑 英雄联盟资料片专精 (League of Heroes)</div>
           <div class="codex-section-body">
-            • <strong>恶魔学家 (Demonologist)：</strong> 召唤深渊魔王、地狱獦狚与深渊献祭。<br>
-            • <strong>巫师 (Sorcerer)：</strong> 精纯奥术洪流、法力风暴与法力过载。<br>
-            • <strong>兽王 (Beastmaster)：</strong> 唤醒荒野群兽、猛兽践踏与兽群撕咬。<br>
-            • <strong>哥布林酋长 / 疯狂隐士 / 时间旅行者 / 战争牧师 / 吸血鬼领主 / 狂热教徒 / 魔匠师：</strong> 带来时空跃迁、鲜血汲取与神圣战魂等丰富衍生战法！
+            • <strong>🎭 幻术师 (Illusionist)：</strong> 构筑镜面反射之墙、幻像勇士与幽幻刺客，以虚实转换与反伤折磨对手。<br>
+            • <strong>🔥 恶魔学者 (Demonologist)：</strong> 召唤深渊劣魔、恶果魔与末日大恶魔，精通自爆灼烧与恶魔契约。<br>
+            • <strong>🐺 驯兽师 (Beastmaster)：</strong> 统领荒野群兽、魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全属性野性灵能。
+          </div>
+        </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">⚡ 力量集结资料片专精 (Gathering of Power)</div>
+          <div class="codex-section-body">
+            • <strong>⏳ 时空术士 (Chronomancer)：</strong> 役使时空猎人、时间闪击者与时间之龙，甚至能施放【时间停止】获得额外连续行动回合！<br>
+            • <strong>👺 地精幻术 (Goblin)：</strong> 率领哥布林英雄、爆破小队、鼠疫入侵与扰乱奇兵，具备灵活突袭与牌库削减奇效。
+          </div>
+        </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">📜 全流派与卡池数量官方考证</div>
+          <div class="codex-section-body">
+            • <strong>实装流派总数：</strong> 正统官方最终版本共 <strong>11 大法术专精</strong>。在选人界面中，提供这 11 大流派以及 1 项“🎲 随机”选项，共 12 个可选项。<br>
+            • <strong>卡牌总数构成：</strong> 基础四大元素（火、水、气、土）各 12 张（共 48 张）+ 11 个专精流派各 8 张专属卡（共 88 张）= <strong>全游戏共 136 张卡牌</strong>。<br>
+            • <strong>流派数量澄清：</strong> 早期部分文档中流传的“16大流派”，系原版早期草案中的未实装废案占位符（如狂热教徒、吸血鬼领主等），实际并未有对应卡牌与机制。
           </div>
         </div>
       `;
@@ -2940,11 +3424,12 @@ function renderCodexPageContent(tab: string): string {
         <div class="codex-section-card">
           <div class="codex-section-title">🎮 丰厚多样的对战玩法</div>
           <div class="codex-section-body">
-            1. <strong>单局对战 (Single Duel)：</strong> 自由配置 16 大法师专精、精美英雄头像与 AI 难度，畅享快节奏的纯粹法力交锋。<br>
+            1. <strong>单局对战 (Single Duel)：</strong> 自由配置 11 大法师专精与随机流派、精美英雄头像与 AI 难度，畅享快节奏的纯粹法力交锋。<br>
             2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 7 大篇章领地据点；击败领主开启后续多重分支路线，体验各领地专属战规。<br>
             3. <strong>英雄联赛 (League of Heroes)：</strong> 支持创建多名法师角色档案，参与 8 轮天梯排位决战，冲击全服巅峰积分榜首！<br>
             4. <strong>自组卡牌工坊 (Custom Deck)：</strong> 精细构筑专属 20 张王牌套牌，体验极致的套路搭配与战术博弈。<br>
-            5. <strong>对战录像回放 (Replay Cinema)：</strong> 全战场真实重现每一场高光交锋，支持分步单步推演与多倍速观摩！
+            5. <strong>局域网对战 (LAN Duel)：</strong> 同一无线局域网或手机热点下，输入 4 位房间码即可实现低延迟跨设备双人实时联机对决！<br>
+            6. <strong>对战录像回放 (Replay Cinema)：</strong> 全战场真实重现每一场高光交锋，支持分步单步推演与多倍速观摩！
           </div>
         </div>
       `;
@@ -3113,7 +3598,7 @@ function renderGameHelpModal(): string {
         <div class="codex-tabs-bar" style="flex-shrink:0;">
           <button class="codex-tab-btn ${activeHelpTab === 'play' ? 'active' : ''}" id="tab-codex-play">📖 如何游戏</button>
           <button class="codex-tab-btn ${activeHelpTab === 'deck' ? 'active' : ''}" id="tab-codex-deck">🃏 卡组构筑</button>
-          <button class="codex-tab-btn ${activeHelpTab === 'classes' ? 'active' : ''}" id="tab-codex-classes">🧙 16大流派</button>
+          <button class="codex-tab-btn ${activeHelpTab === 'classes' ? 'active' : ''}" id="tab-codex-classes">🧙 11大流派</button>
           <button class="codex-tab-btn ${activeHelpTab === 'modes' ? 'active' : ''}" id="tab-codex-modes">🗺️ 游戏模式</button>
           <button class="codex-tab-btn ${activeHelpTab === 'cards' ? 'active' : ''}" id="tab-codex-cards">🃏 卡牌资料</button>
         </div>
@@ -3891,6 +4376,17 @@ function renderBattlefieldRulesModal(): string {
           标准战役对决：将敌方守关领主生命值清零即可攻克该领地。
         </div>
       `}
+    `;
+  } else if (currentBattleSource === 'lan') {
+    title = '局域网对决 · 实时联机';
+    bodyHtml = `
+      <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:12px; color:#1e3a8a; font-weight:900;">
+        对手：${engine.enemy.name} · ${HERO_CLASSES.find(c => c.id === engine.enemy.className)?.nameCn || engine.enemy.className}
+      </div>
+      <div style="background:rgba(30,58,138,0.12); border-left:4px solid #3b82f6; padding:12px 16px; border-radius:6px; font-size:clamp(15px, 1.2vw, 19px); line-height:1.65; color:#1e293b; font-weight:800;">
+        📶 <strong>联机环境：</strong>局域网 WebRTC P2P 直连通道，状态全同步。<br>
+        ⚡ <strong>规则：</strong>标准决斗规则，消灭对方英雄生命值即可斩获胜利。
+      </div>
     `;
   } else if (currentBattleSource === 'custom_deck') {
     title = '自组卡牌实战决斗';
@@ -4689,8 +5185,12 @@ function renderGameOverModal(): string {
                   ? `恭喜大捷！第 <strong>${selectedCampaignLevelId}</strong> 关对手已被击败，大地图新战线现已向您敞开！`
                   : (currentBattleSource === 'league'
                       ? `联赛凯歌高奏！您在第 <strong>${activeLeague?.currentMatch || 1}</strong> 轮对决中力克强敌，积分大幅飙升！`
-                      : '您精心构筑的卡组经受住了实战考验，以完美的元素统合之力瓦解了敌军！'))
-              : '英雄生命力耗尽，战场符文暗淡……但真正的魔导师在沉寂中洞察生机，总结克敌之道，再次问鼎巅峰！'}
+                      : (currentBattleSource === 'lan'
+                          ? `局域网联机凯歌！您在与 <strong>${engine.enemy.name}</strong> 的高能智斗中运筹帷幄，赢得了整场对决的无上荣耀！`
+                          : '您精心构筑的卡组经受住了实战考验，以完美的元素统合之力瓦解了敌军！')))
+              : (currentBattleSource === 'lan'
+                  ? `在与 <strong>${engine.enemy.name}</strong> 的奥术交锋中棋差一着……胜败乃法师常事，重整旗鼓再来一局！`
+                  : '英雄生命力耗尽，战场符文暗淡……但真正的魔导师在沉寂中洞察生机，总结克敌之道，再次问鼎巅峰！')}
           </p>
           <div class="battle-result-stats-pill">
             <span>战局博弈: <strong>${engine.turnCount}</strong> 回合</span>
@@ -4717,10 +5217,17 @@ function renderGameOverModal(): string {
               <span>返回自组卡牌</span>
             </button>
           ` : ''}
-          <button class="battle-result-btn restart" id="btn-restart">
-            <span class="btn-icon">🔄</span>
-            <span>${isWin ? '再次对战' : '整军再战'}</span>
-          </button>
+          ${currentBattleSource === 'lan' ? `
+            <button class="battle-result-btn next" id="btn-lan-result-return">
+              <span class="btn-icon">🌐</span>
+              <span>返回局域网大厅</span>
+            </button>
+          ` : `
+            <button class="battle-result-btn restart" id="btn-restart">
+              <span class="btn-icon">🔄</span>
+              <span>${isWin ? '再次对战' : '整军再战'}</span>
+            </button>
+          `}
           <button class="battle-result-btn menu" id="btn-return-menu">
             <span class="btn-icon">🏠</span>
             <span>返回主菜单</span>
@@ -4732,6 +5239,9 @@ function renderGameOverModal(): string {
 }
 
 function getCombatBgmForCurrentBattle(): 'combat1' | 'combat2' | 'combat3' {
+  if (currentBattleSource === 'lan') {
+    return 'combat3';
+  }
   if (currentBattleSource === 'league') {
     return 'combat2';
   }
@@ -4769,6 +5279,7 @@ export function render() {
     if (showLeagueHubModal) app.innerHTML += renderLeagueHubModal();
     if (showCampaignHubModal) app.innerHTML += renderCampaignHubModal();
     if (showCampaignSetupModal) app.innerHTML += renderCampaignSetupModal();
+    if (showLanLobbyModal) app.innerHTML += renderLanLobbyModal();
   } else if (currentView === 'single_duel_setup') {
     app.innerHTML = renderSingleDuelSetup();
   } else if (currentView === 'campaign') {
@@ -4802,6 +5313,9 @@ export function render() {
   if (showLeagueAdviceModal) app.innerHTML += renderLeagueOpponentAdviceModal();
   if (showLeagueCompletionModal) app.innerHTML += renderLeagueCompletionModal();
   if (pendingConfirmDialog) app.innerHTML += renderCustomConfirmModal();
+  if (lanVsMatchData) app.innerHTML += renderLanVsOverlay();
+  if (showLanDisconnectModal) app.innerHTML += renderLanDisconnectModal();
+  if (showClassGridPickerFor) app.innerHTML += renderClassGridPickerModal(showClassGridPickerFor);
 
   attachEventListeners();
 
@@ -4818,6 +5332,185 @@ function attachEventListeners() {
   document.getElementById('btn-menu-single-duel')?.addEventListener('click', () => {
     sound.play('click');
     currentView = 'single_duel_setup';
+    render();
+  });
+
+  document.getElementById('btn-menu-lan')?.addEventListener('click', () => {
+    sound.play('click');
+    showLanLobbyModal = true;
+    render();
+  });
+
+  // ===================================
+  // LAN MULTIPLAYER LOBBY ACTIONS
+  // ===================================
+  document.getElementById('btn-lan-lobby-close')?.addEventListener('click', () => {
+    sound.play('click');
+    lanNetwork.disconnect();
+    showLanLobbyModal = false;
+    lanIsConnecting = false;
+    lanStatusText = '';
+    render();
+  });
+
+  document.getElementById('btn-lan-footer-cancel')?.addEventListener('click', () => {
+    sound.play('click');
+    lanNetwork.disconnect();
+    showLanLobbyModal = false;
+    lanIsConnecting = false;
+    lanStatusText = '';
+    render();
+  });
+
+  document.getElementById('btn-lan-cycle-face')?.addEventListener('click', () => {
+    lanPlayerFaceId = (lanPlayerFaceId % 78) + 1;
+    saveLanProfilePreferences();
+    sound.play('click');
+    render();
+  });
+
+  const lanNameInput = document.getElementById('input-lan-player-name') as HTMLInputElement | null;
+  lanNameInput?.addEventListener('input', (e) => {
+    lanPlayerName = (e.target as HTMLInputElement).value;
+    saveLanProfilePreferences();
+  });
+
+  document.getElementById('btn-lan-class-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    lanPlayerClassIdx = (lanPlayerClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
+    saveLanProfilePreferences();
+    render();
+  });
+
+  document.getElementById('btn-lan-class-next')?.addEventListener('click', () => {
+    sound.play('click');
+    lanPlayerClassIdx = (lanPlayerClassIdx + 1) % HERO_CLASSES.length;
+    saveLanProfilePreferences();
+    render();
+  });
+
+  document.getElementById('btn-lan-open-class-picker')?.addEventListener('click', () => {
+    sound.play('click');
+    showClassGridPickerFor = 'lan';
+    render();
+  });
+
+  document.getElementById('btn-lan-tab-host')?.addEventListener('click', () => {
+    if (lanActiveTab !== 'host') {
+      sound.play('click');
+      lanActiveTab = 'host';
+      render();
+    }
+  });
+
+  document.getElementById('btn-lan-tab-join')?.addEventListener('click', () => {
+    if (lanActiveTab !== 'join') {
+      sound.play('click');
+      lanActiveTab = 'join';
+      render();
+    }
+  });
+
+  document.getElementById('btn-lan-create-room')?.addEventListener('click', async () => {
+    sound.play('click');
+    lanStatusText = '正在创建局域网房间...';
+    render();
+    try {
+      await lanNetwork.createRoom(getMyLanProfile());
+      showToastNotice(`🎉 房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
+    } catch (err: any) {
+      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
+    }
+    render();
+  });
+
+  document.getElementById('btn-lan-recreate-room')?.addEventListener('click', async () => {
+    sound.play('click');
+    lanStatusText = '正在重新生成房间...';
+    render();
+    try {
+      await lanNetwork.createRoom(getMyLanProfile());
+      showToastNotice(`🎉 新房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
+    } catch (err: any) {
+      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
+    }
+    render();
+  });
+
+  document.getElementById('btn-lan-copy-code')?.addEventListener('click', () => {
+    sound.play('click');
+    const code = lanNetwork.getRoomCode();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToastNotice(`📋 房间码 [${code}] 已复制到剪贴板！`);
+      }).catch(() => {
+        showToastNotice(`房间码: ${code}`);
+      });
+    } else {
+      showToastNotice(`房间码: ${code}`);
+    }
+  });
+
+  document.getElementById('btn-lan-start-duel')?.addEventListener('click', () => {
+    sound.play('click');
+    startLanBattleAsHost();
+  });
+
+  document.querySelectorAll('.btn-lan-key').forEach((el) => {
+    el.addEventListener('click', () => {
+      const key = (el as HTMLElement).dataset.key;
+      if (key && lanJoinCode.length < 4) {
+        sound.play('click');
+        lanJoinCode += key;
+        render();
+      }
+    });
+  });
+
+  document.querySelector('.btn-lan-key-clear')?.addEventListener('click', () => {
+    sound.play('click');
+    lanJoinCode = '';
+    render();
+  });
+
+  document.querySelector('.btn-lan-key-backspace')?.addEventListener('click', () => {
+    sound.play('click');
+    lanJoinCode = lanJoinCode.slice(0, -1);
+    render();
+  });
+
+  document.getElementById('btn-lan-join-action')?.addEventListener('click', async () => {
+    if (lanJoinCode.length === 4 && !lanIsConnecting) {
+      sound.play('click');
+      lanIsConnecting = true;
+      lanStatusText = `正在连接房间 [${lanJoinCode}]...`;
+      render();
+      try {
+        await lanNetwork.joinRoom(lanJoinCode, getMyLanProfile());
+        lanIsConnecting = false;
+        showToastNotice(`✅ 已成功加入房间 [${lanJoinCode}]！等待房主开始...`);
+        render();
+      } catch (err: any) {
+        lanIsConnecting = false;
+        lanStatusText = err.message || '连接失败，请确认房间码';
+        render();
+      }
+    }
+  });
+
+  document.getElementById('btn-lan-disconnect-confirm')?.addEventListener('click', () => {
+    sound.play('click');
+    showLanDisconnectModal = false;
+    currentView = 'menu';
+    lanNetwork.disconnect();
+    render();
+  });
+
+  document.getElementById('btn-lan-result-return')?.addEventListener('click', () => {
+    sound.play('click');
+    lanNetwork.disconnect();
+    showLanLobbyModal = true;
+    currentView = 'menu';
     render();
   });
 
@@ -5155,6 +5848,14 @@ function attachEventListeners() {
     render();
   });
 
+  document.getElementById('class-grid-overlay')?.addEventListener('click', (e) => {
+    if (e.target === document.getElementById('class-grid-overlay')) {
+      sound.play('click');
+      showClassGridPickerFor = null;
+      render();
+    }
+  });
+
   document.querySelectorAll('.class-grid-item').forEach((item) => {
     item.addEventListener('click', () => {
       sound.play('click');
@@ -5162,8 +5863,11 @@ function attachEventListeners() {
       const clsIdx = parseInt((item as HTMLElement).dataset.classIndex || '0');
       if (target === 'player') {
         playerClassIndex = clsIdx;
-      } else {
+      } else if (target === 'ai') {
         aiClassIndex = clsIdx;
+      } else if (target === 'lan') {
+        lanPlayerClassIdx = clsIdx;
+        saveLanProfilePreferences();
       }
       showClassGridPickerFor = null;
       render();
@@ -5473,6 +6177,9 @@ function attachEventListeners() {
   document.getElementById('btn-confirm-surrender')?.addEventListener('click', () => {
     sound.play('click');
     showSurrenderModal = false;
+    if (engine.isLanGame) {
+      lanNetwork.sendMessage({ type: 'SURRENDER' });
+    }
     engine.player.hp = 0;
     engine.checkWinner();
     render();
@@ -5492,6 +6199,10 @@ function attachEventListeners() {
 
   document.getElementById('btn-get-advice')?.addEventListener('click', () => {
     sound.play('click');
+    if (engine.isLanGame) {
+      showToastNotice('ℹ️ 局域网对决中无法使用战术锦囊');
+      return;
+    }
     const advice = engine.getAdvice();
     if (advice.card) {
       selectedCard = advice.card;
@@ -5504,6 +6215,17 @@ function attachEventListeners() {
   document.getElementById('btn-end-turn')?.addEventListener('click', async () => {
     if (isActionPending) return;
     if (engine.activeTurn === 'player' && !engine.gameOver && !engine.isCombatPhase) {
+      if (engine.isLanGame && engine.isGuest) {
+        sound.play('click');
+        isActionPending = true;
+        selectedCard = null;
+        try {
+          lanNetwork.sendMessage({ type: 'ACTION_PASS' });
+        } finally {
+          setTimeout(() => { isActionPending = false; }, 300);
+        }
+        return;
+      }
       isActionPending = true;
       selectedCard = null;
       try {
@@ -5546,6 +6268,17 @@ function attachEventListeners() {
       if (selectedCard?.id === card.id) {
         // If clicking selected spell that requires no target, cast it immediately!
         if (card.type === 'spell' && !card.requiresTarget && engine.canPlayCard('player', card) && !isActionPending) {
+          if (engine.isLanGame && engine.isGuest) {
+            isActionPending = true;
+            try {
+              lanNetwork.sendMessage({ type: 'ACTION_PLAY_CARD', payload: { cardId: card.id } });
+            } finally {
+              selectedCard = null;
+              setTimeout(() => { isActionPending = false; }, 300);
+            }
+            render();
+            return;
+          }
           isActionPending = true;
           try {
             await engine.playCard('player', card);
@@ -5589,6 +6322,18 @@ function attachEventListeners() {
 
       if (side === 'player') {
         if (selectedCard.type === 'creature' && engine.playerBoard[slotIdx] === null) {
+          if (engine.isLanGame && engine.isGuest) {
+            isActionPending = true;
+            const cardToPlay = selectedCard;
+            try {
+              lanNetwork.sendMessage({ type: 'ACTION_PLAY_CARD', payload: { cardId: cardToPlay.id, targetSlot: slotIdx } });
+            } finally {
+              selectedCard = null;
+              setTimeout(() => { isActionPending = false; }, 300);
+            }
+            render();
+            return;
+          }
           isActionPending = true;
           const cardToPlay = selectedCard;
           try {
@@ -5599,6 +6344,18 @@ function attachEventListeners() {
           }
         } else if (selectedCard.type === 'spell' && selectedCard.requiresTarget && isFriendlyTargetSpell(selectedCard)) {
           if (engine.playerBoard[slotIdx]) {
+            if (engine.isLanGame && engine.isGuest) {
+              isActionPending = true;
+              const cardToPlay = selectedCard;
+              try {
+                lanNetwork.sendMessage({ type: 'ACTION_PLAY_CARD', payload: { cardId: cardToPlay.id, targetSlot: slotIdx } });
+              } finally {
+                selectedCard = null;
+                setTimeout(() => { isActionPending = false; }, 300);
+              }
+              render();
+              return;
+            }
             isActionPending = true;
             const cardToPlay = selectedCard;
             try {
@@ -5611,6 +6368,18 @@ function attachEventListeners() {
         }
       } else if (side === 'enemy' && selectedCard.type === 'spell' && selectedCard.requiresTarget && !isFriendlyTargetSpell(selectedCard)) {
         if (engine.enemyBoard[slotIdx] && !engine.enemyBoard[slotIdx]!.spellImmune) {
+          if (engine.isLanGame && engine.isGuest) {
+            isActionPending = true;
+            const cardToPlay = selectedCard;
+            try {
+              lanNetwork.sendMessage({ type: 'ACTION_PLAY_CARD', payload: { cardId: cardToPlay.id, targetSlot: slotIdx } });
+            } finally {
+              selectedCard = null;
+              setTimeout(() => { isActionPending = false; }, 300);
+            }
+            render();
+            return;
+          }
           isActionPending = true;
           const cardToPlay = selectedCard;
           try {

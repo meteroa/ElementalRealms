@@ -1208,29 +1208,39 @@ body, html {
 
 .mobile-mode-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(320px, clamp(360px, 34vw, 500px)));
-  gap: clamp(14px, 2.2vh, 24px);
-  max-width: clamp(760px, 72vw, 1060px);
+  grid-template-columns: repeat(6, 1fr);
+  gap: clamp(10px, 1.8vh, 18px);
+  max-width: clamp(740px, 86vw, 1080px);
   width: 100%;
   justify-content: center;
 }
 
 .mobile-mode-card {
+  grid-column: span 2;
   position: relative;
   background: linear-gradient(135deg, rgba(32, 25, 20, 0.88) 0%, rgba(16, 12, 10, 0.94) 100%);
   border: 1.5px solid rgba(198, 155, 63, 0.55);
   border-radius: 14px;
-  padding: clamp(14px, 2vh, 24px) clamp(16px, 1.8vw, 26px);
+  padding: clamp(10px, 1.5vh, 16px) clamp(12px, 1.3vw, 20px);
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: clamp(12px, 1.5vw, 20px);
-  min-height: clamp(72px, 9vh, 96px);
+  gap: clamp(10px, 1.2vw, 16px);
+  min-height: clamp(66px, 8.8vh, 88px);
   backdrop-filter: blur(12px);
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 230, 150, 0.25);
   transition: all 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
   overflow: hidden;
   user-select: none;
+}
+
+/* Symmetrical 3-2 golden balance layout in landscape: Row 2 items 4 and 5 centered */
+.mobile-mode-card:nth-child(4) {
+  grid-column: 2 / span 2;
+}
+
+.mobile-mode-card:nth-child(5) {
+  grid-column: 4 / span 2;
 }
 
 .mobile-mode-card:hover {
@@ -3401,12 +3411,12 @@ body, html {
 .class-grid-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 14, 0.85);
+  background: rgba(5, 7, 14, 0.88);
   backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 120;
+  z-index: 25000 !important;
   animation: fadeIn 0.2s ease;
 }
 
@@ -3456,6 +3466,47 @@ body, html {
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.15);
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+
+.class-grid-thumb-wrap {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #c69b3f;
+  margin-bottom: 4px;
+  box-shadow: 0 0 10px rgba(198, 155, 63, 0.45);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.class-grid-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lan-class-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid var(--border-gold);
+  flex-shrink: 0;
+}
+
+.duel-class-inline-img {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.2px solid var(--border-gold);
+  vertical-align: middle;
+  margin-right: 4px;
+  flex-shrink: 0;
 }
 
 .class-grid-icon {
@@ -7046,7 +7097,10 @@ body, html {
     margin: 0 auto;
   }
 
-  .mobile-mode-card {
+  .mobile-mode-card,
+  .mobile-mode-card:nth-child(4),
+  .mobile-mode-card:nth-child(5) {
+    grid-column: span 1;
     min-height: 60px;
     padding: 8px 14px;
     gap: 12px;
@@ -7077,8 +7131,7 @@ body, html {
   .settings-modal-content,
   .help-modal-content,
   .modal-dialog,
-  .combat-rules-modal,
-  .deck-builder-view {
+  .combat-rules-modal {
     box-sizing: border-box !important;
     max-width: 95vw !important;
     width: min(600px, 95vw) !important;
@@ -7086,6 +7139,29 @@ body, html {
     padding: 12px 10px !important;
     margin: auto !important;
     overflow-y: auto !important;
+  }
+
+  /* Single Duel Setup settings row wrapping in portrait */
+  .single-duel-setting-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+
+  .single-duel-setting-row > div {
+    width: 100% !important;
+    justify-content: space-between !important;
+  }
+
+  .single-duel-setting-row .league-choice-stepper {
+    max-width: 60% !important;
+  }
+
+  .single-duel-setting-row .league-choice-val {
+    max-width: 150px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
   }
 
   .duel-combatants-row {
@@ -7320,51 +7396,87 @@ body, html {
   }
 
   .hero-mana-bar {
-    gap: 3px !important;
+    gap: 4px !important;
   }
 
   .hero-mana-chip {
-    height: 20px !important;
-    padding: 0 2px !important;
-    gap: 1px !important;
+    height: 26px !important;
+    padding: 0 6px !important;
+    gap: 2px !important;
+    border-radius: 4px !important;
   }
 
   .hero-mana-chip .chip-icon {
-    font-size: 11px !important;
+    font-size: 14px !important;
   }
 
   .hero-mana-chip .chip-val {
-    font-size: 12px !important;
+    font-size: 15px !important;
     font-weight: 900 !important;
   }
 
-  /* 5th: Hand Cards Section (Reduced height, cards balanced, no longer skinny) */
+  /* 5th: Hand Cards Section (Ensuring all 5 columns fit cleanly without edge clipping) */
   .combat-hand-section {
     order: 5 !important;
-    width: 100vw !important;
+    width: 100% !important;
+    max-width: 100vw !important;
     flex: 1 !important;
     min-height: 0 !important;
-    padding: 2px 4px 6px !important;
+    padding: 2px 2px 4px !important;
     gap: 2px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   .combat-hand-grid {
-    gap: 3px !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    gap: 2px !important;
+    box-sizing: border-box !important;
   }
 
   .hand-column {
-    padding: 2px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    padding: 1px !important;
     gap: 2px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   .hand-column-header {
     height: 20px !important;
-    font-size: 10.5px !important;
-    gap: 2px !important;
+    font-size: 10px !important;
+    padding: 0 2px !important;
+    gap: 1px !important;
+    box-sizing: border-box !important;
+  }
+
+  .hand-column-header .col-icon {
+    font-size: 10px !important;
+  }
+
+  .hand-column-header .col-label {
+    font-size: 9px !important;
+    letter-spacing: -0.5px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .hand-column-header .col-mana-badge {
+    font-size: 10px !important;
+    padding: 0 3px !important;
   }
 
   .hand-column-cards {
     gap: 2px !important;
+  }
+
+  .combat-hand-card-item {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   .hand-card-cell.vertical .card-cost-gem {
@@ -7473,6 +7585,245 @@ body, html {
     padding: 6px 8px !important;
     font-size: 12px !important;
   }
+
+  /* 5. League Standings Screen in Portrait (Fix: Leaderboard visible & distinct) */
+  .league-standings-view {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+  }
+
+  .league-standings-view .league-header-banner {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    border-radius: 0 !important;
+    padding: 4px 8px !important;
+    flex-shrink: 0 !important;
+    box-sizing: border-box !important;
+    z-index: 10 !important;
+  }
+
+  .league-standings-view .league-table-container {
+    position: relative !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 38vh !important;
+    max-height: 38vh !important;
+    flex-shrink: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    box-sizing: border-box !important;
+    margin: 0 !important;
+    z-index: 5 !important;
+    bottom: auto !important;
+  }
+
+  .league-standings-view .campaign-bottom-deck {
+    position: relative !important;
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    padding: 4px 6px !important;
+    gap: 4px !important;
+    background: #120e0a !important;
+    box-sizing: border-box !important;
+  }
+
+  .league-standings-view .campaign-deck-center {
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    max-height: calc(100vh - 38vh - 150px) !important;
+    overflow-y: auto !important;
+    margin: 0 !important;
+    padding: 4px 8px !important;
+  }
+
+  .league-standings-view .campaign-deck-left {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 2px 6px !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  .league-standings-view .campaign-deck-right {
+    width: 100% !important;
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 6px !important;
+    padding: 2px 0 !important;
+    flex-shrink: 0 !important;
+  }
+
+  .league-standings-view .campaign-deck-right .campaign-pc-btn {
+    width: 100% !important;
+    padding: 8px 4px !important;
+    font-size: 13px !important;
+  }
+
+  /* 6. Custom Deck Builder in Portrait (Fix: 5 columns + candidate pool fully accessible) */
+  .deck-builder-view {
+    width: 100vw !important;
+    height: 100vh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    max-height: 100vh !important;
+  }
+
+  .deck-builder-top-bar {
+    height: auto !important;
+    min-height: 0 !important;
+    flex-direction: column !important;
+    padding: 6px 8px !important;
+    gap: 4px !important;
+    flex-shrink: 0 !important;
+  }
+
+  .deck-builder-top-left {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .deck-builder-top-left #builder-deck-name {
+    flex: 1 !important;
+    width: auto !important;
+    min-width: 80px !important;
+    padding: 4px 6px !important;
+    font-size: 13px !important;
+  }
+
+  .deck-builder-top-right {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .deck-builder-top-right .league-choice-stepper {
+    flex: 1 !important;
+    width: auto !important;
+    padding: 2px 4px !important;
+  }
+
+  .deck-builder-top-right .campaign-pc-btn {
+    padding: 4px 10px !important;
+    font-size: 13px !important;
+    min-width: 50px !important;
+  }
+
+  .deck-builder-content {
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: none !important;
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .deck-columns-container {
+    width: 100% !important;
+    height: auto !important;
+    flex-shrink: 0 !important;
+    gap: 4px !important;
+  }
+
+  .deck-5-cols-grid {
+    width: 100% !important;
+    gap: 3px !important;
+  }
+
+  .deck-col-header {
+    font-size: 10px !important;
+    padding: 1px 2px !important;
+  }
+
+  .deck-slot-card {
+    aspect-ratio: 5 / 7 !important;
+    border-radius: 3px !important;
+  }
+
+  .deck-slot-cost, .deck-slot-atk, .deck-slot-life {
+    font-size: 9px !important;
+    padding: 0 1px !important;
+  }
+
+  .deck-columns-container .campaign-deck-center {
+    height: auto !important;
+    max-height: 60px !important;
+    min-height: 38px !important;
+    overflow-y: auto !important;
+    padding: 3px 6px !important;
+    font-size: 11px !important;
+  }
+
+  .deck-pool-container {
+    width: 100% !important;
+    flex: 1 !important;
+    min-height: 180px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    border: 1px solid rgba(198, 155, 63, 0.4) !important;
+    border-radius: 6px !important;
+    background: rgba(14, 11, 8, 0.95) !important;
+    padding: 4px !important;
+    box-sizing: border-box !important;
+  }
+
+  .deck-pool-tabs {
+    width: 100% !important;
+    display: flex !important;
+    gap: 2px !important;
+    margin-bottom: 4px !important;
+  }
+
+  .deck-pool-tab {
+    flex: 1 !important;
+    padding: 4px 2px !important;
+    font-size: 11px !important;
+    text-align: center !important;
+  }
+
+  .deck-pool-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 4px !important;
+    flex: 1 !important;
+    max-height: 200px !important;
+    overflow-y: auto !important;
+    padding: 2px !important;
+  }
+
+  .deck-pool-item {
+    aspect-ratio: 5 / 7 !important;
+    border-radius: 3px !important;
+  }
 }
 
 /* ==========================================================================
@@ -7568,6 +7919,601 @@ body, html {
   background: rgba(34, 197, 94, 0.35) !important;
   box-shadow: 0 0 10px rgba(34, 197, 94, 0.6) !important;
   transform: scale(1.06) !important;
+}
+
+/* ==========================================
+   LAN MULTIPLAYER DUEL LOBBY & STYLES
+   ========================================== */
+
+.mobile-mode-card.lan-duel {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.82) 0%, rgba(15, 23, 42, 0.94) 100%);
+  border: 1.5px solid rgba(59, 130, 246, 0.45);
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.15);
+}
+
+.mobile-mode-card.lan-duel:hover {
+  border-color: #60a5fa;
+  box-shadow: 0 6px 24px rgba(59, 130, 246, 0.35);
+  transform: translateY(-2px);
+}
+
+.mode-card-badge.cyan {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
+  color: #e0f2fe;
+  border-color: #38bdf8;
+}
+
+/* Modal Stone Frame for LAN Lobby */
+.lan-lobby-dialog {
+  width: clamp(340px, 92vw, 680px);
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 15%, #18233d 0%, #0c101d 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 12px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.85), 0 0 24px rgba(198, 155, 63, 0.3), inset 0 1px 2px rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+  position: relative;
+  animation: lanLobbyPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes lanLobbyPop {
+  0% { transform: scale(0.92); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.lan-header-banner {
+  background: linear-gradient(90deg, #1e293b 0%, #1e3a8a 50%, #1e293b 100%);
+  border-bottom: 2px solid var(--border-gold);
+  padding: 10px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.lan-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.lan-header-icon {
+  font-size: 24px;
+  filter: drop-shadow(0 0 8px rgba(56, 189, 248, 0.8));
+}
+
+.lan-header-title {
+  font-size: clamp(16px, 1.4vw, 20px);
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  letter-spacing: 0.5px;
+}
+
+.lan-header-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #bae6fd;
+  background: rgba(14, 165, 233, 0.25);
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+
+/* User Profile Customization Bar */
+.lan-profile-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  background: rgba(15, 23, 42, 0.7);
+  border-bottom: 1px solid rgba(198, 155, 63, 0.2);
+}
+
+.lan-profile-face-wrap {
+  position: relative;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 2px solid var(--border-gold);
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(198, 155, 63, 0.4);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.lan-profile-face-wrap:hover {
+  transform: scale(1.06);
+  border-color: #fef08a;
+}
+
+.lan-profile-face-wrap .face-change-hint {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.65);
+  font-size: 9px;
+  color: #fef08a;
+  text-align: center;
+  padding: 1px 0;
+}
+
+.lan-profile-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lan-profile-name-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lan-profile-name-input {
+  background: rgba(30, 41, 59, 0.8);
+  border: 1px solid rgba(198, 155, 63, 0.4);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 4px 10px;
+  width: 140px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.lan-profile-name-input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
+}
+
+.lan-class-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lan-class-step-btn {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(198, 155, 63, 0.4);
+  color: #ffd700;
+  width: 28px;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lan-class-step-btn:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-color: #ffd700;
+  box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+.lan-class-display-btn {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1.5px solid rgba(198, 155, 63, 0.55);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: all 0.15s ease;
+}
+
+.lan-class-display-btn:hover {
+  border-color: #ffd700;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+  transform: translateY(-1px);
+}
+
+.lan-class-icon {
+  font-size: 16px;
+}
+
+.lan-class-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #ffd700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+
+.lan-class-badge-pill {
+  font-size: 10.5px;
+  color: #93c5fd;
+  background: rgba(30, 58, 138, 0.4);
+  padding: 1px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(147, 197, 253, 0.3);
+}
+
+/* Tabs */
+.lan-tab-strip {
+  display: flex;
+  background: rgba(10, 15, 29, 0.8);
+  border-bottom: 2px solid rgba(198, 155, 63, 0.3);
+}
+
+.lan-tab-btn {
+  flex: 1;
+  padding: 11px 0;
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-dim);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.lan-tab-btn.active {
+  color: #ffd700;
+  background: rgba(30, 58, 138, 0.3);
+}
+
+.lan-tab-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 20%;
+  right: 20%;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  border-radius: 2px;
+}
+
+/* Lobby Content */
+.lan-lobby-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Host Panel */
+.lan-host-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(198, 155, 63, 0.25);
+  border-radius: 10px;
+  padding: 16px;
+}
+
+.lan-code-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #93c5fd;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.lan-digit-display {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.lan-digit-box {
+  width: 58px;
+  height: 68px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5), 0 2px 4px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6), 0 4px 10px rgba(0, 0, 0, 0.5);
+  letter-spacing: 1px;
+}
+
+.lan-digit-box.placeholder {
+  color: rgba(198, 155, 63, 0.3);
+  font-size: 28px;
+}
+
+.lan-copy-btn {
+  background: linear-gradient(180deg, #3d2d14 0%, #221808 100%);
+  border: 1px solid var(--border-gold);
+  color: #ffd700;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.lan-copy-btn:hover {
+  background: linear-gradient(180deg, #5c431d 0%, #35250c 100%);
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+/* Status Indicator */
+.lan-status-box {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  width: 100%;
+}
+
+.lan-status-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(56, 189, 248, 0.3);
+  border-top-color: #38bdf8;
+  border-radius: 50%;
+  animation: lanSpin 0.9s linear infinite;
+}
+
+@keyframes lanSpin {
+  to { transform: rotate(360deg); }
+}
+
+.lan-status-text {
+  font-size: 13px;
+  font-weight: 700;
+  color: #cbd5e1;
+}
+
+/* Connected Opponent Card */
+.lan-peer-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  background: linear-gradient(90deg, rgba(30, 58, 138, 0.35) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1.5px solid #3b82f6;
+  border-radius: 10px;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.25);
+  animation: lanLobbyPop 0.3s ease;
+}
+
+.lan-peer-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 2px solid #60a5fa;
+  object-fit: cover;
+  box-shadow: 0 0 10px rgba(96, 165, 250, 0.4);
+}
+
+.lan-peer-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lan-peer-name {
+  font-size: 16px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 1px 3px #000;
+}
+
+.lan-peer-class {
+  font-size: 12px;
+  font-weight: 700;
+  color: #93c5fd;
+}
+
+/* Join Panel Touch Keypad */
+.lan-keypad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  max-width: 260px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.lan-keypad-btn {
+  height: 46px;
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(198, 155, 63, 0.35);
+  border-radius: 8px;
+  color: #f1f5f9;
+  font-size: 18px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.1s ease;
+  user-select: none;
+}
+
+.lan-keypad-btn:active,
+.lan-keypad-btn:hover {
+  background: linear-gradient(180deg, #334155 0%, #1e293b 100%);
+  border-color: #ffd700;
+  color: #ffd700;
+  transform: scale(0.98);
+}
+
+.lan-keypad-btn.action-btn {
+  font-size: 14px;
+  color: #94a3b8;
+}
+
+/* Action button bar */
+.lan-actions-footer {
+  padding: 12px 20px;
+  border-top: 1px solid rgba(198, 155, 63, 0.25);
+  background: rgba(10, 14, 26, 0.85);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.lan-action-btn {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-weight: 800;
+  border-radius: 8px;
+  border: 1px solid var(--border-gold);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lan-action-btn.primary {
+  background: linear-gradient(180deg, #15803d 0%, #166534 100%);
+  color: #f0fdf4;
+  border-color: #4ade80;
+  box-shadow: 0 2px 10px rgba(22, 101, 52, 0.4);
+}
+
+.lan-action-btn.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #16a34a 0%, #15803d 100%);
+  box-shadow: 0 4px 16px rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.lan-action-btn.primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+
+.lan-action-btn.secondary {
+  background: rgba(30, 41, 59, 0.7);
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.lan-action-btn.secondary:hover {
+  background: rgba(51, 65, 85, 0.8);
+  color: #fff;
+}
+
+/* VS Match Splash Overlay */
+.lan-vs-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 15, 0.92);
+  backdrop-filter: blur(12px);
+  z-index: 999999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  animation: lanLobbyPop 0.3s ease;
+}
+
+.lan-vs-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(24px, 5vw, 60px);
+  margin-bottom: 24px;
+}
+
+.lan-vs-combatant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.lan-vs-avatar-wrap {
+  width: clamp(80px, 12vw, 120px);
+  height: clamp(80px, 12vw, 120px);
+  border-radius: 50%;
+  border: 3px solid var(--border-gold);
+  overflow: hidden;
+  box-shadow: 0 0 24px rgba(198, 155, 63, 0.5);
+}
+
+.lan-vs-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lan-vs-name {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 900;
+  color: #ffd700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+}
+
+.lan-vs-class-badge {
+  font-size: 13px;
+  font-weight: 800;
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.85);
+  border: 1px solid rgba(198, 155, 63, 0.4);
+  padding: 3px 12px;
+  border-radius: 12px;
+}
+
+.lan-vs-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.lan-vs-lightning {
+  font-size: clamp(36px, 5vw, 64px);
+  font-weight: 900;
+  color: #ef4444;
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.8), 0 0 40px rgba(249, 115, 22, 0.6);
+  letter-spacing: 2px;
+  animation: lanVsPulse 0.8s ease infinite alternate;
+}
+
+@keyframes lanVsPulse {
+  0% { transform: scale(1); filter: brightness(1); }
+  100% { transform: scale(1.15); filter: brightness(1.3); }
+}
+
+.lan-vs-countdown {
+  font-size: clamp(18px, 1.8vw, 24px);
+  font-weight: 900;
+  color: #67e8f9;
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.7);
+  letter-spacing: 1px;
 }
 
 

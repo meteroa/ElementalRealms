@@ -1,4 +1,4 @@
-import type { CardDef, BoardCreature, PlayerState, ElementType, HeroClass, BattleLogEntry, CampaignLevel } from '../types';
+import type { CardDef, BoardCreature, PlayerState, ElementType, HeroClass, BattleLogEntry, CampaignLevel, NetworkGameStateSnapshot } from '../types';
 import cardsData from '../data/cards.json';
 import { sound } from './sound';
 
@@ -33,6 +33,13 @@ export class SpectromancerEngine {
   public currentCampaign: CampaignLevel | null = null;
   public replaySteps: ReplayStep[] = [];
 
+  // LAN Multiplayer properties & callbacks
+  public isLanGame: boolean = false;
+  public isHost: boolean = false;
+  public isGuest: boolean = false;
+  public onStateBroadcast?: (snapshot: NetworkGameStateSnapshot) => void;
+  public onVfxBroadcast?: (event: { type: string; payload: any }) => void;
+
   // Animation & Visual Feedback Callbacks
   public onStateChange?: () => void;
   public onDamageEffect?: (side: 'player' | 'enemy', slot: number | 'hero', amount: number) => void;
@@ -43,6 +50,7 @@ export class SpectromancerEngine {
   public onCardEnterSlot?: (info: { who: 'player' | 'enemy'; card: CardDef; targetSlot?: number }) => Promise<void>;
   public onCardAnnouncement?: (who: 'player' | 'enemy', card: CardDef) => Promise<void>;
   public enemyRevealedCardIds: Set<string> = new Set();
+  public playerRevealedCardIds: Set<string> = new Set();
   public lastSummonedUid: string | null = null;
 
   // Turn skip / extra actions
@@ -70,9 +78,16 @@ export class SpectromancerEngine {
       initialEnemyCreatures?: Array<{ slot: number; card: CardDef }>;
       extraPlayerMana?: Partial<Record<ElementType, number>>;
       extraEnemyMana?: Partial<Record<ElementType, number>>;
+      isLanGame?: boolean;
+      isHost?: boolean;
+      isGuest?: boolean;
     }
   ) {
     this.currentCampaign = campaign || null;
+    this.isLanGame = !!customConfig?.isLanGame;
+    this.isHost = !!customConfig?.isHost;
+    this.isGuest = !!customConfig?.isGuest;
+
     const enemyClassPool: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
       'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin'
@@ -692,6 +707,8 @@ export class SpectromancerEngine {
       if (this.onCardAnnouncement) {
         await this.onCardAnnouncement(who, card);
       }
+    } else {
+      this.playerRevealedCardIds.add(card.id);
     }
 
     if (card.type === 'creature') {
@@ -2107,8 +2124,10 @@ export class SpectromancerEngine {
       if (attackerSide === 'player') {
         this.startTurn('enemy');
         this.notify();
-        await this.delay(900);
-        await this.triggerAiTurn();
+        if (!this.isLanGame) {
+          await this.delay(900);
+          await this.triggerAiTurn();
+        }
       } else {
         this.turnCount++;
         this.startTurn('player');
@@ -2123,11 +2142,17 @@ export class SpectromancerEngine {
     if (this.onDamageEffect) {
       this.onDamageEffect(side, slot, amount);
     }
+    if (this.isLanGame && this.isHost && this.onVfxBroadcast) {
+      this.onVfxBroadcast({ type: 'damage', payload: { side, slot, amount } });
+    }
   }
 
   private triggerHeal(side: 'player' | 'enemy', slot: number | 'hero', amount: number) {
     if (this.onHealEffect) {
       this.onHealEffect(side, slot, amount);
+    }
+    if (this.isLanGame && this.isHost && this.onVfxBroadcast) {
+      this.onVfxBroadcast({ type: 'heal', payload: { side, slot, amount } });
     }
   }
 
@@ -2388,6 +2413,78 @@ export class SpectromancerEngine {
 
   public notify() {
     if (this.onStateChange) this.onStateChange();
+    if (this.isLanGame && this.isHost && this.onStateBroadcast) {
+      this.onStateBroadcast(this.exportStateSnapshot());
+    }
+  }
+
+  public exportStateSnapshot(): NetworkGameStateSnapshot {
+    return {
+      turnCount: this.turnCount,
+      activeTurn: this.activeTurn,
+      isCombatPhase: this.isCombatPhase,
+      gameOver: this.gameOver,
+      winner: this.winner,
+      playerHp: this.player.hp,
+      playerMaxHp: this.player.maxHp,
+      playerMana: { ...this.player.mana },
+      playerGrowth: { ...this.player.growth },
+      enemyHp: this.enemy.hp,
+      enemyMaxHp: this.enemy.maxHp,
+      enemyMana: { ...this.enemy.mana },
+      enemyGrowth: { ...this.enemy.growth },
+      playerBoard: this.cloneBoard(this.playerBoard),
+      enemyBoard: this.cloneBoard(this.enemyBoard),
+      guestHand: this.enemy.hand.map((c) => ({ ...c })),
+      hostHand: this.player.hand.map((c) => ({ ...c })),
+      enemyRevealedCardIds: Array.from(this.playerRevealedCardIds),
+      lastLog: this.logs.length > 0 ? this.logs[0] : undefined,
+    };
+  }
+
+  public applyStateSnapshot(snapshot: NetworkGameStateSnapshot) {
+    this.turnCount = snapshot.turnCount;
+    // For guest: host's 'player' is guest's 'enemy', host's 'enemy' is guest's 'player'
+    this.activeTurn = snapshot.activeTurn === 'player' ? 'enemy' : 'player';
+    this.isCombatPhase = snapshot.isCombatPhase;
+    this.gameOver = snapshot.gameOver;
+    this.winner = snapshot.winner === 'player' ? 'enemy' : (snapshot.winner === 'enemy' ? 'player' : snapshot.winner);
+
+    // Swap players: guest is player, host is enemy
+    this.player.hp = snapshot.enemyHp;
+    this.player.maxHp = snapshot.enemyMaxHp;
+    this.player.mana = { ...snapshot.enemyMana };
+    this.player.growth = { ...snapshot.enemyGrowth };
+
+    this.enemy.hp = snapshot.playerHp;
+    this.enemy.maxHp = snapshot.playerMaxHp;
+    this.enemy.mana = { ...snapshot.playerMana };
+    this.enemy.growth = { ...snapshot.playerGrowth };
+
+    // Swap boards
+    this.playerBoard = snapshot.enemyBoard.map((c) => (c ? { ...c, owner: 'player', card: { ...c.card } } : null));
+    this.enemyBoard = snapshot.playerBoard.map((c) => (c ? { ...c, owner: 'enemy', card: { ...c.card } } : null));
+
+    if (snapshot.guestHand) {
+      this.player.hand = snapshot.guestHand.map((c) => ({ ...c }));
+    }
+    if (snapshot.hostHand) {
+      this.enemy.hand = snapshot.hostHand.map((c) => ({ ...c }));
+    }
+
+    if (snapshot.enemyRevealedCardIds) {
+      this.enemyRevealedCardIds = new Set(snapshot.enemyRevealedCardIds);
+    }
+
+    if (snapshot.lastLog) {
+      const exists = this.logs.some((l) => l.id === snapshot.lastLog!.id);
+      if (!exists) {
+        this.logs.unshift(snapshot.lastLog);
+        if (this.logs.length > 50) this.logs.pop();
+      }
+    }
+
+    if (this.onStateChange) this.onStateChange();
   }
 
   public reset(
@@ -2428,6 +2525,7 @@ export class SpectromancerEngine {
     this.skipNextTurn = { player: false, enemy: false };
     this.extraActionRemaining = { player: 0, enemy: 0 };
     this.enemyRevealedCardIds.clear();
+    this.playerRevealedCardIds.clear();
     this.startTurn('player');
     this.replaySteps = [{
       turn: 1,

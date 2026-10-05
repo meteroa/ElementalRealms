@@ -89,3 +89,52 @@ export interface CampaignLevel {
   enemyHp: number;
   unlocked: boolean;
 }
+
+export interface NetworkUserProfile {
+  name: string;
+  face: string;
+  className: HeroClass;
+  classCn: string;
+  classType?: HeroClass;
+}
+
+export type NetworkMessageType =
+  | 'ROOM_JOIN'
+  | 'ROOM_ACCEPT'
+  | 'GAME_START'
+  | 'ACTION_PLAY_CARD'
+  | 'ACTION_PASS'
+  | 'STATE_SYNC'
+  | 'VFX_EVENT'
+  | 'SURRENDER'
+  | 'CHAT'
+  | 'PING'
+  | 'PONG';
+
+export interface NetworkMessage {
+  type: NetworkMessageType;
+  payload?: any;
+}
+
+export interface NetworkGameStateSnapshot {
+  turnCount: number;
+  activeTurn: 'player' | 'enemy';
+  isCombatPhase: boolean;
+  gameOver: boolean;
+  winner: 'player' | 'enemy' | null;
+  playerHp: number;
+  playerMaxHp: number;
+  playerMana: Record<ElementType, number>;
+  playerGrowth: Record<ElementType, number>;
+  enemyHp: number;
+  enemyMaxHp: number;
+  enemyMana: Record<ElementType, number>;
+  enemyGrowth: Record<ElementType, number>;
+  playerBoard: (BoardCreature | null)[];
+  enemyBoard: (BoardCreature | null)[];
+  guestHand?: CardDef[];
+  hostHand?: CardDef[];
+  enemyRevealedCardIds?: string[];
+  lastLog?: BattleLogEntry;
+}
+
