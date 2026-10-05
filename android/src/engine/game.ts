@@ -50,6 +50,7 @@ export class SpectromancerEngine {
   public extraActionRemaining: { player: number; enemy: number } = { player: 0, enemy: 0 };
   public leagueRule?: string;
   public campaignLevel?: CampaignLevel;
+  public difficulty: string = '普通';
 
   constructor(
     playerClass: HeroClass = 'sorcery',
@@ -60,9 +61,15 @@ export class SpectromancerEngine {
       enemyName?: string;
       enemyFace?: string;
       enemyClass?: HeroClass;
+      playerHp?: number;
       enemyHp?: number;
+      difficulty?: string;
       customDeck?: CardDef[];
       leagueRule?: string;
+      initialPlayerCreatures?: Array<{ slot: number; card: CardDef }>;
+      initialEnemyCreatures?: Array<{ slot: number; card: CardDef }>;
+      extraPlayerMana?: Partial<Record<ElementType, number>>;
+      extraEnemyMana?: Partial<Record<ElementType, number>>;
     }
   ) {
     this.currentCampaign = campaign || null;
@@ -72,13 +79,15 @@ export class SpectromancerEngine {
     ];
     const enemyClass: HeroClass = customConfig?.enemyClass || (campaign ? enemyClassPool[campaign.id % enemyClassPool.length] : 'necromancer');
     const enemyHp = customConfig?.enemyHp || (campaign ? campaign.enemyHp : 60);
-    const enemyFace = customConfig?.enemyFace || (campaign ? campaign.face : '/faces/Face6.jpg');
+    const enemyFace = customConfig?.enemyFace || (campaign ? campaign.face : './faces/Face6.jpg');
     const enemyName = customConfig?.enemyName || (campaign ? campaign.oppName : '大法师');
 
     const playerName = customConfig?.playerName || '玩家';
-    const playerFace = customConfig?.playerFace || '/faces/Face1.jpg';
+    const playerFace = customConfig?.playerFace || './faces/Face1.jpg';
+    const playerHp = customConfig?.playerHp || 60;
+    this.difficulty = customConfig?.difficulty || '普通';
 
-    this.player = this.createPlayer('player', playerName, playerFace, playerClass, 60);
+    this.player = this.createPlayer('player', playerName, playerFace, playerClass, playerHp);
     this.enemy = this.createPlayer('enemy', enemyName, enemyFace, enemyClass, enemyHp);
 
     if (customConfig?.customDeck && customConfig.customDeck.length === 20) {
@@ -89,7 +98,35 @@ export class SpectromancerEngine {
     this.leagueRule = customConfig?.leagueRule;
 
     if (customConfig?.leagueRule) {
-      this.log(`【联赛规则生效】${customConfig.leagueRule.replace(/\r?\n/g, ' ')}`, 'heal');
+      this.log(`【战场规则生效】${customConfig.leagueRule.replace(/\r?\n/g, ' ')}`, 'heal');
+    }
+
+    if (customConfig?.extraPlayerMana) {
+      Object.entries(customConfig.extraPlayerMana).forEach(([elem, amount]) => {
+        const e = elem === 'special' ? this.player.specialElement : (elem as ElementType);
+        if (this.player.mana[e] !== undefined) {
+          this.player.mana[e] += amount;
+        }
+      });
+    }
+    if (customConfig?.extraEnemyMana) {
+      Object.entries(customConfig.extraEnemyMana).forEach(([elem, amount]) => {
+        const e = elem === 'special' ? this.enemy.specialElement : (elem as ElementType);
+        if (this.enemy.mana[e] !== undefined) {
+          this.enemy.mana[e] += amount;
+        }
+      });
+    }
+
+    if (customConfig?.initialPlayerCreatures) {
+      customConfig.initialPlayerCreatures.forEach((item) => {
+        this.placeInitialCreature('player', item.slot, item.card);
+      });
+    }
+    if (customConfig?.initialEnemyCreatures) {
+      customConfig.initialEnemyCreatures.forEach((item) => {
+        this.placeInitialCreature('enemy', item.slot, item.card);
+      });
     }
 
     this.startTurn('player');
@@ -106,6 +143,36 @@ export class SpectromancerEngine {
       playerBoard: this.cloneBoard(this.playerBoard),
       enemyBoard: this.cloneBoard(this.enemyBoard),
     }];
+  }
+
+  public placeInitialCreature(
+    side: 'player' | 'enemy',
+    slotIndex: number,
+    card: CardDef
+  ): BoardCreature | null {
+    if (slotIndex < 0 || slotIndex >= 6) return null;
+    const board = side === 'player' ? this.playerBoard : this.enemyBoard;
+    const creature: BoardCreature = {
+      uid: Math.random().toString(36).substring(2, 9),
+      card,
+      owner: side,
+      slotIndex,
+      baseAttack: card.attack || 0,
+      currentAttack: card.attack || 0,
+      buffedAttack: false,
+      currentLife: card.life || 1,
+      maxLife: card.life || 1,
+      isWall: !!card.isWall,
+      flying: !!card.flying,
+      spellImmune: !!card.spellImmune,
+      poison: 0,
+      regen: card.regen || 0,
+      canAttack: false,
+    };
+    board[slotIndex] = creature;
+    this.recalculateBoardStats();
+    this.log(`【战场随从入场】${side === 'player' ? this.player.name : this.enemy.name} 的【${card.nameCn}】进驻 [${slotIndex + 1}号位]！`, 'summon');
+    return creature;
   }
 
   public cloneBoard(board: (BoardCreature | null)[]): (BoardCreature | null)[] {
@@ -227,6 +294,7 @@ export class SpectromancerEngine {
 
     // 1. Calculate active mana growth & creature growth auras
     let extraFireGrowth = 0;
+    let extraWaterGrowth = 0;
     let extraAirGrowth = 0;
     let extraEarthGrowth = 0;
     let extraSpecialGrowth = 0;
@@ -236,6 +304,7 @@ export class SpectromancerEngine {
     board.forEach((c) => {
       if (!c) return;
       if (c.card.ability === 'fire_growth_1') extraFireGrowth += 1;
+      if (c.card.ability === 'water_growth_1') extraWaterGrowth += 1;
       if (c.card.ability === 'air_growth_1') extraAirGrowth += 1;
       if (c.card.ability === 'earth_growth_2') extraEarthGrowth += 2;
       if (c.card.ability === 'sorcery_growth_2') extraSpecialGrowth += 2;
@@ -248,6 +317,7 @@ export class SpectromancerEngine {
     activeElements.forEach((elem) => {
       let g = actor.growth[elem];
       if (elem === 'fire') g += extraFireGrowth;
+      if (elem === 'water') g += extraWaterGrowth;
       if (elem === 'air') g += extraAirGrowth;
       if (elem === 'earth') g += extraEarthGrowth;
       if (elem === 'special') g += extraSpecialGrowth;
@@ -323,7 +393,7 @@ export class SpectromancerEngine {
       // Goblin Berserker: deals 2 damage to neighbors
       if (creature.card.ability === 'berserk') {
         [idx - 1, idx + 1].forEach((nIdx) => {
-          if (nIdx >= 0 && nIdx < 5) {
+          if (nIdx >= 0 && nIdx < 6) {
             const target = board[nIdx];
             if (target && !target.spellImmune) {
               target.currentLife -= 2;
@@ -434,7 +504,7 @@ export class SpectromancerEngine {
         const dmg = Math.max(1, actor.mana.illusion);
         opponent.hp -= dmg;
         this.triggerDamage(who === 'player' ? 'enemy' : 'player', 'hero', dmg);
-        sound.play('lightning');
+        sound.play('magic');
         this.log(`【${creature.card.nameCn}】神谕制裁，对 ${opponent.name} 造成 ${dmg} 点幻象精神伤害！`, 'damage');
       }
 
@@ -451,6 +521,18 @@ export class SpectromancerEngine {
         actor.mana[chosen] = Math.max(0, actor.mana[chosen] - 3);
         sound.play('rats');
         this.log(`【${creature.card.nameCn}】鼠群撕咬全场敌军造成 6 点伤害，牺牲了 3 点 ${chosen.toUpperCase()} 能量！`, 'damage');
+      }
+
+      // Basilisk: 4 damage to all enemy creatures with HP <= 8
+      if (creature.card.ability === 'basilisk_gaze_4') {
+        oppBoard.forEach((opp, oIdx) => {
+          if (opp && !opp.spellImmune && opp.currentLife <= 8) {
+            opp.currentLife -= 4;
+            this.triggerDamage(who === 'player' ? 'enemy' : 'player', oIdx, 4);
+            this.log(`【巨蜥】石化凝视，对虚弱的【${opp.card.nameCn}】造成 4 点石化重创！`, 'damage');
+          }
+        });
+        sound.play('gaze');
       }
 
       // Enable creature attack
@@ -558,7 +640,7 @@ export class SpectromancerEngine {
         isWall: !!card.isWall,
         flying: !!card.flying,
         spellImmune: !!card.spellImmune,
-        poison: card.poison || 0,
+        poison: 0,
         regen: card.regen || 0,
         canAttack: isSwift,
       };
@@ -584,9 +666,13 @@ export class SpectromancerEngine {
           this.lastSummonedUid = null;
         }
       }, 700);
-      await this.delay(550);
+      await this.delay(450);
 
-      this.resolveOnSummon(who, card, targetSlot);
+      await this.resolveOnSummon(who, card, targetSlot);
+      this.notify();
+      await this.delay(450);
+      this.cleanupDead();
+      this.notify();
     } else {
       if (this.onCardEnterSlot) {
         await this.onCardEnterSlot({ who, card, targetSlot });
@@ -634,7 +720,7 @@ export class SpectromancerEngine {
     return true;
   }
 
-  private resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number) {
+  private async resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number): Promise<void> {
     const actor = who === 'player' ? this.player : this.enemy;
     const opponent = who === 'player' ? this.enemy : this.player;
     const opposingSide = who === 'player' ? 'enemy' : 'player';
@@ -653,6 +739,49 @@ export class SpectromancerEngine {
     }
 
     switch (card.onSummon) {
+      case 'spawn_spiders': {
+        [-1, 1].forEach((offset) => {
+          const adj = targetSlot + offset;
+          if (adj >= 0 && adj < myBoard.length && myBoard[adj] === null) {
+            const spiderCard: CardDef = {
+              id: 'earth_forest_spider',
+              name: 'Forest Spider',
+              nameCn: '丛林蜘蛛',
+              type: 'creature',
+              element: 'earth',
+              cost: 2,
+              attack: 2,
+              life: 11,
+              poison: 2,
+              image: 'GiantSpider',
+              imgUrl: './cards/GiantSpider.jpg',
+              imgBigUrl: './cards/GiantSpiderBig.jpg',
+              desc: '【剧毒】每次造成伤害附加2点中毒。',
+            };
+            const spiderCreature: BoardCreature = {
+              uid: 'spawn_spider_' + Date.now() + '_' + adj,
+              card: spiderCard,
+              owner: who,
+              slotIndex: adj,
+              baseAttack: 2,
+              currentAttack: 2,
+              buffedAttack: false,
+              currentLife: 11,
+              maxLife: 11,
+              isWall: false,
+              flying: false,
+              spellImmune: false,
+              poison: 0,
+              regen: 0,
+              canAttack: false,
+            };
+            myBoard[adj] = spiderCreature;
+            this.log(`【巨型蜘蛛】孵化繁衍，在 [${adj + 1}号位] 召唤了【丛林蜘蛛】(2/11)！`, 'summon');
+          }
+        });
+        sound.play('summon');
+        break;
+      }
       case 'damage_all_enemies_5': {
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
@@ -665,14 +794,70 @@ export class SpectromancerEngine {
         break;
       }
       case 'damage_all_other_4': {
-        [...myBoard, ...opposingBoard].forEach((c) => {
-          if (c && c.uid !== this.lastSummonedUid && !c.spellImmune) {
+        myBoard.forEach((c, idx) => {
+          if (c && idx !== targetSlot && !c.spellImmune) {
             c.currentLife -= 4;
-            this.triggerDamage(c.owner, c.slotIndex, 4);
+            this.triggerDamage(who, idx, 4);
+          }
+        });
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= 4;
+            this.triggerDamage(opposingSide, idx, 4);
           }
         });
         sound.play('boom');
         this.log(`【${card.nameCn}】践踏全场，对所有其它生物造成 4 点震荡伤害！`, 'damage');
+        break;
+      }
+      case 'lich_burst_8': {
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= 8;
+            this.triggerDamage(opposingSide, idx, 8);
+          }
+        });
+        sound.play('cursedfog');
+        this.log(`【${card.nameCn}】入场冥火轰鸣，对敌方全场生物造成 8 点冥火伤害！`, 'damage');
+        break;
+      }
+      case 'demon_greater_summon': {
+        const fireDmg = Math.min(10, Math.max(1, actor.mana.fire));
+        opponent.hp -= fireDmg;
+        this.triggerDamage(opposingSide, 'hero', fireDmg);
+        opposingBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= fireDmg;
+            this.triggerDamage(opposingSide, idx, fireDmg);
+          }
+        });
+        sound.play('hellfire');
+        this.log(`【${card.nameCn}】深渊降临灭世登场，对敌方英雄及全场生物各造成 ${fireDmg} 点灭世烈焰伤害！`, 'damage');
+        break;
+      }
+      case 'scorpion_stun': {
+        const oppSlot = opposingBoard[targetSlot];
+        if (oppSlot) {
+          oppSlot.canAttack = false;
+          sound.play('poison');
+          this.log(`【${card.nameCn}】麻痹毒针刺入【${oppSlot.card.nameCn}】，使其麻痹跳过下轮攻击！`, 'damage');
+        }
+        break;
+      }
+      case 'angel_holy_3': {
+        actor.mana.holy += 3;
+        sound.play('heal');
+        this.log(`【${card.nameCn}】圣光降临，圣职能量 +3！`, 'heal');
+        break;
+      }
+      case 'timeblazer_teleport': {
+        [targetSlot - 1, targetSlot + 1].forEach((sIdx) => {
+          if (sIdx >= 0 && sIdx < 6 && myBoard[sIdx]) {
+            myBoard[sIdx]!.flying = true;
+          }
+        });
+        sound.play('hasten');
+        this.log(`【${card.nameCn}】时空穿梭，赋予两侧相邻友军直击敌方英雄本体的能力！`, 'heal');
         break;
       }
       case 'gain_fire_2': {
@@ -717,7 +902,7 @@ export class SpectromancerEngine {
       }
       case 'spawn_spiders': {
         [targetSlot - 1, targetSlot + 1].forEach((sIdx) => {
-          if (sIdx >= 0 && sIdx < 5 && myBoard[sIdx] === null) {
+          if (sIdx >= 0 && sIdx < 6 && myBoard[sIdx] === null) {
             myBoard[sIdx] = {
               uid: Math.random().toString(36).substring(2, 9),
               card: {
@@ -731,8 +916,8 @@ export class SpectromancerEngine {
                 life: 11,
                 image: 'GiantSpider',
                 desc: '丛林蜘蛛',
-                imgUrl: '/cards/GiantSpider.jpg',
-                imgBigUrl: '/cards/GiantSpiderBig.jpg',
+                imgUrl: './cards/GiantSpider.jpg',
+                imgBigUrl: './cards/GiantSpiderBig.jpg',
               },
               owner: who,
               slotIndex: sIdx,
@@ -901,8 +1086,8 @@ export class SpectromancerEngine {
                 life: 15,
                 image: 'Shanhai_DongDong',
                 desc: '䍶䍶先锋',
-                imgUrl: '/cards/Shanhai_DongDong.jpg',
-                imgBigUrl: '/cards/Shanhai_DongDongBig.jpg',
+                imgUrl: './cards/Shanhai_DongDong.jpg',
+                imgBigUrl: './cards/Shanhai_DongDongBig.jpg',
               },
               owner: who,
               slotIndex: sIdx,
@@ -1400,6 +1585,12 @@ export class SpectromancerEngine {
           defenderHero.hp -= heroDmg;
           this.triggerDamage(defenderSide, 'hero', heroDmg);
           this.log(`【${attacker.card.nameCn}】越过战线，直接对 ${defenderHero.name} 造成 ${heroDmg} 点伤害！`, 'attack');
+
+          if (attacker.card.ability === 'lich_power_drain') {
+            const attackerHeroObj = attackerSide === 'player' ? this.player : this.enemy;
+            attackerHeroObj.mana.death = (attackerHeroObj.mana.death || 0) + 2;
+            this.log(`【巫妖王】吸取死灵精粹，死灵能量 +2！`, 'heal');
+          }
         }
 
         if (isCleave) {
@@ -1453,6 +1644,13 @@ export class SpectromancerEngine {
             attacker.currentLife = Math.min(attacker.maxLife, attacker.currentLife + dmg);
             this.triggerHeal(attackerSide, slot, dmg);
           }
+
+          // Poison trait: injects poison into the damaged creature
+          if (attacker.card.poison && !defender.spellImmune && dmg > 0) {
+            defender.poison = (defender.poison || 0) + (attacker.card.poison || 2);
+            sound.play('poison');
+            this.log(`【${attacker.card.nameCn}】注入剧毒，【${defender.card.nameCn}】身中剧毒（每回合受 ${defender.poison} 点毒素伤害）！`, 'damage');
+          }
         }
       } else {
         let heroDmg = attacker.currentAttack;
@@ -1481,6 +1679,12 @@ export class SpectromancerEngine {
           defenderHero.hp -= heroDmg;
           this.triggerDamage(defenderSide, 'hero', heroDmg);
           this.log(`【${attacker.card.nameCn}】直入中军，对 ${defenderHero.name} 造成 ${heroDmg} 点打击伤害！`, 'attack');
+
+          if (attacker.card.ability === 'lich_power_drain') {
+            const attackerHeroObj = attackerSide === 'player' ? this.player : this.enemy;
+            attackerHeroObj.mana.death = (attackerHeroObj.mana.death || 0) + 2;
+            this.log(`【巫妖王】吸取死灵精粹，死灵能量 +2！`, 'heal');
+          }
         }
       }
 
@@ -1565,6 +1769,16 @@ export class SpectromancerEngine {
             this.log(`【${creature.card.nameCn}】圆寂升华，圣职能量 +2！`, 'heal');
           }
 
+          // Keeper of Death (亡灵御守): death_power_on_kill -> opposite player gets +1 death mana
+          const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+          const oppHero = who === 'player' ? this.enemy : this.player;
+          oppBoard.forEach((k) => {
+            if (k && k.card.ability === 'death_power_on_kill') {
+              oppHero.mana.death = (oppHero.mana.death || 0) + 1;
+              this.log(`【${k.card.nameCn}】汲取亡魂，死灵能量 +1！`, 'heal');
+            }
+          });
+
           if (creature.card.ability === 'phoenix_rebirth' && actor.mana.fire >= 10) {
             board[idx] = {
               ...creature,
@@ -1623,6 +1837,29 @@ export class SpectromancerEngine {
               }
             }
           });
+
+          // Vampire: +4 attack if opposite slot has an enemy creature
+          if (c.card.ability === 'vampirism') {
+            const oppBoard = side === 'player' ? this.enemyBoard : this.playerBoard;
+            if (oppBoard[slotIdx]) {
+              totalAtk += 4;
+            }
+          }
+
+          // Goblin Hero: +2 attack for each adjacent creature
+          if (c.card.ability === 'goblin_hero_synergy') {
+            [-1, 1].forEach((offset) => {
+              const nIdx = slotIdx + offset;
+              if (nIdx >= 0 && nIdx < board.length && board[nIdx]) {
+                totalAtk += 2;
+              }
+            });
+          }
+
+          // Wolverine: berserk attack +2 when currentLife <= half maxLife
+          if (c.card.ability === 'wolverine_berserk_regen' && c.currentLife <= Math.floor(c.maxLife / 2)) {
+            totalAtk += 2;
+          }
         }
 
         c.currentAttack = Math.max(0, totalAtk);
@@ -1671,6 +1908,12 @@ export class SpectromancerEngine {
       return;
     }
 
+    // Easy difficulty occasional hesitation
+    if (this.difficulty === '容易' && Math.random() < 0.3 && this.enemyBoard.some((c) => c !== null)) {
+      await this.passTurn('enemy');
+      return;
+    }
+
     const emptySlots: number[] = [];
     this.enemyBoard.forEach((slot, idx) => {
       if (slot === null) emptySlots.push(idx);
@@ -1686,18 +1929,33 @@ export class SpectromancerEngine {
       }
     });
 
+    // In Hard/Master difficulty, sort playable creatures by stats
+    const creatures = playableCards
+      .filter((c) => c.type === 'creature')
+      .sort((a, b) => {
+        if (this.difficulty === '大法师' || this.difficulty === '困难') {
+          return ((b.attack || 0) + (b.life || 0)) - ((a.attack || 0) + (a.life || 0));
+        }
+        return 0;
+      });
+
     const hasEnemyTarget = this.playerBoard.some((c) => c !== null);
     const spell = playableCards.find((c) => c.type === 'spell' && (hasEnemyTarget || !c.requiresTarget));
-    const creature = playableCards.find((c) => c.type === 'creature');
+    const creature = creatures[0];
 
-    if (spell && Math.random() > 0.4) {
+    const preferSpellThreshold = (this.difficulty === '大法师' || this.difficulty === '困难') ? 0.3 : 0.45;
+
+    if (spell && Math.random() > preferSpellThreshold) {
       let targetSlot = undefined;
       if (spell.requiresTarget) {
-        const validTargets: number[] = [];
+        const validTargets: { idx: number; atk: number }[] = [];
         this.playerBoard.forEach((c, idx) => {
-          if (c && !c.spellImmune) validTargets.push(idx);
+          if (c && !c.spellImmune) validTargets.push({ idx, atk: c.currentAttack });
         });
-        if (validTargets.length > 0) targetSlot = validTargets[0];
+        if (validTargets.length > 0) {
+          validTargets.sort((a, b) => b.atk - a.atk);
+          targetSlot = validTargets[0].idx;
+        }
       }
       await this.playCard('enemy', spell, targetSlot);
     } else if (creature && bestSlot !== undefined) {
@@ -1734,11 +1992,11 @@ export class SpectromancerEngine {
     ];
     const enemyClass: HeroClass = customConfig?.enemyClass || (campaign ? enemyClassPool[campaign.id % enemyClassPool.length] : 'necromancer');
     const enemyHp = customConfig?.enemyHp || (campaign ? campaign.enemyHp : 60);
-    const enemyFace = customConfig?.enemyFace || (campaign ? campaign.face : '/faces/Face6.jpg');
+    const enemyFace = customConfig?.enemyFace || (campaign ? campaign.face : './faces/Face6.jpg');
     const enemyName = customConfig?.enemyName || (campaign ? campaign.oppName : '大法师');
 
     const playerName = customConfig?.playerName || '玩家';
-    const playerFace = customConfig?.playerFace || '/faces/Face1.jpg';
+    const playerFace = customConfig?.playerFace || './faces/Face1.jpg';
 
     this.player = this.createPlayer('player', playerName, playerFace, playerClass, 60);
     this.enemy = this.createPlayer('enemy', enemyName, enemyFace, enemyClass, enemyHp);

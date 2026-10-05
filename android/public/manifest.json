@@ -1,0 +1,71 @@
+{
+  "@platforms": [
+    "android"
+  ],
+  "id": "__UNI__YSMJ100",
+  "name": "元素秘境",
+  "version": {
+    "name": "1.0.0",
+    "code": "100"
+  },
+  "description": "元素秘境 · 魔导对决 (Elemental Realms)",
+  "icons": {
+    "android": {
+      "hdpi": "icons/icon-72.png",
+      "xhdpi": "icons/icon-96.png",
+      "xxhdpi": "icons/icon-144.png",
+      "xxxhdpi": "icons/icon-192.png"
+    }
+  },
+  "launch_path": "index.html",
+  "developer": {
+    "name": "Spectromancer",
+    "email": "",
+    "url": ""
+  },
+  "permissions": {
+    "Audio": {
+      "description": "音频播放"
+    }
+  },
+  "plus": {
+    "useragent": {
+      "value": "SpectromancerAndroid",
+      "concatenateOnIE": false
+    },
+    "splashscreen": {
+      "autoclose": true,
+      "waiting": false
+    },
+    "popGesture": "none",
+    "runmode": "normal",
+    "signature": "skip",
+    "distribute": {
+      "plugins": {},
+      "google": {
+        "permissions": [
+          "<uses-permission android:name=\"android.permission.INTERNET\"/>",
+          "<uses-permission android:name=\"android.permission.ACCESS_NETWORK_STATE\"/>",
+          "<uses-permission android:name=\"android.permission.WAKE_LOCK\"/>"
+        ]
+      },
+      "apple": {},
+      "orientation": [
+        "landscape-primary",
+        "landscape-secondary",
+        "portrait-primary",
+        "portrait-secondary"
+      ]
+    },
+    "screenOrientation": [
+      "landscape-primary",
+      "landscape-secondary",
+      "portrait-primary",
+      "portrait-secondary"
+    ],
+    "statusbar": {
+      "immersed": false
+    },
+    "fullscreen": true
+  }
+}

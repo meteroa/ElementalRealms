@@ -7,8 +7,26 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="theme-color" content="#0a0d18" />
     <title>元素秘境 · 魔导对决 (Elemental Realms)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@700;900&family=Ma+Shan+Zheng&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet" />
   </head>
   <body>
+    <script>
+      // Global fallback: redirect any broken image pointing to file:///cards, faces, ui to relative ./
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t.tagName === 'IMG' && t.src) {
+          if (!t.getAttribute('data-err-retried')) {
+            t.setAttribute('data-err-retried', '1');
+            var m = t.src.match(/file:\/\/\/(cards\/.*|faces\/.*|ui\/.*)$/);
+            if (m) {
+              t.src = './' + m[1];
+            }
+          }
+        }
+      }, true);
+    </script>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>

@@ -8,6 +8,10 @@ interface SoundDef {
 class SoundManager {
   private currentTrack: string = '';
   private bgmAudio: HTMLAudioElement | null = null;
+  private plusBgmPlayer: any = null;
+  private bgmSourceNode: AudioBufferSourceNode | null = null;
+  private bgmGainNode: GainNode | null = null;
+  private isWebAudioBgmPlaying: boolean = false;
   public enabled: boolean = true;
   public bgmEnabled: boolean = true;
 
@@ -39,7 +43,7 @@ class SoundManager {
     summondrop: { file: 'summondrop.ogg', volume: 0.75 },
     attack: { file: 'attack.ogg', volume: 1.5 },
     boom: { file: 'boom.ogg', volume: 0.85 },
-    victory: { file: 'trumpet.ogg', volume: 0.7 },
+    victory: { file: 'ritual_of_glory.ogg', volume: 0.85 },
     defeat: { file: 'doombolt.ogg', volume: 0.8 },
 
     // Authentic PC Spell Sounds (pc/Sounds.ctl)
@@ -195,14 +199,165 @@ class SoundManager {
       if (ctx && ctx.state === 'suspended') {
         ctx.resume().catch(() => {});
       }
-      if (this.bgmEnabled && this.enabled && this.bgmAudio && this.bgmAudio.paused) {
-        this.bgmAudio.play().catch(() => {});
+      if (this.bgmEnabled && this.enabled) {
+        if (!this.isWebAudioBgmPlaying && !this.plusBgmPlayer && (!this.bgmAudio || this.bgmAudio.paused)) {
+          this.playBgm(this.currentTrack || 'menu1', true);
+        }
       }
     };
 
     ['click', 'touchstart', 'pointerdown', 'keydown'].forEach((evt) => {
       window.addEventListener(evt, unlock, { passive: true });
     });
+
+    if (typeof document !== 'undefined') {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          unlock();
+        }
+      });
+    }
+
+    if (typeof window !== 'undefined') {
+      const onReady = () => {
+        if (this.bgmEnabled && this.enabled) {
+          this.playBgm(this.currentTrack || 'menu1');
+        }
+      };
+      if ((window as any).plus) {
+        onReady();
+      } else {
+        document.addEventListener('plusready', onReady, false);
+      }
+
+      // Auto-recovery watchdog: checks every 2.5s if BGM unexpectedly stopped or was muted by OS
+      setInterval(() => {
+        if (this.enabled && this.bgmEnabled && this.currentTrack) {
+          const ctx = this.getAudioContext();
+          if (ctx && ctx.state === 'suspended') {
+            ctx.resume().catch(() => {});
+          }
+          if (!this.isWebAudioBgmPlaying && !this.plusBgmPlayer && (!this.bgmAudio || this.bgmAudio.paused)) {
+            this.playBgm(this.currentTrack, true);
+          }
+        }
+      }, 2500);
+    }
+  }
+
+  private getAudioUrl(filename: string): string {
+    return `./audio/${filename.toLowerCase()}`;
+  }
+
+  private playWithPlus(file: string, vol: number = 0.8, isBgm: boolean = false): boolean {
+    const w = typeof window !== 'undefined' ? (window as any) : null;
+    if (!w || !w.plus || !w.plus.audio) return false;
+
+    try {
+      const cleanFile = file.toLowerCase();
+      const primaryPath = `_www/audio/${cleanFile}`;
+      const player = w.plus.audio.createPlayer(primaryPath);
+      if (!player) return false;
+
+      if (typeof player.setVolume === 'function') {
+        player.setVolume(vol);
+      }
+
+      if (isBgm) {
+        if (this.plusBgmPlayer) {
+          try { this.plusBgmPlayer.stop(); } catch {}
+          try { this.plusBgmPlayer.close(); } catch {}
+          this.plusBgmPlayer = null;
+        }
+        this.plusBgmPlayer = player;
+        const onBgmEnd = () => {
+          if (this.plusBgmPlayer === player && this.enabled && this.bgmEnabled) {
+            try {
+              try { player.stop(); } catch {}
+              try { player.close(); } catch {}
+            } catch {}
+            this.plusBgmPlayer = null;
+            setTimeout(() => {
+              if (this.enabled && this.bgmEnabled && !this.plusBgmPlayer) {
+                this.playWithPlus(file, vol, true);
+              }
+            }, 50);
+          }
+        };
+        player.play(onBgmEnd, () => {
+          const altPlayer = w.plus.audio.createPlayer(`audio/${cleanFile}`);
+          if (altPlayer) {
+            this.plusBgmPlayer = altPlayer;
+            altPlayer.play(onBgmEnd, () => {
+              try { altPlayer.close(); } catch {}
+              this.plusBgmPlayer = null;
+              this.playHtml5Bgm(cleanFile);
+            });
+          } else {
+            this.plusBgmPlayer = null;
+            this.playHtml5Bgm(cleanFile);
+          }
+        });
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private playHtml5Bgm(fileWithExt: string) {
+    if (this.bgmAudio) {
+      try { this.bgmAudio.pause(); } catch {}
+      this.bgmAudio = null;
+    }
+    try {
+      this.bgmAudio = new Audio(this.getAudioUrl(fileWithExt));
+      this.bgmAudio.loop = true;
+      this.bgmAudio.volume = 0.45;
+      this.bgmAudio.addEventListener('ended', () => {
+        if (this.enabled && this.bgmEnabled && this.bgmAudio) {
+          this.bgmAudio.currentTime = 0;
+          this.bgmAudio.play().catch(() => {});
+        }
+      });
+      if (this.enabled && this.bgmEnabled) {
+        const p = this.bgmAudio.play();
+        if (p !== undefined) {
+          p.catch(() => {});
+        }
+      }
+    } catch {}
+  }
+
+  private async loadAudioArrayBuffer(url: string): Promise<ArrayBuffer | null> {
+    if (typeof window !== 'undefined' && window.location.protocol === 'file:') {
+      return new Promise((resolve) => {
+        try {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', url, true);
+          xhr.responseType = 'arraybuffer';
+          xhr.onload = () => {
+            if (xhr.status === 200 || xhr.status === 0) {
+              resolve(xhr.response as ArrayBuffer);
+            } else {
+              resolve(null);
+            }
+          };
+          xhr.onerror = () => resolve(null);
+          xhr.send();
+        } catch {
+          resolve(null);
+        }
+      });
+    }
+
+    try {
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return await res.arrayBuffer();
+    } catch {
+      return null;
+    }
   }
 
   private async loadBuffer(file: string): Promise<AudioBuffer | null> {
@@ -213,9 +368,9 @@ class SoundManager {
       try {
         const ctx = this.getAudioContext();
         if (!ctx) return null;
-        const res = await fetch(`/audio/${file.toLowerCase()}`);
-        if (!res.ok) return null;
-        const arrayBuf = await res.arrayBuffer();
+        const url = this.getAudioUrl(file);
+        const arrayBuf = await this.loadAudioArrayBuffer(url);
+        if (!arrayBuf) return null;
         const audioBuf = await ctx.decodeAudioData(arrayBuf);
         this.audioBuffers.set(file, audioBuf);
         return audioBuf;
@@ -230,40 +385,135 @@ class SoundManager {
     return promise;
   }
 
-  // Preload essential high-frequency SFX into memory via Web Audio & HTML5 pool
+  // Preload essential high-frequency SFX and core BGM into memory via Web Audio
   private preloadCoreSounds() {
     const frequent = [
-      'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'summon1.ogg', 'summondrop.ogg',
-      'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg'
+      'menu1.ogg', 'combat1.ogg', 'combat2.ogg', 'combat3.ogg',
+      'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'btn3.ogg', 'summon1.ogg', 'summondrop.ogg',
+      'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg', 'ritual_of_glory.ogg', 'doombolt.ogg'
     ];
     frequent.forEach((file) => {
       this.loadBuffer(file);
       try {
-        const a = new Audio(`/audio/${file}`);
+        const a = new Audio(this.getAudioUrl(file));
         a.preload = 'auto';
         this.audioPool.set(file, [a]);
       } catch {}
     });
   }
 
-  public playBgm(track: string = 'menu1') {
-    if (this.currentTrack === track && this.bgmAudio && !this.bgmAudio.paused) return;
-    this.currentTrack = track;
+  private stopAllBgm() {
+    if (this.bgmSourceNode) {
+      try { this.bgmSourceNode.onended = null; } catch {}
+      try { this.bgmSourceNode.stop(); } catch {}
+      try { this.bgmSourceNode.disconnect(); } catch {}
+      this.bgmSourceNode = null;
+    }
+    this.isWebAudioBgmPlaying = false;
+
+    if (this.plusBgmPlayer) {
+      try { this.plusBgmPlayer.stop(); } catch {}
+      try { this.plusBgmPlayer.close(); } catch {}
+      this.plusBgmPlayer = null;
+    }
+
     if (this.bgmAudio) {
-      this.bgmAudio.pause();
+      try { this.bgmAudio.pause(); } catch {}
       this.bgmAudio = null;
     }
+  }
+
+  private async playWebAudioBgm(cleanTrack: string, vol: number = 0.45): Promise<boolean> {
     try {
-      this.bgmAudio = new Audio(`/audio/${track.toLowerCase()}.ogg`);
-      this.bgmAudio.loop = true;
-      this.bgmAudio.volume = 0.35;
-      if (this.enabled && this.bgmEnabled) {
-        const p = this.bgmAudio.play();
-        if (p !== undefined) {
-          p.catch(() => {});
-        }
+      const ctx = this.getAudioContext();
+      if (!ctx) return false;
+
+      if (ctx.state === 'suspended') {
+        await ctx.resume().catch(() => {});
       }
-    } catch {}
+
+      const file = `${cleanTrack}.ogg`;
+      const buffer = await this.loadBuffer(file);
+      if (!buffer) return false;
+
+      // Verify track hasn't changed while buffer was loading
+      if (this.currentTrack !== cleanTrack) return true;
+
+      // Cleanly stop any existing Web Audio BGM
+      if (this.bgmSourceNode) {
+        try { this.bgmSourceNode.onended = null; } catch {}
+        try { this.bgmSourceNode.stop(); } catch {}
+        try { this.bgmSourceNode.disconnect(); } catch {}
+        this.bgmSourceNode = null;
+      }
+
+      // Stop any 5+ or HTML5 audio players
+      if (this.plusBgmPlayer) {
+        try { this.plusBgmPlayer.stop(); } catch {}
+        try { this.plusBgmPlayer.close(); } catch {}
+        this.plusBgmPlayer = null;
+      }
+      if (this.bgmAudio) {
+        try { this.bgmAudio.pause(); } catch {}
+        this.bgmAudio = null;
+      }
+
+      if (!this.bgmGainNode) {
+        this.bgmGainNode = ctx.createGain();
+        this.bgmGainNode.connect(ctx.destination);
+      }
+      this.bgmGainNode.gain.value = (this.enabled && this.bgmEnabled) ? vol : 0;
+
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.connect(this.bgmGainNode);
+      src.onended = () => {
+        if (this.bgmSourceNode === src) {
+          this.isWebAudioBgmPlaying = false;
+          this.bgmSourceNode = null;
+        }
+      };
+      src.start(0);
+
+      this.bgmSourceNode = src;
+      this.isWebAudioBgmPlaying = true;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  public async playBgm(track: string = 'menu1', force: boolean = false) {
+    let cleanTrack = (track || 'menu1').toLowerCase().trim();
+    if (cleanTrack === 'battle1') cleanTrack = 'combat1';
+    if (!['menu1', 'combat1', 'combat2', 'combat3'].includes(cleanTrack)) {
+      cleanTrack = 'combat1';
+    }
+
+    if (!force && this.currentTrack === cleanTrack && (this.isWebAudioBgmPlaying || (this.bgmAudio && !this.bgmAudio.paused) || this.plusBgmPlayer)) {
+      return;
+    }
+    this.currentTrack = cleanTrack;
+
+    if (!this.enabled || !this.bgmEnabled) {
+      this.stopAllBgm();
+      return;
+    }
+
+    // 1. Primary: Web Audio API (Zero latency, seamless loop, 0 native OS handle leaks)
+    const webAudioOk = await this.playWebAudioBgm(cleanTrack, 0.45);
+    if (webAudioOk && this.isWebAudioBgmPlaying) {
+      return;
+    }
+
+    // 2. Secondary fallback: 5+ Native Audio Player (HBuilderX / Android local)
+    if (this.playWithPlus(`${cleanTrack}.ogg`, 0.45, true)) {
+      return;
+    }
+
+    // 3. Tertiary fallback: Standard HTML5 Audio
+    this.playHtml5Bgm(`${cleanTrack}.ogg`);
   }
 
   public play(name: string, customVolume?: number) {
@@ -277,30 +527,31 @@ class SoundManager {
       const vol = customVolume !== undefined ? customVolume : (def.volume ?? 0.8);
       const safeVol = Math.max(0, Math.min(1, vol));
 
+      // 1. Web Audio API (Zero latency, concurrent, zero native handles)
       const ctx = this.getAudioContext();
-      if (ctx && ctx.state === 'running') {
-        const buf = this.audioBuffers.get(def.file);
-        if (buf) {
-          const src = ctx.createBufferSource();
-          src.buffer = buf;
-          const gain = ctx.createGain();
-          gain.gain.value = Math.max(0, vol); // Web Audio API supports amplified gain > 1.0!
-          src.connect(gain);
-          gain.connect(ctx.destination);
-          src.start(0);
-          return;
-        } else {
-          // Pre-fetch into buffer cache for next time
-          this.loadBuffer(def.file).then((b) => {
-            if (b && ctx.state === 'running') {
-              // already cached for next time
-            }
-          });
+      if (ctx) {
+        if (ctx.state === 'suspended') {
+          ctx.resume().catch(() => {});
+        }
+        if (ctx.state === 'running') {
+          const buf = this.audioBuffers.get(def.file);
+          if (buf) {
+            const src = ctx.createBufferSource();
+            src.buffer = buf;
+            const gain = ctx.createGain();
+            gain.gain.value = safeVol;
+            src.connect(gain);
+            gain.connect(ctx.destination);
+            src.start(0);
+            return;
+          } else {
+            this.loadBuffer(def.file);
+          }
         }
       }
 
-      // HTML5 Audio fallback
-      const filePath = `/audio/${def.file.toLowerCase()}`;
+      // 2. HTML5 Audio Pool Fallback
+      const filePath = this.getAudioUrl(def.file);
       let pool = this.audioPool.get(def.file);
       if (!pool) {
         pool = [];
@@ -324,39 +575,57 @@ class SoundManager {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch(() => {
-          const fallback = new Audio(filePath);
-          fallback.volume = safeVol;
-          fallback.play().catch(() => {});
+          try {
+            const fallback = new Audio(filePath);
+            fallback.volume = safeVol;
+            fallback.play().catch(() => {});
+          } catch {}
         });
       }
     } catch {}
   }
 
   public startBgm() {
-    if (!this.bgmAudio) {
-      this.playBgm('combat1');
-    } else if (this.enabled && this.bgmEnabled) {
-      this.bgmAudio.play().catch(() => {});
+    if (!this.isWebAudioBgmPlaying && !this.bgmAudio && !this.plusBgmPlayer) {
+      this.playBgm(this.currentTrack || 'combat1', true);
+    } else {
+      this.updateBgmOutput();
+    }
+  }
+
+  private updateBgmOutput() {
+    const shouldPlay = this.enabled && this.bgmEnabled;
+    if (this.bgmGainNode) {
+      this.bgmGainNode.gain.value = shouldPlay ? 0.45 : 0;
+    }
+    if (!shouldPlay) {
+      if (this.bgmAudio) this.bgmAudio.pause();
+      if (this.plusBgmPlayer) {
+        try { this.plusBgmPlayer.pause(); } catch {}
+      }
+    } else {
+      if (this.isWebAudioBgmPlaying) {
+        const ctx = this.getAudioContext();
+        if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+      } else if (this.plusBgmPlayer) {
+        try { this.plusBgmPlayer.resume(); } catch {}
+      } else if (this.bgmAudio) {
+        this.bgmAudio.play().catch(() => {});
+      } else {
+        this.playBgm(this.currentTrack || 'menu1', true);
+      }
     }
   }
 
   public toggleMute(): boolean {
     this.enabled = !this.enabled;
-    if (!this.enabled && this.bgmAudio) {
-      this.bgmAudio.pause();
-    } else if (this.enabled && this.bgmAudio && this.bgmEnabled) {
-      this.bgmAudio.play().catch(() => {});
-    }
+    this.updateBgmOutput();
     return this.enabled;
   }
 
   public toggleBgm(): boolean {
     this.bgmEnabled = !this.bgmEnabled;
-    if (!this.bgmEnabled && this.bgmAudio) {
-      this.bgmAudio.pause();
-    } else if (this.bgmEnabled && this.bgmAudio && this.enabled) {
-      this.bgmAudio.play().catch(() => {});
-    }
+    this.updateBgmOutput();
     return this.bgmEnabled;
   }
 }

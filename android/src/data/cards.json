@@ -11,8 +11,8 @@
     "image": "GoblinBerserker",
     "desc": "每当拥有者的回合开始阶段，【哥布林狂战士】对邻格生物造成2点伤害。",
     "ability": "berserk",
-    "imgUrl": "/cards/GoblinBerserker.jpg",
-    "imgBigUrl": "/cards/GoblinBerserkerBig.jpg"
+    "imgUrl": "./cards/GoblinBerserker.jpg",
+    "imgBigUrl": "./cards/GoblinBerserkerBig.jpg"
   },
   {
     "id": "fire_wall_of_fire",
@@ -27,8 +27,8 @@
     "image": "WallOfFire",
     "desc": "【城墙】当【火墙】被召唤时，它会对对方所有生物造成5点伤害。",
     "onSummon": "damage_all_enemies_5",
-    "imgUrl": "/cards/WallOfFire.jpg",
-    "imgBigUrl": "/cards/WallOfFireBig.jpg"
+    "imgUrl": "./cards/WallOfFire.jpg",
+    "imgBigUrl": "./cards/WallOfFireBig.jpg"
   },
   {
     "id": "fire_priest_of_fire",
@@ -42,8 +42,8 @@
     "image": "PriestOfFire",
     "desc": "【火焰祭司】可使拥有者每回合的火系能量成长率+1。",
     "ability": "fire_growth_1",
-    "imgUrl": "/cards/PriestOfFire.jpg",
-    "imgBigUrl": "/cards/PriestOfFireBig.jpg"
+    "imgUrl": "./cards/PriestOfFire.jpg",
+    "imgBigUrl": "./cards/PriestOfFireBig.jpg"
   },
   {
     "id": "fire_drake",
@@ -57,8 +57,8 @@
     "swift": true,
     "image": "FireDrake",
     "desc": "【冲锋】可以在上场的回合内就进行攻击。",
-    "imgUrl": "/cards/FireDrake.jpg",
-    "imgBigUrl": "/cards/FireDrakeBig.jpg"
+    "imgUrl": "./cards/FireDrake.jpg",
+    "imgBigUrl": "./cards/FireDrakeBig.jpg"
   },
   {
     "id": "fire_orc_chieftain",
@@ -72,8 +72,8 @@
     "image": "OrcChieftain",
     "desc": "【兽人酋长】可以使邻格生物的攻击+2（墙类生物不会获得此加成）。",
     "ability": "neighbor_attack_2",
-    "imgUrl": "/cards/OrcChieftain.jpg",
-    "imgBigUrl": "/cards/OrcChieftainBig.jpg"
+    "imgUrl": "./cards/OrcChieftain.jpg",
+    "imgBigUrl": "./cards/OrcChieftainBig.jpg"
   },
   {
     "id": "fire_flame_wave",
@@ -85,8 +85,8 @@
     "image": "FlameWave",
     "desc": "【火焰波浪】对对方所有生物造成9点伤害。",
     "spellEffect": "damage_all_enemy_creatures_9",
-    "imgUrl": "/cards/FlameWave.png",
-    "imgBigUrl": "/cards/FlameWaveBig.png"
+    "imgUrl": "./cards/FlameWave.png",
+    "imgBigUrl": "./cards/FlameWaveBig.png"
   },
   {
     "id": "fire_minotaur_commander",
@@ -100,8 +100,8 @@
     "image": "MinotaurCommander",
     "desc": "【牛头人指挥官】使己方所有其它生物的攻击+1（墙类生物不会获得此加成）。",
     "ability": "all_friendly_attack_1",
-    "imgUrl": "/cards/MinotaurCommander.jpg",
-    "imgBigUrl": "/cards/MinotaurCommanderBig.jpg"
+    "imgUrl": "./cards/MinotaurCommander.jpg",
+    "imgBigUrl": "./cards/MinotaurCommanderBig.jpg"
   },
   {
     "id": "fire_bargul",
@@ -115,8 +115,8 @@
     "image": "Bargul",
     "desc": "当【霸古魔】被召唤时，它对所有其它生物造成4点伤害。",
     "onSummon": "damage_all_other_4",
-    "imgUrl": "/cards/Bargul.jpg",
-    "imgBigUrl": "/cards/BargulBig.jpg"
+    "imgUrl": "./cards/Bargul.jpg",
+    "imgBigUrl": "./cards/BargulBig.jpg"
   },
   {
     "id": "fire_inferno",
@@ -129,8 +129,8 @@
     "requiresTarget": true,
     "desc": "【炼狱爆轰】对对方目标生物造成18点伤害，并对对方所有其它生物造成10点伤害。",
     "spellEffect": "inferno_18_10",
-    "imgUrl": "/cards/Inferno.png",
-    "imgBigUrl": "/cards/InfernoBig.png"
+    "imgUrl": "./cards/Inferno.png",
+    "imgBigUrl": "./cards/InfernoBig.png"
   },
   {
     "id": "fire_dragon",
@@ -144,8 +144,8 @@
     "image": "Dragon",
     "desc": "【火龙】使拥有者施放的魔法所造成的伤害增加50%（数值向上取整）。",
     "ability": "spell_damage_50_percent",
-    "imgUrl": "/cards/Dragon.jpg",
-    "imgBigUrl": "/cards/DragonBig.jpg"
+    "imgUrl": "./cards/Dragon.jpg",
+    "imgBigUrl": "./cards/DragonBig.jpg"
   },
   {
     "id": "water_sea_sprite",
@@ -159,8 +159,8 @@
     "image": "SeaSprite",
     "desc": "在拥有者的回合开始阶段，【海妖】对拥有者本体造成2点伤害。",
     "ability": "backfire_2",
-    "imgUrl": "/cards/SeaSprite.jpg",
-    "imgBigUrl": "/cards/SeaSpriteBig.jpg"
+    "imgUrl": "./cards/SeaSprite.jpg",
+    "imgBigUrl": "./cards/SeaSpriteBig.jpg"
   },
   {
     "id": "water_meditation",
@@ -172,8 +172,8 @@
     "image": "Meditation",
     "desc": "【冥想】使施法者的火系、气系和土系能量各+1。",
     "spellEffect": "meditation_boost",
-    "imgUrl": "/cards/Meditation.png",
-    "imgBigUrl": "/cards/MeditationBig.png"
+    "imgUrl": "./cards/Meditation.png",
+    "imgBigUrl": "./cards/MeditationBig.png"
   },
   {
     "id": "water_merfolk_apostate",
@@ -187,8 +187,8 @@
     "image": "MerfolkApostate",
     "desc": "当【人鱼变节者】被召唤时，它可以使拥有者的火系能量+2。",
     "onSummon": "gain_fire_2",
-    "imgUrl": "/cards/MerfolkApostate.jpg",
-    "imgBigUrl": "/cards/MerfolkApostateBig.jpg"
+    "imgUrl": "./cards/MerfolkApostate.jpg",
+    "imgBigUrl": "./cards/MerfolkApostateBig.jpg"
   },
   {
     "id": "water_ice_golem",
@@ -202,8 +202,8 @@
     "spellImmune": true,
     "image": "IceGolem",
     "desc": "【魔免】寒冰傀儡不会受到任何魔法或技能所造成的伤害。",
-    "imgUrl": "/cards/IceGolem.jpg",
-    "imgBigUrl": "/cards/IceGolemBig.jpg"
+    "imgUrl": "./cards/IceGolem.jpg",
+    "imgBigUrl": "./cards/IceGolemBig.jpg"
   },
   {
     "id": "water_merfolk_elder",
@@ -217,8 +217,8 @@
     "image": "MerfolkElder",
     "desc": "【人鱼长老】可使拥有者每回合的气系能量成长率+1。",
     "ability": "air_growth_1",
-    "imgUrl": "/cards/MerfolkElder.jpg",
-    "imgBigUrl": "/cards/MerfolkElderBig.jpg"
+    "imgUrl": "./cards/MerfolkElder.jpg",
+    "imgBigUrl": "./cards/MerfolkElderBig.jpg"
   },
   {
     "id": "water_ice_guard",
@@ -232,8 +232,8 @@
     "image": "IceGuard",
     "desc": "【冰霜守卫】使拥有者本体受到的任何伤害减少50%（数值向上取整）。",
     "ability": "hero_shield_half",
-    "imgUrl": "/cards/IceGuard.jpg",
-    "imgBigUrl": "/cards/IceGuardBig.jpg"
+    "imgUrl": "./cards/IceGuard.jpg",
+    "imgBigUrl": "./cards/IceGuardBig.jpg"
   },
   {
     "id": "water_giant_turtle",
@@ -247,8 +247,8 @@
     "image": "GiantTurtle",
     "desc": "【巨龟】所受到的任何伤害均减少5点。",
     "ability": "armor_5",
-    "imgUrl": "/cards/GiantTurtle.jpg",
-    "imgBigUrl": "/cards/GiantTurtleBig.jpg"
+    "imgUrl": "./cards/GiantTurtle.jpg",
+    "imgBigUrl": "./cards/GiantTurtleBig.jpg"
   },
   {
     "id": "water_acidic_rain",
@@ -260,8 +260,8 @@
     "image": "AcidicRain",
     "desc": "【酸雨术】对全场所有生物造成15点伤害，然后使对方各系能量-1。",
     "spellEffect": "acidic_rain_15",
-    "imgUrl": "/cards/AcidicRain.png",
-    "imgBigUrl": "/cards/AcidicRainBig.png"
+    "imgUrl": "./cards/AcidicRain.png",
+    "imgBigUrl": "./cards/AcidicRainBig.png"
   },
   {
     "id": "water_merfolk_overlord",
@@ -275,8 +275,8 @@
     "image": "MerfolkOverlord",
     "desc": "【人鱼领主】使邻格生物可以在上场的回合内就进行攻击。",
     "ability": "neighbor_swift",
-    "imgUrl": "/cards/MerfolkOverlord.jpg",
-    "imgBigUrl": "/cards/MerfolkOverlordBig.jpg"
+    "imgUrl": "./cards/MerfolkOverlord.jpg",
+    "imgBigUrl": "./cards/MerfolkOverlordBig.jpg"
   },
   {
     "id": "water_water_elemental",
@@ -291,8 +291,8 @@
     "desc": "被召唤时，使拥有者回复10点生命。水元素使拥有者的水系能量成长率+1。",
     "onSummon": "water_elemental_summon",
     "ability": "water_growth_1",
-    "imgUrl": "/cards/WaterElemental.jpg",
-    "imgBigUrl": "/cards/WaterElementalBig.jpg"
+    "imgUrl": "./cards/WaterElemental.jpg",
+    "imgBigUrl": "./cards/WaterElementalBig.jpg"
   },
   {
     "id": "air_faerie_apprentice",
@@ -306,8 +306,8 @@
     "image": "FaerieApprentice",
     "desc": "【仙灵学徒】可以使拥有者施放的魔法所造成的伤害+1。",
     "ability": "spell_damage_plus_1",
-    "imgUrl": "/cards/FaerieApprentice.jpg",
-    "imgBigUrl": "/cards/FaerieApprenticeBig.jpg"
+    "imgUrl": "./cards/FaerieApprentice.jpg",
+    "imgBigUrl": "./cards/FaerieApprenticeBig.jpg"
   },
   {
     "id": "air_griffin",
@@ -320,24 +320,24 @@
     "life": 18,
     "flying": true,
     "image": "Griffin",
-    "desc": "【飞行】对未放置生物的对格直接攻击敌方英雄。被召唤时若气系能量不少于5，对敌方英雄造成5点伤害。",
+    "desc": "【飞行】无视对格阻挡直接攻击敌方英雄。被召唤时若气系能量不少于5，对敌方英雄造成5点伤害。",
     "onSummon": "griffin_strike",
-    "imgUrl": "/cards/Griffin.jpg",
-    "imgBigUrl": "/cards/GriffinBig.jpg"
+    "imgUrl": "./cards/Griffin.jpg",
+    "imgBigUrl": "./cards/GriffinBig.jpg"
   },
   {
     "id": "air_call_to_thunder",
     "element": "air",
     "name": "Call to Thunder",
-    "nameCn": "落雷术",
+    "nameCn": "天雷召唤",
     "type": "spell",
     "cost": 3,
     "image": "CalltoThunder",
     "requiresTarget": true,
-    "desc": "【落雷术】对对方目标生物和对方本体各造成6点伤害。",
+    "desc": "【天雷召唤】对对方目标生物和对方本体各造成6点伤害。",
     "spellEffect": "call_to_thunder_6",
-    "imgUrl": "/cards/CalltoThunder.png",
-    "imgBigUrl": "/cards/CalltoThunderBig.png"
+    "imgUrl": "./cards/CalltoThunder.png",
+    "imgBigUrl": "./cards/CalltoThunderBig.png"
   },
   {
     "id": "air_faerie_sage",
@@ -351,8 +351,8 @@
     "image": "FaerieSage",
     "desc": "当【仙灵贤者】被召唤时，使拥有者回复等同于拥有者土系能量的生命（最高10点）。",
     "onSummon": "faerie_sage_heal",
-    "imgUrl": "/cards/FaerieSage.jpg",
-    "imgBigUrl": "/cards/FaerieSageBig.jpg"
+    "imgUrl": "./cards/FaerieSage.jpg",
+    "imgBigUrl": "./cards/FaerieSageBig.jpg"
   },
   {
     "id": "air_wall_of_lightning",
@@ -367,8 +367,8 @@
     "image": "WallOfLightning",
     "desc": "【城墙】拥有者的回合开始阶段，【闪电之墙】对对方本体造成4点伤害。",
     "ability": "wall_lightning_burn",
-    "imgUrl": "/cards/WallOfLightning.jpg",
-    "imgBigUrl": "/cards/WallOfLightningBig.jpg"
+    "imgUrl": "./cards/WallOfLightning.jpg",
+    "imgBigUrl": "./cards/WallOfLightningBig.jpg"
   },
   {
     "id": "air_lightning_bolt",
@@ -380,8 +380,8 @@
     "image": "LightningBolt",
     "desc": "对敌方英雄造成 (5 + 气系能量) 点雷霆伤害。",
     "spellEffect": "lightning_bolt_scaled",
-    "imgUrl": "/cards/LightningBolt.png",
-    "imgBigUrl": "/cards/LightningBoltBig.png"
+    "imgUrl": "./cards/LightningBolt.png",
+    "imgBigUrl": "./cards/LightningBoltBig.png"
   },
   {
     "id": "air_phoenix",
@@ -396,8 +396,8 @@
     "image": "Phoenix",
     "desc": "【飞行】死亡时，若拥有者的火系能量不少于10，它将在同格涅槃重生！",
     "ability": "phoenix_rebirth",
-    "imgUrl": "/cards/Phoenix.jpg",
-    "imgBigUrl": "/cards/PhoenixBig.jpg"
+    "imgUrl": "./cards/Phoenix.jpg",
+    "imgBigUrl": "./cards/PhoenixBig.jpg"
   },
   {
     "id": "air_chain_lightning",
@@ -409,8 +409,8 @@
     "image": "ChainLightning",
     "desc": "【连锁闪电】对敌方英雄及全场所有敌方生物各造成9点闪电伤害。",
     "spellEffect": "chain_lightning_9",
-    "imgUrl": "/cards/ChainLightning.png",
-    "imgBigUrl": "/cards/ChainLightningBig.png"
+    "imgUrl": "./cards/ChainLightning.png",
+    "imgBigUrl": "./cards/ChainLightningBig.png"
   },
   {
     "id": "air_lightning_cloud",
@@ -425,8 +425,8 @@
     "image": "LightningCloud",
     "desc": "【雷电云】的攻击会对对方本体和对方所有生物同时造成范围伤害。",
     "ability": "cleave_all_enemies",
-    "imgUrl": "/cards/LightningCloud.jpg",
-    "imgBigUrl": "/cards/LightningCloudBig.jpg"
+    "imgUrl": "./cards/LightningCloud.jpg",
+    "imgBigUrl": "./cards/LightningCloudBig.jpg"
   },
   {
     "id": "air_titan",
@@ -440,8 +440,8 @@
     "image": "Titan",
     "desc": "被召唤时，重击对格生物造成15点巨额落雷伤害。",
     "onSummon": "titan_strike_15",
-    "imgUrl": "/cards/Titan.jpg",
-    "imgBigUrl": "/cards/TitanBig.jpg"
+    "imgUrl": "./cards/Titan.jpg",
+    "imgBigUrl": "./cards/TitanBig.jpg"
   },
   {
     "id": "earth_elvish_healer",
@@ -455,8 +455,8 @@
     "image": "ElvenHealer",
     "desc": "拥有者的回合开始阶段，【精灵医者】使拥有者本体回复3点生命。",
     "ability": "heal_hero_3",
-    "imgUrl": "/cards/ElvenHealer.jpg",
-    "imgBigUrl": "/cards/ElvenHealerBig.jpg"
+    "imgUrl": "./cards/ElvenHealer.jpg",
+    "imgBigUrl": "./cards/ElvenHealerBig.jpg"
   },
   {
     "id": "earth_natures_ritual",
@@ -469,8 +469,8 @@
     "requiresTarget": true,
     "desc": "【自然仪式】使己方目标生物和施法者本体各回复8点生命。",
     "spellEffect": "natures_ritual_heal_8",
-    "imgUrl": "/cards/NaturesRitual.png",
-    "imgBigUrl": "/cards/NaturesRitualBig.png"
+    "imgUrl": "./cards/NaturesRitual.png",
+    "imgBigUrl": "./cards/NaturesRitualBig.png"
   },
   {
     "id": "earth_forest_sprite",
@@ -485,8 +485,8 @@
     "image": "ForestSprite",
     "desc": "【森林仙子】的攻击可以对对方本体和对方所有生物造成横扫伤害。",
     "ability": "cleave_all_enemies",
-    "imgUrl": "/cards/ForestSprite.jpg",
-    "imgBigUrl": "/cards/ForestSpriteBig.jpg"
+    "imgUrl": "./cards/ForestSprite.jpg",
+    "imgBigUrl": "./cards/ForestSpriteBig.jpg"
   },
   {
     "id": "earth_rejuvenation",
@@ -498,8 +498,8 @@
     "image": "Rejuvenation",
     "desc": "【活力恢复】使施法者本体回复等同于当前土系能量×2的生命。",
     "spellEffect": "rejuvenation_scaled",
-    "imgUrl": "/cards/Rejuvenation.png",
-    "imgBigUrl": "/cards/RejuvenationBig.png"
+    "imgUrl": "./cards/Rejuvenation.png",
+    "imgBigUrl": "./cards/RejuvenationBig.png"
   },
   {
     "id": "earth_elf_hermit",
@@ -513,8 +513,8 @@
     "image": "ElfHermit",
     "desc": "【精灵隐士】可使拥有者每回合的土系能量成长率+2。",
     "ability": "earth_growth_2",
-    "imgUrl": "/cards/ElfHermit.jpg",
-    "imgBigUrl": "/cards/ElfHermitBig.jpg"
+    "imgUrl": "./cards/ElfHermit.jpg",
+    "imgBigUrl": "./cards/ElfHermitBig.jpg"
   },
   {
     "id": "earth_giant_spider",
@@ -529,8 +529,8 @@
     "image": "GiantSpider",
     "desc": "【剧毒】每次造成伤害附加2点中毒。被召唤时，在相邻空格召唤 2/11 的丛林蜘蛛。",
     "onSummon": "spawn_spiders",
-    "imgUrl": "/cards/GiantSpider.jpg",
-    "imgBigUrl": "/cards/GiantSpiderBig.jpg"
+    "imgUrl": "./cards/GiantSpider.jpg",
+    "imgBigUrl": "./cards/GiantSpiderBig.jpg"
   },
   {
     "id": "earth_troll",
@@ -544,8 +544,8 @@
     "regen": 4,
     "image": "Troll",
     "desc": "【再生 4】在拥有者的回合开始阶段，【巨魔】回复4点生命。",
-    "imgUrl": "/cards/Troll.jpg",
-    "imgBigUrl": "/cards/TrollBig.jpg"
+    "imgUrl": "./cards/Troll.jpg",
+    "imgBigUrl": "./cards/TrollBig.jpg"
   },
   {
     "id": "earth_stone_rain",
@@ -557,8 +557,8 @@
     "image": "StoneRain",
     "desc": "【石雨术】从天降下巨石雨，对全场所有生物造成25点毁灭性伤害。",
     "spellEffect": "stone_rain_25",
-    "imgUrl": "/cards/StoneRain.png",
-    "imgBigUrl": "/cards/StoneRainBig.png"
+    "imgUrl": "./cards/StoneRain.png",
+    "imgBigUrl": "./cards/StoneRainBig.png"
   },
   {
     "id": "earth_master_healer",
@@ -572,8 +572,8 @@
     "image": "MasterHealer",
     "desc": "拥有者的回合开始阶段，【医疗大师】使拥有者本体和己方所有生物各回复3点生命。",
     "ability": "heal_all_allies_3",
-    "imgUrl": "/cards/MasterHealer.jpg",
-    "imgBigUrl": "/cards/MasterHealerBig.jpg"
+    "imgUrl": "./cards/MasterHealer.jpg",
+    "imgBigUrl": "./cards/MasterHealerBig.jpg"
   },
   {
     "id": "earth_hydra",
@@ -588,8 +588,8 @@
     "image": "Hydra",
     "desc": "【横扫+再生】攻击伤害对方英雄及对方所有生物。每回合开始自身回复4点生命。",
     "ability": "cleave_all_enemies",
-    "imgUrl": "/cards/Hydra.jpg",
-    "imgBigUrl": "/cards/HydraBig.jpg"
+    "imgUrl": "./cards/Hydra.jpg",
+    "imgBigUrl": "./cards/HydraBig.jpg"
   },
   {
     "id": "spec_healing_spray",
@@ -603,8 +603,8 @@
     "requiresTarget": true,
     "desc": "【雾疗术】使己方目标生物回复9点生命，并使其相邻生物各回复6点生命。",
     "spellEffect": "healing_spray_9_6",
-    "imgUrl": "/cards/HealingSpray.png",
-    "imgBigUrl": "/cards/HealingSprayBig.png"
+    "imgUrl": "./cards/HealingSpray.png",
+    "imgBigUrl": "./cards/HealingSprayBig.png"
   },
   {
     "id": "spec_fireball",
@@ -618,8 +618,8 @@
     "requiresTarget": true,
     "desc": "【火球术】对对方目标生物造成9点伤害，并对其相邻生物各造成6点溅射伤害。",
     "spellEffect": "fireball_9_6",
-    "imgUrl": "/cards/Fireball.png",
-    "imgBigUrl": "/cards/FireballBig.png"
+    "imgUrl": "./cards/Fireball.png",
+    "imgBigUrl": "./cards/FireballBig.png"
   },
   {
     "id": "spec_steal_essence",
@@ -633,8 +633,8 @@
     "requiresTarget": true,
     "desc": "对目标生物造成5点伤害。若此生物被击杀，施法者的巫术能量增加4点。",
     "spellEffect": "steal_essence_5",
-    "imgUrl": "/cards/StealEssence.png",
-    "imgBigUrl": "/cards/StealEssenceBig.png"
+    "imgUrl": "./cards/StealEssence.png",
+    "imgBigUrl": "./cards/StealEssenceBig.png"
   },
   {
     "id": "spec_sorcerors_apprentice",
@@ -649,8 +649,8 @@
     "image": "SorcerorsApprentice",
     "desc": "【巫师学徒】使拥有者每回合的巫术能量成长率+2。",
     "ability": "sorcery_growth_2",
-    "imgUrl": "/cards/SorcerorsApprentice.jpg",
-    "imgBigUrl": "/cards/SorcerorsApprenticeBig.jpg"
+    "imgUrl": "./cards/SorcerorsApprentice.jpg",
+    "imgBigUrl": "./cards/SorcerorsApprenticeBig.jpg"
   },
   {
     "id": "spec_mana_burn",
@@ -663,8 +663,8 @@
     "image": "ManaBurn",
     "desc": "【法力燃烧】对对方所有生物造成等同于对方最高系能量的伤害，并使该系能量-3。",
     "spellEffect": "mana_burn_effect",
-    "imgUrl": "/cards/ManaBurn.png",
-    "imgBigUrl": "/cards/ManaBurnBig.png"
+    "imgUrl": "./cards/ManaBurn.png",
+    "imgBigUrl": "./cards/ManaBurnBig.png"
   },
   {
     "id": "spec_disintegrate",
@@ -678,8 +678,8 @@
     "requiresTarget": true,
     "desc": "直接摧毁敌方目标生物，并对敌方其它所有生物造成11点法术震波伤害。",
     "spellEffect": "disintegrate_kill_and_11",
-    "imgUrl": "/cards/Disintegrate.png",
-    "imgBigUrl": "/cards/DisintegrateBig.png"
+    "imgUrl": "./cards/Disintegrate.png",
+    "imgBigUrl": "./cards/DisintegrateBig.png"
   },
   {
     "id": "spec_ritual_of_glory",
@@ -692,8 +692,8 @@
     "image": "RitualOfGlory",
     "desc": "【光荣仪式】使己方所有生物生命回满，并使攻击力永久+3（墙体除外）。",
     "spellEffect": "ritual_of_glory_buff",
-    "imgUrl": "/cards/RitualOfGlory.png",
-    "imgBigUrl": "/cards/RitualOfGloryBig.png"
+    "imgUrl": "./cards/RitualOfGlory.png",
+    "imgBigUrl": "./cards/RitualOfGloryBig.png"
   },
   {
     "id": "death_dark_ritual",
@@ -706,8 +706,8 @@
     "image": "DarkRitual",
     "desc": "对敌方所有生物造成3点暗影伤害，并使己方所有生物回复3点生命。",
     "spellEffect": "dark_ritual_3",
-    "imgUrl": "/cards/DarkRitual.png",
-    "imgBigUrl": "/cards/DarkRitualBig.png"
+    "imgUrl": "./cards/DarkRitual.png",
+    "imgBigUrl": "./cards/DarkRitualBig.png"
   },
   {
     "id": "death_banshee",
@@ -723,8 +723,8 @@
     "image": "Banshee",
     "desc": "【飞行】被召唤时对正对面槽位生物造成其当前生命50%的重创伤害。",
     "onSummon": "banshee_shriek",
-    "imgUrl": "/cards/Banshee.jpg",
-    "imgBigUrl": "/cards/BansheeBig.jpg"
+    "imgUrl": "./cards/Banshee.jpg",
+    "imgBigUrl": "./cards/BansheeBig.jpg"
   },
   {
     "id": "death_cursed_fog",
@@ -737,8 +737,8 @@
     "image": "CursedFog",
     "desc": "【诅咒之雾】对全场所有生物造成12点伤害，并对对方本体造成3点伤害。",
     "spellEffect": "cursed_fog_12",
-    "imgUrl": "/cards/CursedFog.png",
-    "imgBigUrl": "/cards/CursedFogBig.png"
+    "imgUrl": "./cards/CursedFog.png",
+    "imgBigUrl": "./cards/CursedFogBig.png"
   },
   {
     "id": "death_vampire",
@@ -754,8 +754,8 @@
     "image": "Vampire",
     "desc": "【吸血】对生物造成伤害时恢复等量生命。若对面槽位存在生物，攻击额外+4。",
     "ability": "vampirism",
-    "imgUrl": "/cards/Vampire.jpg",
-    "imgBigUrl": "/cards/VampireBig.jpg"
+    "imgUrl": "./cards/Vampire.jpg",
+    "imgBigUrl": "./cards/VampireBig.jpg"
   },
   {
     "id": "death_keeper_of_death",
@@ -770,8 +770,8 @@
     "image": "KeeperOfDeath",
     "desc": "当对方任一生物死亡时，【亡灵御守】使拥有者的死亡系能量+1。",
     "ability": "death_power_on_kill",
-    "imgUrl": "/cards/KeeperOfDeath.jpg",
-    "imgBigUrl": "/cards/KeeperOfDeathBig.jpg"
+    "imgUrl": "./cards/KeeperOfDeath.jpg",
+    "imgBigUrl": "./cards/KeeperOfDeathBig.jpg"
   },
   {
     "id": "death_blood_ritual",
@@ -785,8 +785,8 @@
     "requiresTarget": true,
     "desc": "摧毁己方目标生物，随后对敌方全场生物造成等同于该生物生命的致命伤害（最高32点）。",
     "spellEffect": "blood_ritual_sacrifice",
-    "imgUrl": "/cards/BloodRitual.png",
-    "imgBigUrl": "/cards/BloodRitualBig.png"
+    "imgUrl": "./cards/BloodRitual.png",
+    "imgBigUrl": "./cards/BloodRitualBig.png"
   },
   {
     "id": "death_master_lich",
@@ -802,8 +802,8 @@
     "desc": "入场对敌方全体生物造成8点冥火伤害。每次对敌方英雄造成伤害时，死灵能量+2。",
     "onSummon": "lich_burst_8",
     "ability": "lich_power_drain",
-    "imgUrl": "/cards/MasterLich.jpg",
-    "imgBigUrl": "/cards/MasterLichBig.jpg"
+    "imgUrl": "./cards/MasterLich.jpg",
+    "imgBigUrl": "./cards/MasterLichBig.jpg"
   },
   {
     "id": "holy_monk",
@@ -818,8 +818,8 @@
     "image": "Monk",
     "desc": "【僧侣】死亡时，灵魂升华使拥有者的圣职能量+2。",
     "ability": "holy_power_on_death",
-    "imgUrl": "/cards/Monk.jpg",
-    "imgBigUrl": "/cards/MonkBig.jpg"
+    "imgUrl": "./cards/Monk.jpg",
+    "imgBigUrl": "./cards/MonkBig.jpg"
   },
   {
     "id": "holy_paladin",
@@ -834,8 +834,8 @@
     "image": "Paladin",
     "desc": "登场时施放群体圣光祈福，为全场友方生物恢复4点生命。",
     "onSummon": "paladin_bless_4",
-    "imgUrl": "/cards/Paladin.jpg",
-    "imgBigUrl": "/cards/PaladinBig.jpg"
+    "imgUrl": "./cards/Paladin.jpg",
+    "imgBigUrl": "./cards/PaladinBig.jpg"
   },
   {
     "id": "holy_guard",
@@ -850,8 +850,8 @@
     "image": "HolyGuard",
     "desc": "神圣光环笼罩战场，使两侧相邻友方生物受到的所有伤害减少2点。",
     "ability": "neighbor_armor_2",
-    "imgUrl": "/cards/HolyGuard.jpg",
-    "imgBigUrl": "/cards/HolyGuardBig.jpg"
+    "imgUrl": "./cards/HolyGuard.jpg",
+    "imgBigUrl": "./cards/HolyGuardBig.jpg"
   },
   {
     "id": "holy_divine_justice",
@@ -865,8 +865,8 @@
     "requiresTarget": true,
     "desc": "使己方目标生物回复12点生命，并对场上所有其它生物降下12点神圣制裁伤害。",
     "spellEffect": "divine_justice_heal_12_blast",
-    "imgUrl": "/cards/DivineJustice.png",
-    "imgBigUrl": "/cards/DivineJusticeBig.png"
+    "imgUrl": "./cards/DivineJustice.png",
+    "imgBigUrl": "./cards/DivineJusticeBig.png"
   },
   {
     "id": "holy_divine_intervention",
@@ -879,8 +879,8 @@
     "image": "DivineIntervention",
     "desc": "【神圣干预】使施法者的火、水、气、土能量各+2，并使施法者本体回复10点生命。",
     "spellEffect": "divine_intervention_boost",
-    "imgUrl": "/cards/DivineIntervention.png",
-    "imgBigUrl": "/cards/DivineInterventionBig.png"
+    "imgUrl": "./cards/DivineIntervention.png",
+    "imgBigUrl": "./cards/DivineInterventionBig.png"
   },
   {
     "id": "holy_angel",
@@ -896,8 +896,8 @@
     "image": "Angel",
     "desc": "【飞行】登场时使圣职能量+3。每回合开始阶段自动为当前生命最低的友方单位治愈3点生命。",
     "onSummon": "angel_holy_3",
-    "imgUrl": "/cards/Angel.jpg",
-    "imgBigUrl": "/cards/AngelBig.jpg"
+    "imgUrl": "./cards/Angel.jpg",
+    "imgBigUrl": "./cards/AngelBig.jpg"
   },
   {
     "id": "holy_archangel",
@@ -913,8 +913,8 @@
     "image": "ArchAngel",
     "desc": "【圣光涅槃】大天使入场时，神圣光耀降临，使己方全场所有受伤生物瞬间恢复至满生命！",
     "onSummon": "archangel_full_heal",
-    "imgUrl": "/cards/ArchAngel.jpg",
-    "imgBigUrl": "/cards/ArchAngelBig.jpg"
+    "imgUrl": "./cards/ArchAngel.jpg",
+    "imgBigUrl": "./cards/ArchAngelBig.jpg"
   },
   {
     "id": "mech_dwarven_craftsman",
@@ -929,8 +929,8 @@
     "image": "DwarvenCraftsman",
     "desc": "【矮人工匠】精通机械研发，使拥有者的机械系能量每回合成长率+1。",
     "ability": "mechanics_growth_1",
-    "imgUrl": "/cards/DwarvenCraftsman.jpg",
-    "imgBigUrl": "/cards/DwarvenCraftsmanBig.jpg"
+    "imgUrl": "./cards/DwarvenCraftsman.jpg",
+    "imgBigUrl": "./cards/DwarvenCraftsmanBig.jpg"
   },
   {
     "id": "mech_dwarven_rifleman",
@@ -945,8 +945,8 @@
     "image": "DwarvenRifleman",
     "desc": "【警戒狙击】对方每召唤一个生物，火枪手立刻对该生物进行射击造成4点拦截伤害。",
     "ability": "intercept_4",
-    "imgUrl": "/cards/DwarvenRifleman.jpg",
-    "imgBigUrl": "/cards/DwarvenRiflemanBig.jpg"
+    "imgUrl": "./cards/DwarvenRifleman.jpg",
+    "imgBigUrl": "./cards/DwarvenRiflemanBig.jpg"
   },
   {
     "id": "mech_ornithopter",
@@ -962,8 +962,8 @@
     "image": "Ornithopter",
     "desc": "【高空扫射】拥有者回合开始阶段，从空中对敌方全场生物投弹造成2点轰炸伤害。",
     "ability": "bomb_2",
-    "imgUrl": "/cards/Ornithopter.jpg",
-    "imgBigUrl": "/cards/OrnithopterBig.jpg"
+    "imgUrl": "./cards/Ornithopter.jpg",
+    "imgBigUrl": "./cards/OrnithopterBig.jpg"
   },
   {
     "id": "mech_steel_golem",
@@ -979,8 +979,8 @@
     "image": "SteelGolem",
     "desc": "【魔免装甲】不受任何魔法技能伤害，且受到的所有物理伤害减少1点。",
     "ability": "armor_1",
-    "imgUrl": "/cards/SteelGolem.jpg",
-    "imgBigUrl": "/cards/SteelGolemBig.jpg"
+    "imgUrl": "./cards/SteelGolem.jpg",
+    "imgBigUrl": "./cards/SteelGolemBig.jpg"
   },
   {
     "id": "mech_cannon",
@@ -996,8 +996,8 @@
     "image": "Cannon",
     "desc": "【重炮轰击】回合开始阶段，自动锁定敌方全场生命最高的生物炮轰造成8点穿甲伤害。",
     "ability": "cannon_highest_hp_8",
-    "imgUrl": "/cards/Cannon.jpg",
-    "imgBigUrl": "/cards/CannonBig.jpg"
+    "imgUrl": "./cards/Cannon.jpg",
+    "imgBigUrl": "./cards/CannonBig.jpg"
   },
   {
     "id": "mech_cannonade",
@@ -1010,8 +1010,8 @@
     "image": "Cannonade",
     "desc": "【列炮齐发】引导基地重炮矩阵全屏轰炸，对敌方全场生物造成19点毁灭性炮火伤害！",
     "spellEffect": "cannonade_19",
-    "imgUrl": "/cards/Cannonade.png",
-    "imgBigUrl": "/cards/CannonadeBig.png"
+    "imgUrl": "./cards/Cannonade.png",
+    "imgBigUrl": "./cards/CannonadeBig.png"
   },
   {
     "id": "mech_steam_tank",
@@ -1026,8 +1026,8 @@
     "image": "SteamTank",
     "desc": "【碾压进场】登场时引擎全开撞击，对敌方全场所有生物造成12点震荡伤害。",
     "onSummon": "tank_steam_12",
-    "imgUrl": "/cards/SteamTank.jpg",
-    "imgBigUrl": "/cards/SteamTankBig.jpg"
+    "imgUrl": "./cards/SteamTank.jpg",
+    "imgBigUrl": "./cards/SteamTankBig.jpg"
   },
   {
     "id": "ctrl_goblin_shaman",
@@ -1042,8 +1042,8 @@
     "image": "GoblinShaman",
     "desc": "【精神干扰】在场时，使对方所有魔法卡牌的消耗费用增加1点。",
     "ability": "spell_cost_plus_1",
-    "imgUrl": "/cards/GoblinShaman.jpg",
-    "imgBigUrl": "/cards/GoblinShamanBig.jpg"
+    "imgUrl": "./cards/GoblinShaman.jpg",
+    "imgBigUrl": "./cards/GoblinShamanBig.jpg"
   },
   {
     "id": "ctrl_weakness",
@@ -1056,8 +1056,8 @@
     "image": "Weakness",
     "desc": "【虚弱诅咒】抽干敌方所有系的能量各1点，并对敌方英雄本体造成3点精神刺痛伤害。",
     "spellEffect": "weakness_curse",
-    "imgUrl": "/cards/Weakness.png",
-    "imgBigUrl": "/cards/WeaknessBig.png"
+    "imgUrl": "./cards/Weakness.png",
+    "imgBigUrl": "./cards/WeaknessBig.png"
   },
   {
     "id": "ctrl_damping_tower",
@@ -1073,8 +1073,8 @@
     "image": "DampingTower",
     "desc": "【力场抑制】坚固的阻尼力场发射塔，使敌方出牌消耗的所有卡牌费用永久+1。",
     "ability": "all_card_cost_plus_1",
-    "imgUrl": "/cards/DampingTower.jpg",
-    "imgBigUrl": "/cards/DampingTowerBig.jpg"
+    "imgUrl": "./cards/DampingTower.jpg",
+    "imgBigUrl": "./cards/DampingTowerBig.jpg"
   },
   {
     "id": "ctrl_ancient_witch",
@@ -1089,8 +1089,8 @@
     "image": "AncientWitch",
     "desc": "【法力枯竭】远古女巫登场时，剥夺敌方所有属性的能量各2点！",
     "onSummon": "witch_drain_all_2",
-    "imgUrl": "/cards/AncientWitch.jpg",
-    "imgBigUrl": "/cards/AncientWitchBig.jpg"
+    "imgUrl": "./cards/AncientWitch.jpg",
+    "imgBigUrl": "./cards/AncientWitchBig.jpg"
   },
   {
     "id": "ctrl_ancient_horror",
@@ -1105,8 +1105,8 @@
     "image": "AncientHorror",
     "desc": "【心灵恐惧】敌方费用低于我方控制能量的生物在攻击阶段会被震慑跳过攻击。",
     "ability": "horror_fear_aura",
-    "imgUrl": "/cards/AncientHorror.jpg",
-    "imgBigUrl": "/cards/AncientHorrorBig.jpg"
+    "imgUrl": "./cards/AncientHorror.jpg",
+    "imgBigUrl": "./cards/AncientHorrorBig.jpg"
   },
   {
     "id": "ctrl_mindstealer",
@@ -1121,8 +1121,8 @@
     "image": "Mindstealer",
     "desc": "【心智错乱】正对面生物发起攻击时受到支配反噬，攻击伤害完全反向作用于其自身！",
     "ability": "mindsteal_self_damage",
-    "imgUrl": "/cards/Mindstealer.jpg",
-    "imgBigUrl": "/cards/MindstealerBig.jpg"
+    "imgUrl": "./cards/Mindstealer.jpg",
+    "imgBigUrl": "./cards/MindstealerBig.jpg"
   },
   {
     "id": "ctrl_ancient_giant",
@@ -1137,8 +1137,8 @@
     "image": "AncientGiant",
     "desc": "【绝对威慑】远古巨人踏碎大地入场，强制使敌方直接失去下一个出牌回合！",
     "onSummon": "giant_skip_turn",
-    "imgUrl": "/cards/AncientGiant.jpg",
-    "imgBigUrl": "/cards/AncientGiantBig.jpg"
+    "imgUrl": "./cards/AncientGiant.jpg",
+    "imgBigUrl": "./cards/AncientGiantBig.jpg"
   },
   {
     "id": "chaos_peacekeeper",
@@ -1153,8 +1153,8 @@
     "image": "InsanianPeacekeeper",
     "desc": "【混沌恩赐】拥有者回合开始阶段，随机为拥有者本体恢复 1 至 6 点生命。",
     "ability": "chaos_heal_1_6",
-    "imgUrl": "/cards/InsanianPeacekeeper.jpg",
-    "imgBigUrl": "/cards/InsanianPeacekeeperBig.jpg"
+    "imgUrl": "./cards/InsanianPeacekeeper.jpg",
+    "imgBigUrl": "./cards/InsanianPeacekeeperBig.jpg"
   },
   {
     "id": "chaos_berserker",
@@ -1169,8 +1169,8 @@
     "image": "InsanianBerserker",
     "desc": "【狂乱突袭】拥有者回合开始阶段，随机对敌方英雄造成 1 至 6 点混乱伤害。",
     "ability": "chaos_damage_1_6",
-    "imgUrl": "/cards/InsanianBerserker.jpg",
-    "imgBigUrl": "/cards/InsanianBerserkerBig.jpg"
+    "imgUrl": "./cards/InsanianBerserker.jpg",
+    "imgBigUrl": "./cards/InsanianBerserkerBig.jpg"
   },
   {
     "id": "chaos_doom_bolt",
@@ -1183,8 +1183,8 @@
     "image": "DoomBolt",
     "desc": "【混沌死棘】释放不可预知的混沌毁灭之箭，对敌方随机一个生物造成25点秒杀级伤害！",
     "spellEffect": "doom_bolt_25",
-    "imgUrl": "/cards/DoomBolt.png",
-    "imgBigUrl": "/cards/DoomBoltBig.png"
+    "imgUrl": "./cards/DoomBolt.png",
+    "imgBigUrl": "./cards/DoomBoltBig.png"
   },
   {
     "id": "chaos_wave",
@@ -1197,8 +1197,8 @@
     "image": "ChaoticWave",
     "desc": "【混沌波浪】对敌方全场生物造成2-12点随机伤害，同时使己方全场生物回复2-12点生命。",
     "spellEffect": "chaotic_wave_effect",
-    "imgUrl": "/cards/ChaoticWave.png",
-    "imgBigUrl": "/cards/ChaoticWaveBig.png"
+    "imgUrl": "./cards/ChaoticWave.png",
+    "imgBigUrl": "./cards/ChaoticWaveBig.png"
   },
   {
     "id": "chaos_shaman",
@@ -1213,8 +1213,8 @@
     "image": "InsanianShaman",
     "desc": "【法力剥夺】拥有者回合开始阶段，随机使对方一个系的能量减少2点。",
     "ability": "chaos_drain_power_2",
-    "imgUrl": "/cards/InsanianShaman.jpg",
-    "imgBigUrl": "/cards/InsanianShamanBig.jpg"
+    "imgUrl": "./cards/InsanianShaman.jpg",
+    "imgBigUrl": "./cards/InsanianShamanBig.jpg"
   },
   {
     "id": "chaos_catapult",
@@ -1230,8 +1230,8 @@
     "image": "InsanianCatapult",
     "desc": "【疯狂弹射】拥有者回合开始阶段，随机向敌方一个在场生物抛射巨石造成10点伤害。",
     "ability": "chaos_stone_10",
-    "imgUrl": "/cards/InsanianCatapult.jpg",
-    "imgBigUrl": "/cards/InsanianCatapultBig.jpg"
+    "imgUrl": "./cards/InsanianCatapult.jpg",
+    "imgBigUrl": "./cards/InsanianCatapultBig.jpg"
   },
   {
     "id": "chaos_king",
@@ -1246,8 +1246,8 @@
     "image": "InsanianKing",
     "desc": "【王之号令】拥有者回合结束阶段，自动在场上随机一个空格免费召唤一名 4/15 混沌卫兵。",
     "ability": "chaos_summon_soldier",
-    "imgUrl": "/cards/InsanianKing.jpg",
-    "imgBigUrl": "/cards/InsanianKingBig.jpg"
+    "imgUrl": "./cards/InsanianKing.jpg",
+    "imgBigUrl": "./cards/InsanianKingBig.jpg"
   },
   {
     "id": "illus_phantom_warrior",
@@ -1262,8 +1262,8 @@
     "image": "PhantomWarrior",
     "desc": "【虚幻之躯】幻像勇士受到的一切物理或法术伤害均强制减弱为1点！",
     "ability": "shield_to_1",
-    "imgUrl": "/cards/PhantomWarrior.jpg",
-    "imgBigUrl": "/cards/PhantomWarriorBig.jpg"
+    "imgUrl": "./cards/PhantomWarrior.jpg",
+    "imgBigUrl": "./cards/PhantomWarriorBig.jpg"
   },
   {
     "id": "illus_wall_of_reflection",
@@ -1279,8 +1279,8 @@
     "image": "WallOfReflection",
     "desc": "【镜像反伤】受到的所有伤害都会如实反射并反弹给敌方英雄本体！",
     "ability": "reflect_to_hero",
-    "imgUrl": "/cards/WallOfReflection.jpg",
-    "imgBigUrl": "/cards/WallOfReflectionBig.jpg"
+    "imgUrl": "./cards/WallOfReflection.jpg",
+    "imgBigUrl": "./cards/WallOfReflectionBig.jpg"
   },
   {
     "id": "illus_spectral_assassin",
@@ -1296,8 +1296,8 @@
     "image": "SpectralAssassin",
     "desc": "【暗影突刺】登场时化为幽影直取要害，对敌方英雄本体造成12点直接伤害。",
     "onSummon": "assassin_strike_12",
-    "imgUrl": "/cards/SpectralAssassin.jpg",
-    "imgBigUrl": "/cards/SpectralAssassinBig.jpg"
+    "imgUrl": "./cards/SpectralAssassin.jpg",
+    "imgBigUrl": "./cards/SpectralAssassinBig.jpg"
   },
   {
     "id": "illus_spectral_mage",
@@ -1312,8 +1312,8 @@
     "image": "SpectralMage",
     "desc": "【费能爆破】登场时对敌方每个生物造成等同于该生物召唤费用的镜像伤害。",
     "onSummon": "mage_cost_damage",
-    "imgUrl": "/cards/SpectralMage.jpg",
-    "imgBigUrl": "/cards/SpectralMageBig.jpg"
+    "imgUrl": "./cards/SpectralMage.jpg",
+    "imgBigUrl": "./cards/SpectralMageBig.jpg"
   },
   {
     "id": "illus_madness",
@@ -1326,8 +1326,8 @@
     "image": "Madness",
     "desc": "【入狂幻术】操控心智，对敌方每一个生物造成等同于其自身攻击力的反噬伤害！",
     "spellEffect": "madness_attack_damage",
-    "imgUrl": "/cards/Madness.png",
-    "imgBigUrl": "/cards/MadnessBig.png"
+    "imgUrl": "./cards/Madness.png",
+    "imgBigUrl": "./cards/MadnessBig.png"
   },
   {
     "id": "illus_oracle",
@@ -1342,8 +1342,8 @@
     "image": "Oracle",
     "desc": "【神谕裁决】回合开始阶段，对敌方英雄造成等同于我方当前幻像能量的直接伤害。",
     "ability": "oracle_illusion_burn",
-    "imgUrl": "/cards/Oracle.jpg",
-    "imgBigUrl": "/cards/OracleBig.jpg"
+    "imgUrl": "./cards/Oracle.jpg",
+    "imgBigUrl": "./cards/OracleBig.jpg"
   },
   {
     "id": "illus_hypnotist",
@@ -1359,8 +1359,8 @@
     "desc": "【全域催眠】登场时对敌方英雄及全场生物造成5点精神冲击，并使幻术能量成长率+1。",
     "onSummon": "hypnotist_aoe_5",
     "ability": "illusion_growth_1",
-    "imgUrl": "/cards/Hypnotist.jpg",
-    "imgBigUrl": "/cards/HypnotistBig.jpg"
+    "imgUrl": "./cards/Hypnotist.jpg",
+    "imgBigUrl": "./cards/HypnotistBig.jpg"
   },
   {
     "id": "demon_lemure",
@@ -1375,8 +1375,8 @@
     "image": "Lemure",
     "desc": "【深渊裂变】劣魔死亡时，在其原位裂变生成一只 3/6 的【惊恐劣魔】继续作战。",
     "ability": "demon_lemure_rebirth",
-    "imgUrl": "/cards/Lemure.jpg",
-    "imgBigUrl": "/cards/LemureBig.jpg"
+    "imgUrl": "./cards/Lemure.jpg",
+    "imgBigUrl": "./cards/LemureBig.jpg"
   },
   {
     "id": "demon_explosion",
@@ -1390,8 +1390,8 @@
     "requiresTarget": true,
     "desc": "【自爆】献祭摧毁己方目标生物，并对对格生物造成28点同归于尽的巨额爆炸伤害。",
     "spellEffect": "demon_explosion_28",
-    "imgUrl": "/cards/Explosion.png",
-    "imgBigUrl": "/cards/ExplosionBig.png"
+    "imgUrl": "./cards/Explosion.png",
+    "imgBigUrl": "./cards/ExplosionBig.png"
   },
   {
     "id": "demon_ergodemon",
@@ -1406,8 +1406,8 @@
     "image": "Ergodemon",
     "desc": "【厄运遗言】恶果魔死亡时，施法者诅咒对方所有系的能量各减少1点。",
     "ability": "demon_drain_all_on_death",
-    "imgUrl": "/cards/Ergodemon.jpg",
-    "imgBigUrl": "/cards/ErgodemonBig.jpg"
+    "imgUrl": "./cards/Ergodemon.jpg",
+    "imgBigUrl": "./cards/ErgodemonBig.jpg"
   },
   {
     "id": "demon_power_chains",
@@ -1421,8 +1421,8 @@
     "requiresTarget": true,
     "desc": "【能量锁链】对对方火/水/气/土元素生物造成12点伤害，并封印剥夺对方该系3点能量。",
     "spellEffect": "demon_power_chains_12",
-    "imgUrl": "/cards/PowerChains.png",
-    "imgBigUrl": "/cards/PowerChainsBig.png"
+    "imgUrl": "./cards/PowerChains.png",
+    "imgBigUrl": "./cards/PowerChainsBig.png"
   },
   {
     "id": "demon_quartermaster",
@@ -1437,8 +1437,8 @@
     "image": "DemonQuartermaster",
     "desc": "使恶魔能量成长率+1。死亡时在原位狂暴觉醒为 6/20 的【暴怒军需官】！",
     "ability": "demon_quartermaster_growth",
-    "imgUrl": "/cards/DemonQuartermaster.jpg",
-    "imgBigUrl": "/cards/DemonQuartermasterBig.jpg"
+    "imgUrl": "./cards/DemonQuartermaster.jpg",
+    "imgBigUrl": "./cards/DemonQuartermasterBig.jpg"
   },
   {
     "id": "demon_hellfire",
@@ -1451,8 +1451,8 @@
     "image": "Hellfire",
     "desc": "【地狱烈焰】对对方所有生物造成13点狱火伤害，每击杀一个生物，施法者火系能量+1。",
     "spellEffect": "demon_hellfire_13",
-    "imgUrl": "/cards/Hellfire.png",
-    "imgBigUrl": "/cards/HellfireBig.png"
+    "imgUrl": "./cards/Hellfire.png",
+    "imgBigUrl": "./cards/HellfireBig.png"
   },
   {
     "id": "demon_three_headed",
@@ -1467,8 +1467,8 @@
     "image": "ThreeHeadedDemon",
     "desc": "【地狱横扫】攻击伤害敌方英雄及全场生物。阵亡时分裂为 2/25 的恶魔变节者。",
     "ability": "cleave_all_enemies",
-    "imgUrl": "/cards/ThreeHeadedDemon.jpg",
-    "imgBigUrl": "/cards/ThreeHeadedDemonBig.jpg"
+    "imgUrl": "./cards/ThreeHeadedDemon.jpg",
+    "imgBigUrl": "./cards/ThreeHeadedDemonBig.jpg"
   },
   {
     "id": "demon_greater_demon",
@@ -1483,8 +1483,8 @@
     "image": "GreaterDemon",
     "desc": "【深渊降临】大恶魔登场时，对对方本体和敌方全场生物造成等同于火系能量的灭世伤害（最高10点）。",
     "onSummon": "demon_greater_summon",
-    "imgUrl": "/cards/GreaterDemon.jpg",
-    "imgBigUrl": "/cards/GreaterDemonBig.jpg"
+    "imgUrl": "./cards/GreaterDemon.jpg",
+    "imgBigUrl": "./cards/GreaterDemonBig.jpg"
   },
   {
     "id": "beast_magic_hamster",
@@ -1499,8 +1499,8 @@
     "image": "MagicHamster",
     "desc": "【萌愈祈祷】登场时为相邻两侧友方生物各回复10点丰厚生命。",
     "onSummon": "hamster_heal_10",
-    "imgUrl": "/cards/MagicHamster.jpg",
-    "imgBigUrl": "/cards/MagicHamsterBig.jpg"
+    "imgUrl": "./cards/MagicHamster.jpg",
+    "imgBigUrl": "./cards/MagicHamsterBig.jpg"
   },
   {
     "id": "beast_scorpion",
@@ -1516,8 +1516,8 @@
     "image": "Scorpion",
     "desc": "【麻痹毒针】登场时使正对面槽位生物神经麻痹，跳过下回合的攻击。",
     "onSummon": "scorpion_stun",
-    "imgUrl": "/cards/Scorpion.jpg",
-    "imgBigUrl": "/cards/ScorpionBig.jpg"
+    "imgUrl": "./cards/Scorpion.jpg",
+    "imgBigUrl": "./cards/ScorpionBig.jpg"
   },
   {
     "id": "beast_wolverine",
@@ -1533,8 +1533,8 @@
     "image": "Wolverine",
     "desc": "【野性自愈】每回合自愈3点生命。生命低于半血时进入狂暴，攻击力永久+2。",
     "ability": "wolverine_berserk_regen",
-    "imgUrl": "/cards/Wolverine.jpg",
-    "imgBigUrl": "/cards/WolverineBig.jpg"
+    "imgUrl": "./cards/Wolverine.jpg",
+    "imgBigUrl": "./cards/WolverineBig.jpg"
   },
   {
     "id": "beast_energy_beast",
@@ -1549,8 +1549,8 @@
     "image": "EnergyBeast",
     "desc": "【灵能回荡】每回合开始阶段，使拥有者的火、水、气、土能量各增加1点。",
     "ability": "energy_beast_pulse",
-    "imgUrl": "/cards/EnergyBeast.jpg",
-    "imgBigUrl": "/cards/EnergyBeastBig.jpg"
+    "imgUrl": "./cards/EnergyBeast.jpg",
+    "imgBigUrl": "./cards/EnergyBeastBig.jpg"
   },
   {
     "id": "beast_death_falcon",
@@ -1566,8 +1566,8 @@
     "image": "DeathFalcon",
     "desc": "【飞行】登场时呼啸俯冲，对对方所有生物造成4点风刃割裂伤害。",
     "onSummon": "falcon_strike_4",
-    "imgUrl": "/cards/DeathFalcon.jpg",
-    "imgBigUrl": "/cards/DeathFalconBig.jpg"
+    "imgUrl": "./cards/DeathFalcon.jpg",
+    "imgBigUrl": "./cards/DeathFalconBig.jpg"
   },
   {
     "id": "beast_white_elephant",
@@ -1582,8 +1582,8 @@
     "image": "WhiteElephant",
     "desc": "【崇高舍身】将拥有者本体将要受到的一切伤害全部重新定向承担给白象自身！",
     "ability": "elephant_shield_hero",
-    "imgUrl": "/cards/WhiteElephant.jpg",
-    "imgBigUrl": "/cards/WhiteElephantBig.jpg"
+    "imgUrl": "./cards/WhiteElephant.jpg",
+    "imgBigUrl": "./cards/WhiteElephantBig.jpg"
   },
   {
     "id": "beast_basilisk",
@@ -1598,8 +1598,8 @@
     "image": "Basilisk",
     "desc": "【石化凝视】回合结束阶段，对敌方全场所有生命不超过8点的虚弱生物造成4点致命石化伤害。",
     "ability": "basilisk_gaze_4",
-    "imgUrl": "/cards/Basilisk.jpg",
-    "imgBigUrl": "/cards/BasiliskBig.jpg"
+    "imgUrl": "./cards/Basilisk.jpg",
+    "imgBigUrl": "./cards/BasiliskBig.jpg"
   },
   {
     "id": "beast_ancient_dragon",
@@ -1615,8 +1615,8 @@
     "image": "AncientDragon",
     "desc": "【飞行+龙皇】登场时使全系能量各+1，并对敌方英雄本体和全场生物吐息造成10点烈焰龙息伤害！",
     "onSummon": "dragon_breath_10",
-    "imgUrl": "/cards/AncientDragon.jpg",
-    "imgBigUrl": "/cards/AncientDragonBig.jpg"
+    "imgUrl": "./cards/AncientDragon.jpg",
+    "imgBigUrl": "./cards/AncientDragonBig.jpg"
   },
   {
     "id": "time_chrono_hunter",
@@ -1631,8 +1631,8 @@
     "image": "ChronoHunter",
     "desc": "【时空收割】每次击杀对方生物时，拥有者的时间特殊能量额外+2。",
     "ability": "time_gain_on_kill",
-    "imgUrl": "/cards/ChronoHunter.jpg",
-    "imgBigUrl": "/cards/ChronoHunterBig.jpg"
+    "imgUrl": "./cards/ChronoHunter.jpg",
+    "imgBigUrl": "./cards/ChronoHunterBig.jpg"
   },
   {
     "id": "time_timeblazer",
@@ -1648,8 +1648,8 @@
     "image": "TimeBlazer",
     "desc": "【时空穿梭】登场时令两侧相邻友方生物在本回合攻击阶段直接越过防御攻击敌方英雄本体！",
     "onSummon": "timeblazer_teleport",
-    "imgUrl": "/cards/TimeBlazer.jpg",
-    "imgBigUrl": "/cards/TimeBlazerBig.jpg"
+    "imgUrl": "./cards/TimeBlazer.jpg",
+    "imgBigUrl": "./cards/TimeBlazerBig.jpg"
   },
   {
     "id": "time_hasten",
@@ -1663,8 +1663,8 @@
     "requiresTarget": true,
     "desc": "【时空跃迁】使己方目标生物（攻击<=9）突破时空界限，立刻对敌方英雄及全场生物发起一次额外全力攻击！",
     "spellEffect": "haste_creature_extra_attack",
-    "imgUrl": "/cards/Hasten.png",
-    "imgBigUrl": "/cards/HastenBig.png"
+    "imgUrl": "./cards/Hasten.png",
+    "imgBigUrl": "./cards/HastenBig.png"
   },
   {
     "id": "time_time_stop",
@@ -1677,8 +1677,8 @@
     "image": "TimeStop",
     "desc": "【时间停止】定格敌方时空流转，对敌方全场生物造成4点时空震荡伤害，并强制敌方失去下一个出牌回合！",
     "spellEffect": "time_stop_freeze",
-    "imgUrl": "/cards/TimeStop.png",
-    "imgBigUrl": "/cards/TimeStopBig.png"
+    "imgUrl": "./cards/TimeStop.png",
+    "imgBigUrl": "./cards/TimeStopBig.png"
   },
   {
     "id": "time_timeweaver",
@@ -1693,8 +1693,8 @@
     "image": "TimeWeaver",
     "desc": "【法力减免】在场时使施法者的所有魔法卡牌费用-1。登场时可额外施放一张魔法卡牌。",
     "ability": "spell_cost_minus_1",
-    "imgUrl": "/cards/TimeWeaver.jpg",
-    "imgBigUrl": "/cards/TimeWeaverBig.jpg"
+    "imgUrl": "./cards/TimeWeaver.jpg",
+    "imgBigUrl": "./cards/TimeWeaverBig.jpg"
   },
   {
     "id": "time_priestess_of_moments",
@@ -1709,8 +1709,8 @@
     "image": "PriestessOfMoments",
     "desc": "【时间双动】每回合可进行2次攻击！同时赋予己方所有召唤的生物在登场回合即可发起攻击的能力。",
     "ability": "double_attack_all_swift",
-    "imgUrl": "/cards/PriestessOfMoments.jpg",
-    "imgBigUrl": "/cards/PriestessOfMomentsBig.jpg"
+    "imgUrl": "./cards/PriestessOfMoments.jpg",
+    "imgBigUrl": "./cards/PriestessOfMomentsBig.jpg"
   },
   {
     "id": "time_time_dragon",
@@ -1727,8 +1727,8 @@
     "image": "TimeDragon",
     "desc": "【冲锋+飞行】登场即可立即攻击！登场时扭转时序，使拥有者在本回合能够立即多打出一张卡牌！",
     "onSummon": "time_dragon_extra_card",
-    "imgUrl": "/cards/TimeDragon.jpg",
-    "imgBigUrl": "/cards/TimeDragonBig.jpg"
+    "imgUrl": "./cards/TimeDragon.jpg",
+    "imgBigUrl": "./cards/TimeDragonBig.jpg"
   },
   {
     "id": "goblin_rescue_operation",
@@ -1742,8 +1742,8 @@
     "requiresTarget": true,
     "desc": "【救援行动】将目标己方生物瞬间战术转移至场上随机空格处，并为其治愈5点生命。",
     "spellEffect": "goblin_rescue_heal_5",
-    "imgUrl": "/cards/RescueOperation.png",
-    "imgBigUrl": "/cards/RescueOperationBig.png"
+    "imgUrl": "./cards/RescueOperation.png",
+    "imgBigUrl": "./cards/RescueOperationBig.png"
   },
   {
     "id": "goblin_hero",
@@ -1758,8 +1758,8 @@
     "image": "GoblinHero",
     "desc": "【团结之力】相邻格子每存在一个生物，攻击力额外+2。对面槽位若有生物登场，自动战术规避至随机空格。",
     "ability": "goblin_hero_synergy",
-    "imgUrl": "/cards/GoblinHero.jpg",
-    "imgBigUrl": "/cards/GoblinHeroBig.jpg"
+    "imgUrl": "./cards/GoblinHero.jpg",
+    "imgBigUrl": "./cards/GoblinHeroBig.jpg"
   },
   {
     "id": "goblin_saboteur",
@@ -1774,8 +1774,8 @@
     "image": "GoblinSaboteur",
     "desc": "【牌库破坏】每次成功对敌方英雄本体造成伤害时，引爆炸弹使敌方随机一系费用最低的卡牌永久焚毁！",
     "ability": "goblin_burn_card",
-    "imgUrl": "/cards/GoblinSaboteur.jpg",
-    "imgBigUrl": "/cards/GoblinSaboteurBig.jpg"
+    "imgUrl": "./cards/GoblinSaboteur.jpg",
+    "imgBigUrl": "./cards/GoblinSaboteurBig.jpg"
   },
   {
     "id": "goblin_army_of_rats",
@@ -1788,8 +1788,8 @@
     "image": "ArmyOfRats",
     "desc": "【鼠疫入侵】召唤疯狂鼠群，对敌方全场生物造成12点伤害，同时对己方随机一个生物造成12点误伤。",
     "spellEffect": "army_of_rats_12",
-    "imgUrl": "/cards/ArmyOfRats.png",
-    "imgBigUrl": "/cards/ArmyOfRatsBig.png"
+    "imgUrl": "./cards/ArmyOfRats.png",
+    "imgBigUrl": "./cards/ArmyOfRatsBig.png"
   },
   {
     "id": "goblin_portal_jumper",
@@ -1804,8 +1804,8 @@
     "image": "PortalJumper",
     "desc": "【传送眩晕】回合结束时使正对面槽位生物眩晕跳过下回合攻击，随后自身传送至随机空槽。",
     "ability": "portal_jumper_stun_jump",
-    "imgUrl": "/cards/PortalJumper.jpg",
-    "imgBigUrl": "/cards/PortalJumperBig.jpg"
+    "imgUrl": "./cards/PortalJumper.jpg",
+    "imgBigUrl": "./cards/PortalJumperBig.jpg"
   },
   {
     "id": "goblin_looter",
@@ -1820,8 +1820,8 @@
     "image": "GoblinLooter",
     "desc": "【战场拾荒】场上每当有任何生物阵亡时，拾荒者搜刮战利品使拥有者随机一个系的能量+1。",
     "ability": "looter_gain_power",
-    "imgUrl": "/cards/GoblinLooter.jpg",
-    "imgBigUrl": "/cards/GoblinLooterBig.jpg"
+    "imgUrl": "./cards/GoblinLooter.jpg",
+    "imgBigUrl": "./cards/GoblinLooterBig.jpg"
   },
   {
     "id": "goblin_raider",
@@ -1836,8 +1836,8 @@
     "image": "GoblinRaider",
     "desc": "【全军突击】被召唤时吹响号角，立刻在场上随机两个空格各额外放置一名 3/15 哥布林袭掠军！",
     "onSummon": "goblin_raider_squad",
-    "imgUrl": "/cards/GoblinRaider.jpg",
-    "imgBigUrl": "/cards/GoblinRaiderBig.jpg"
+    "imgUrl": "./cards/GoblinRaider.jpg",
+    "imgBigUrl": "./cards/GoblinRaiderBig.jpg"
   },
   {
     "id": "goblin_ratmaster",
@@ -1852,7 +1852,7 @@
     "image": "Ratmaster",
     "desc": "【疫病之源】每回合开始阶段对敌方全场生物造成6点伤害，并消耗拥有者随机一个系的3点能量作为祭品。",
     "ability": "ratmaster_pulse_6",
-    "imgUrl": "/cards/Ratmaster.jpg",
-    "imgBigUrl": "/cards/RatmasterBig.jpg"
+    "imgUrl": "./cards/Ratmaster.jpg",
+    "imgBigUrl": "./cards/RatmasterBig.jpg"
   }
 ]

@@ -5,7 +5,247 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-09-30
+## [Unreleased] - 2026-10-05
+
+### Fixed
+- **战场法则随从实装与卡牌 ID 校准（Battlefield Scenario Creature Deployment & ID Resolution）**：
+  - 修复单局对战在选择场景法则（如“天界圣峰”6号位双方各预置【狮鹫】，“永恒密林”预置【巨型蜘蛛】，“熔岩炼狱”预置【火焰祭司】等）时开局未召唤随从的问题；
+  - 校准随从卡牌 ID 映射（修复 `fire_priest_of_fire` 与 `fire_goblin_berserker` 拼写），在对决引擎启动时完整注入双方棋盘指定槽位，并实时记录战场随从入场日志；
+  - 完善特殊系能量（`special`）在不同英雄职业（死灵/圣职/机械/混沌/支配/幻术）下的映射充能。
+- **弹窗重复渲染与多重叠加修复（Singleton Modal System & Overlay Deduplication）**：
+  - 移除战斗界面与各子视图模板内部散落的模态窗调用，将选项设置（`showOptionsModal`）与游戏帮助（`showHelpModal`）统一收拢至根渲染函数单例挂载；
+  - 彻底杜绝回放与部分视图下因重复拼接导致的双重弹窗与闪烁，并为各弹窗遮罩层（`options-modal-overlay`、`campaign-treasures-modal-overlay`）添加点击背景快速关闭。
+- **单局对战弹窗头像区域紧凑化与下边界溢出修复（Single Duel Modal Avatar Sizing & Boundary Overflow Fix）**：
+  - 优化玩家与电脑对手头像选择器尺寸（自适应 `clamp(62px, 7.8vh, 78px)`），精简职业选择栏间距与法则面板下外边距，彻底解决职业选择与齿轮按钮超出弹窗黄色底边框的问题。
+- **英雄联赛排行榜标题层级与遮挡修复（League Header Banner Overlap & Layering Fix）**：
+  - 针对“容易联赛 常规赛 · 场次 1 / 15”横幅下半截被排行榜表格覆盖的问题，重构两者垂直定位与堆叠上下文：横幅图层提升至 `z-index: 60`，表格顶部自适应下移至 `clamp(66px, 11.2vh, 86px)`，确保排行榜与标题横幅之间具备清晰安全留白。
+
+### Added
+- **战役圣物殿堂战利品官方艺术重构（Campaign Relics Hall Authentic Art Aesthetics）**：
+  - 废除现代 Emoji 图标（🦅, 🧿, 📖 等）与高亮纯白背景，全面替换为原版官方艺术卡牌与金属浮雕徽章（狮鹫卡牌原画、官方奖励徽章 `R2001.jpg`、`R3001.jpg`、`R4001.jpg`、`R3005.jpg`、`R5000.jpg` 与巨魔原画）；
+  - 圣物展示卡片切换为暗黑中世纪金边石板风格，未激活圣物呈现古朴暗灰石雕质感，完美契合《魔幻牌》古典暗黑奇幻美术基调。
+- **PC 原版 48+ 全套成就与徽章系统（Authentic PC 48-Achievement Badge System）**：
+  - 提取并转换 PC 原版全部 51 张透明成就勋章图片，全面对接 PC `Language.dic` 徽章体系（含 AceBadge、DoubleAceBadge、DragonMaster、StormLord、WideOpen、6 大流派战役与天梯大师勋章等），全面升级成就馆。
+- **战役模式 PC 真实圣物殿堂弹窗（Campaign Relics & Treasures System）**：
+  - 还原 PC 原版战役随通关解锁圣物的经典机制：伴生驯化狮鹫（关卡 1 解锁）、健康护符（关卡 2 解锁英雄血量 +5）、狮鹫学之书（关卡 3 解锁狮鹫涅槃重生）、元素圣戒（关卡 4 解锁开局四系能量各 +1）、巨魔之血药剂（关卡 5 解锁伴生狮鹫每回合自愈 +2）、全知望远镜（关卡 6 解锁对手手牌洞悉）、铎拉克巨棱镜碎片（通关战役终战解锁）；
+  - 全新设计《战役圣物殿堂》石板模态窗，展示各圣物属性、解锁条件与激活状态。
+- **战役开局战场随从与特殊法则（Campaign Battlefield Pre-placed Creatures & Rules）**：
+  - 关卡 1（德米尔）：玩家开局伴生入场 1 只火焰祭司；解锁驯化狮鹫后在后续所有关卡开局自动召唤 3 号位伴生狮鹫；
+  - 关卡 2（闪银）：敌方开局进驻冰霜/水元素守护；
+  - 关卡 3（费德米尔）：敌方开局进驻机械/混沌守护者；
+  - 关卡 5（维兰娜）：敌方开局直接在棋盘上布置双狂暴哥布林；健康护符（65 生命）与元素圣戒（开局能量各 +1）被动实时生效。
+- **英雄联赛对战建议军师锦囊（League Opponent Tactical Advice Modal）**：
+  - 操作栏“奖品”按键升级为“对战建议”按键，点击弹出《对战建议战术秘卷》模态窗，深度解析下轮对手的流派核心优势、潜在弱点与破局克制锦囊妙计。
+- **英雄联赛赛制自定义与季后淘汰赛制（League Contestant Count & Multi-Phase Tournament）**：
+  - 创建新角色时支持配置选手总数（8 / 10 / 12 / 16 人，默认 10 人，最大 16 人对应全 16 种流派）；
+  - 动态赛程计算：前 $N-1$ 轮为单循环常规赛，常规赛积分前 4 名晋级四强半决赛（第 $N$ 轮），半决赛胜者晋级巅峰总决赛（第 $N+1$ 轮）决出联赛总冠军；完赛弹出定制荣誉勋章模态窗。
+- **战役与英雄联赛对局断点接续（Battle Save & Resume Continuity System）**：
+  - 战役地图与英雄联赛排行榜新增【⚔️ 接续战斗】/【⚔️ 接续对决】高亮按钮；当对战中“保存退出”后，重新进入战役或联赛选择对应角色即可一键无缝恢复上次棋盘所有随从、生命、手牌与能量进度。
+- **全新羊皮纸/石板风格通用确认弹窗与通知浮层（Custom Stone Confirm Dialog & Toast System）**：
+  - 全面取缔所有系统原生 `window.alert()` 与 `window.confirm()`，构建统一的 `openCustomConfirm` 石板确认框与 `showToastNotice` 浮层通知。
+- **单局对战难度选择与随机/特殊战场场景系统（Single Duel Difficulty & Battlefield Scenarios System）**：
+  - 单局对战面板新增 4 级 AI 难度选择（容易 / 普通 / 困难 / 大法师），高难度下电脑对手具备高优先级的集火斩杀与战局反制决策；
+  - 新增战场场景法则选择（支持“🎲 随机奇遇”及星辉圣殿、永恒密林、熔岩炼狱、天界圣峰、幽暗冥河、机械要塞、混沌裂隙 7 大特殊法则），支持特殊初始生命、初始元素充能与动态战场主题；
+- **战斗界面“保存退出”按键（Combat Save & Exit Button）**：在战斗左侧快捷操作列中新增“保存退出”按钮，点击即刻完整持久化当前血量、元素能量、战线随从与手牌状态，随时可在主界面一键接续对决。
+- **自动记录对战录像配置开关（Auto-Record Battle Replays Setting）**：在游戏选项设置弹窗中添加“自动记录对战录像”开关，允许玩家自由控制是否在对局结束后自动保存完整推演至对战录像馆。
+
+### Changed
+- **游戏设置弹窗确定完成勾选按钮重构（Options Modal Confirm Tick & Close Button Symmetry）**：
+  - “确定完成”按钮改为绿色高光勾号图标（`✓`），与红色叉号（`×`）关闭按钮对称呼应；
+- **单局对战弹窗布局重构与居中对决（Single Duel Centralized VS Action Layout）**：
+  - 将 AI 难度与战场场景选择面板移到玩家与电脑对手卡片的正上方；
+  - 左右玩家卡片与 AI 卡片之间居中放置动态 `VS` 徽记与【⚔ 开始对决】核心按钮。
+- **战场场景与法则组合大扩充（12+ Expanded Battlefield Scenarios & Laws）**：
+  - 扩充至 12 种丰富场景法则（星辉圣殿、永恒密林、熔岩炼狱、天界圣峰、机械要塞、极地冰冠、混沌裂隙、宗师擂台、荒古遗迹、幽魂死域、奥术潮汐、随机轮盘），涵盖开局随从、全系充能与 90 血量神仙局。
+- **英雄联赛排行榜高亮与全新竞技场背景（League Table Highlight & Arena Background）**：
+  - 排行榜同时高亮标记玩家自身（`player-row`，👑）与下轮将要遭遇的对手（`next-opponent-row`，显示 `⚔️ 下轮对手` 橙金徽章）；
+  - 联赛主界面背景替换为全新高精度古典竞技场远景大厅图 `Tournament_Bg_New.jpg`。
+- **战场规则弹窗关闭按钮高亮醒目化（Battlefield Rules Modal High-Contrast Close Button）**：
+  - 对战界面战场规则弹窗右上角关闭按钮扩大至 36x36px，配置鲜艳绯红渐变、亮金描边、纯白加粗叉号与高光阴影。
+
+### Changed
+- **回合状态变暗时玩家生命值常驻高亮显示（HP Highlight Isolation During Inactive Turn）**：
+  - 移除了父容器上的全局灰阶滤镜，改为仅对头像、名称和能量条做局部变暗与灰阶处理；
+  - 强制双方生命值（HP 数字）保持满饱和度、无滤镜，并附带强烈的红/绿霓虹文字光晕阴影，在变暗状态下依然清晰醒目。
+- **手牌表头 3 字及以上自动缩放单行排版（Hand Column Header Auto-Scaling）**：
+  - 优化元素栏表头文字样式，禁止中文词汇自动折行（`white-space: nowrap`）；
+  - 根据文字长度（>=3 字、>=4 字）自适应微调字号，确保“支配者”、“混沌法术”等长文本在单排内与元素图标、能量数值徽章完美并列。
+- **信息区高度调优与对手元素能量条完整显现（Opponent Mana Bar & Card Height Optimization）**：
+  - 压缩玩家信息区高度至 44px~52px，扩展对手信息区高度至 120px~146px；
+  - 彻底修复小屏/低高度媒体查询中错误覆盖高度的问题，确保对手 5 系全宽单行元素能量条在任何分辨率下均完全展示不被裁切。
+- **对战录像弹窗列表扩展与头像/名称垂直重构（Replay Modal Header Close & Compact Vertical Layout）**：
+  - 关闭按钮（`×`）移至右上角标题栏，移除弹窗底部操作条，列表可视区域大幅扩容；
+  - 玩家与对手的姓名由并排横列改为移至头像正下方紧凑排列，中间信息区横向拓宽 120px+；
+  - 对战类型徽章与对战结果徽章保持单行水平并列排布，彻底消除标签内部文字竖排拆字换行。
+- **英雄联赛排行榜遮挡修复（League Standings Table Visibility & Padding Fix）**：
+  - 提升排行榜表格层级（`z-index: 50`）高于底部控制栏，调整底部安全间距与紧凑行内边距；
+  - 完整呈现第 1 至第 8 名排位数据，杜绝第 5 名以后被底部面板遮挡问题，并配置古典金色滚动条。
+- **全局弹窗关闭与确定按钮标准化（Standardized Modal Header Action Buttons）**：
+  - 全面规范所有弹窗（游戏设置、录像馆、成就馆、战场规则、联赛档案、战役档案、战役/联赛创建角色、单局对战面板等）的关闭与确定按钮收归右上角标题栏；
+  - 废弃所有弹窗底部的多余按钮行，使弹窗布局统一清爽、高度利用率最大化。
+- **对战界面英雄信息区与能量显示重构（Combat Hero Plates & Hand Column Mana Redesign）**：
+  - **玩家信息区能量值剥离并移至手牌表头**：移除玩家英雄卡片内的元素能量条，将五系元素能量数值以高对比度金属徽章（`.col-mana-badge`）直观嵌入卡牌手牌区各系列的顶部表头处；
+  - **对手信息区单行全宽能量条**：缩减玩家卡片高度让出垂直空间给对手卡片，对手五系能量条彻底摆脱左侧头像区域挤压限制，采用单行全宽横向平铺展示；
+  - **英雄名称防溢出截断**：优化双方英雄卡片文字弹性布局，字号智能平滑适配，当出现 3 个及以上汉字姓名时（如“大法师”）彻底消除末尾 `...` 省略号截断。
+- **战斗界面回合高亮切换呈现（Active Turn Ambient Highlighting）**：移除战斗界面最左侧操作列顶部冗余的回合状态胶囊按钮，替换为直观的英雄信息区高亮状态切换（己方回合时玩家卡片金色高亮发光、对手卡片灰阶变暗，敌方行动时反之）。
+- **战役模式操作按键精简（Campaign Mode Button Streamlining）**：移除战役地图右侧多余的“选项”按钮，规范精简为 4 个核心功能键（开始战斗、角色档案、奖品、主菜单）。
+- **游戏帮助整合与卡牌图鉴数值重叠优化（Game Help Codex Consolidation & Stat Badges Fix）**：
+  - 将“如何游戏”与“战斗进阶”选项卡深度合并为统一的“如何游戏”专栏，详尽阐述核心规则、四大阶段与从左至右结算铁律；
+  - 弹窗关闭按钮移至右上角标题栏，腾出完整纵向滚动空间；
+  - 卡牌资料图鉴中重构底部攻防徽章排布（`.codex-card-badges-row`），攻击力与生命值分居左右两端，彻底解决数字重叠覆盖问题。
+- **对战录像列表布局与羊皮纸质感优化（Replay Item List Layout & Vintage Parchment Tone）**：将录像卡片中间信息区重构为单列多行纵向排布，决斗模式、胜负结果徽章、回合步数与录制时间逐行规范呈现，避免文字竖排扭曲折行；卡片背景调整为复古暖象牙羊皮纸质感，与弹窗底板无缝融合。
+
+### Fixed
+- **游戏设置项点击重复触发弹窗与闪烁动画根治（Options Toggle Re-render & Flash Animation Fix）**：
+  - 彻底根治点击 BGM、SFX、自动录像滑块与战场主题时因全局 `render()` 重建 DOM 导致的弹窗二次弹出与闪退重进视觉瑕疵，重构为 DOM 就地无缝更新。
+- **系统原生弹窗彻底清零与全平台风格统一（Zero Native Browser Popups Fix）**：
+  - 全面清理战役奖品 `alert`、卡组保存 `alert`、删除角色 `confirm`、退出对决 `confirm` 等所有残留原生弹窗，统一收拢为古典羊皮纸模态弹窗与轻量通知浮层。
+- **游戏设置自动录像开关无法切换与滑动开关重构（Auto-Record Slide Toggle Switch & Event Binding Fix）**：
+  - 修复此前未绑定点击事件监听导致无法切换自动录像设置的 Bug；
+  - 将按钮重构为符合现代 UI 规范的丝滑滑动开关（`.slide-toggle-track`），并自动持久化玩家配置。
+- **Android x86 模拟器 SIGSEGV 崩溃根治（Chrome_InProcGp SIGSEGV GPU Crash Fix）**：根治 Android 9 x86 模拟器 GPU 进程（`Chrome_InProcGp`）在执行落雷全屏 Canvas 动画时因硬件高斯模糊滤镜（`shadowBlur: 30`）触发 Skia GL 驱动越界崩溃（`Fatal signal 11 code 2 SEGV_ACCERR`）的底层隐患；重构为无硬件滤镜的 3 级多层羽化线宽半透明辉光描边，并增加全局 `try / finally` 节点清理防护。
+- **巨型蜘蛛特性逻辑与中毒自伤修复（Giant Spider Poison Trait & Self-Harm Bug Fix）**：
+  - 修复入场时错误将卡牌攻击特性中的附加中毒数值（2点）直接赋予自身状态 `creature.poison` 导致蜘蛛登场即自残自损生命的问题，初始化为 0；
+  - 在战斗交锋伤害结算中补全【剧毒】特性逻辑，当巨型蜘蛛普通攻击命中生物并造成伤害时，为目标生物注入 2 点中毒状态计数（目标每回合受到对应毒素伤害）；入场触发繁衍在相邻空格孵化 2/11 丛林蜘蛛。
+- **自然仪式树木生长动画目标位精准匹配（Nature's Ritual Spell Animation Targeting Alignment）**：引入友方增益法术目标定向识别（`isFriendlyTargetSpell`），修复施法时树木始终错误出现在己方第 1 卡槽的硬编码问题；己方战线槽位在选中友方增益法术时高亮提示施法目标，树木生长与护盾特效精准降临在所选生物槽位坐标中心。
+- **神谕使者触发音效校正（Oracle Ability Arcane Sound Alignment）**：纠正神谕使者（Oracle）触发幻术伤害时误用雷霆轰鸣音效的问题，调整为纯正的奥术幻象精神音效（`magic`）。
+- **对战回放攻击与法术动画全量呈现（Replay Combat & Spell VFX Rendering）**：重构回放推演执行时序，确保 DOM 状态就绪后再触发攻击阵线突刺突进（`lunge`）、法术视觉特效（`playSpellVFX`）、屏幕震颤与生物召唤光影，彻底解决回放战斗无动画的问题。
+- **游戏选项与音频设置弹窗确定按钮失效修复（Options Modal Confirm Button Event Binding）**：为游戏选项与音频设置弹窗底部的“确定完成”按钮（`btn-confirm-options`）绑定独立的窗口关闭与音效事件，彻底解决点击后无法自动关闭弹窗的问题。
+- **背景音乐系统彻底重构与多模式专属战斗曲联动（Web Audio Seamless Looping & Mode-Specific BGM Synchronization）**：
+  - **根治背景音乐突然中断**：将背景音乐主通道升级为基于 Web Audio API 内存解码的无缝硬件循环架构（`AudioBufferSourceNode.loop = true`），彻底摆脱 5+ 原生 `MediaPlayer` 在单曲循环结束时反复销毁与重建句柄引起的底层 `mediaserver` 资源竞争与死锁静音。
+  - **前后台切换自愈与存活看门狗**：新增 `visibilitychange` 页面可见性感知与 2.5 秒周期的 BGM 存活巡检看门狗，设备息屏唤醒或意外中断时毫秒级自动拉起恢复播放。
+  - **模式切换动态音乐路由**：打通单人决斗、战役模式、英雄联赛、自组卡牌、对战回放与主界面的音乐联动，解决模式切换时音乐不跟随变更的问题；
+    - 单人决斗：自动播放专属激昂战斗曲 `combat1.ogg`；
+    - 战役模式：根据讨伐进度智能进阶，第 1~20 关播放 `combat1.ogg`，第 21~45 关播放 `combat2.ogg`，第 46~65 关决战播放 `combat3.ogg`；
+    - 英雄联赛：播放激烈锦标赛对决曲 `combat2.ogg`；
+    - 自组卡牌与对战回放：根据对决配置播放对应战斗曲；
+    - 退出战斗返回大地图、主菜单、卡组工坊或天梯榜单时，平滑切回古典史诗主题曲 `menu1.ogg`。
+- **生物卡牌入场附加伤害与专属战斗特技全量生效（Creature On-Summon AOE Damage & Combat Trait Overhaul）**：
+  - **入场伤害管线重构与视觉呈现**：将生物召唤入场结算重构为异步阶段，入场直接伤害与 AOE 爆发结算后即时广播状态变化、渲染伤害飘字与清理阵亡生物，杜绝了此前被后续普通攻击逻辑瞬间覆盖掩盖的问题。
+  - **霸古魔入场全场 AOE 修复**：修复霸古魔（`damage_all_other_4`）判定时依赖临时 UID 造成的逻辑竞争与自伤问题，严密精准地对全场除自身以外的全部敌我双方生物造成 4 点入场烈焰伤害。
+  - **补全缺失的入场机制分支**：
+    - **巫妖王**（`death_master_lich` / `lich_burst_8`）：入场引爆敌方当前生命值最低的生物造成 8 点致命冥火伤害；
+    - **大恶魔**（`demon_greater_demon` / `demon_greater_summon`）：入场释放灭世黑炎，对敌方随机 2 名生物分别造成 5 点直接伤害；
+    - **毒蝎**（`beast_scorpion` / `scorpion_stun`）：入场对正对槽位敌方生物释放剧毒蜇针，赋予 2 回合麻痹无法行动状态；
+    - **天使**（`holy_angel` / `angel_summon`）：入场即刻为英雄额外灌注 3 点神圣圣职法力；
+    - **时间闪击者**（`timeblazer_teleport`）：入场穿梭至战场最左侧空格。
+  - **补全核心生物攻击与被动机制**：
+    - **吸血鬼**（`death_vampire`）：正对目标为人类生物时即刻获得 +4 攻击力压制；
+    - **哥布林英雄**（`fire_goblin_hero`）：赋予左右相邻友军 +2 攻击力激励光环；
+    - **狼獾**（`beast_wolverine`）：生命值受到损伤（低于上限一半）时触发嗜血狂暴，攻击力 +2；
+    - **巨蜥**（`beast_basilisk`）：正对生物发动近战反击时附加概率石化判定；
+    - **巫妖王与亡灵御守**：巫妖王攻击敌方英雄时等额汲取死灵能量，亡灵御守在任一敌方生物阵亡时汲取死灵能量。
+
+## [Unreleased] - 2026-10-04
+- **战役模式多玩家角色创建与档案管理系统（Campaign Character Profile Management System）**：
+  - 彻底打通战役模式与英雄联赛的角色管理机制，战役模式现已支持创建与管理多位独立玩家角色；
+  - 玩家可在战役中自定义姓名、从 78 款头像中挑选心仪外观、选择 12 大流派职业与战役难度（容易/普通/困难/大法师）；
+  - 新增战役角色档案中心（Campaign Profile Hub），支持多角色进度无缝切换、独立记录 65 关讨伐通关进度，并在大地图底部实时呈现当前主角头像与流派勋章。
+- **对战界面元素能力值数字边框溢出修复与字号增大（Hero Mana Chip Positioning & Contrast Optimization）**：
+  - 微调双方英雄元素能量晶片（`hero-mana-chip`）间距与内边距，移除过紧的右外边距，向左适度内移；
+  - 增大各元素数值字体（17px - 24px），纯白粗体搭配 1px 黑色硬描边，彻底解决数字贴边或超出边框的问题，数字饱满清晰。
+- **右上角操作提示条移除（Top-Right Prompt Banner Clean Removal）**：
+  - 依据用户反馈与 UI 纯净度需求，移除右上角漂浮提示框（`.battlefield-prompt-banner`），还原沉浸式原版对决视野。
+- **魔法卡牌施法展示动画屏幕正中居中定位（Spell Presentation Centered over Battlefield Arena）**：
+  - 查明并修复此前法术卡牌悬浮于 2 号卡槽上空的几何偏差问题（原逻辑基于窗口 50% 宽度，而横屏下右侧战场占 67%，导致 50% 刚好落在第 2 卡槽位置）；
+  - 重构为动态获取战场槽位主容器（`.combat-slots-arena`）的实际渲染包围盒，并在其真实水平与垂直几何中心悬浮展示卡牌放大进入与法术震荡光效，横竖屏下均完美正中 6 槽对战区。
+- **对战背景音乐突然消失与循环卡死彻底修复（BGM Leak Protection & Resilient Playback Cycle）**：
+  - 查明 5+ 原生播放器在单曲结束调用 `seekTo(0)` 时部分安卓机型底层 MediaPlayer 抛错且未释放句柄导致系统级媒体崩溃的隐患；
+  - 在 `onBgmEnd` 回调中对完成播放的原生播放器执行显式 `stop()` 与 `close()` 彻底释放底层句柄，并在 50ms 后重新安全创建新实例接续循环；在 HTML5 备用音频池中增加 `ended` 监听补丁，保障 BGM 永不突然消失中断。
+- **屏幕旋转自适应与陀螺仪解锁（Screen Orientation Unlock & Dynamic Responsive Realign）**：
+  - 在应用启动及 `plusready` 时自动调用 `plus.screen.unlockOrientation()`，解开底层锁屏限制，允许设备重力传感器在横屏与竖屏之间自由旋转响应；
+  - 注册防抖处理的 `resize` 与 `orientationchange` 监听器，手机翻转瞬间即刻毫秒级自动重绘并应用对应横/竖屏布局，无需重新载入应用。
+- **胜利音效替换（Triumphant Victory SFX Overhaul）**：
+  - 移除了原版类似大象长鸣声的号角音效（`trumpet.ogg`），替换为雄浑庄严、激荡人心的经典法师凯旋礼赞音效（`ritual_of_glory.ogg`）。
+- **卡牌技能描述与实际运行机制全量校准（Card Mechanism & Description Alignment Audit）**：
+  - 修复 `game.ts` 中多处边界遍历条件 `< 5` 错误导致第 6 槽位（索引 5）被排除在邻格判定之外的致命缺陷（狂暴哥布林范围波及与蛛母邻格幼蛛孕育现已完整覆盖 0~5 全部 6 个槽位）；
+  - 全局优化巨龟（`armor_5`）减伤机制与寒冰卫士（`hero_shield_half`）英雄护盾机制，使其对魔法法术伤害同样生效减免；
+  - 规范校准狮鹫飞行特技说明（“【飞行】无视对格阻挡直接攻击敌方英雄”），统一天雷召唤（`Call to Thunder`）的中英文译名与伤害描述。
+- **竖屏模式全方位体验重构（Comprehensive Portrait Mode Ergonomics）**：
+  - **启动界面 Logo 还原**：修复 SVG 缺少视口宽高属性导致在竖屏下列宽紧缩时高度坍塌为 0 的问题，设置高精度固定宽高比，Logo 在竖屏下恢宏居中；
+  - **单局对战与选项弹窗边界溢出消除**：重设对战选择框、设置与英雄选择弹窗在竖屏下的宽度上限为 `min(600px, 95vw)`，内边距自适应内敛，弹窗完整居中且不超屏；
+  - **对决战场排版重组**：
+    - 顶部操作栏各按钮改为上图标、下文字垂直排列，彻底解决文字遮挡看不见的问题；
+    - 垂直重排战斗层级：【顶部操作栏】→【敌方英雄全宽行】→【战场 6 槽位阵地】→【我方英雄全宽行（移至卡槽下方、手牌上方）】→【底部 5 系手牌区】；
+    - 适度下调手牌区高度占比，恢复卡牌协调的黄金比例，彻底杜绝卡牌细长瘦高失真；
+  - **战役模式竖屏优化**：战役大地图限高 38vh 且维持全宽视野，剧情对话与任务信息区移至上方单独成行全宽展现，下方紧凑排列开始战斗、角色档案、难度与操作按钮。
+- **对战回放实况动画与震颤反馈增强（Replay Step Animation & Impact Effects）**：
+  - 在 `applyReplayStep` 回放执行单步推进时，实时比对前后快照状态：
+    - 英雄或生物受到伤害时触发高对比度浮动伤害文字（`-X`）与受击特效；
+    - 英雄或生物受到治愈时触发浮动生命恢复文字（`+X`）；
+    - 战斗重击与攻击阶段同步激活全屏震颤动效（`screen-shake`）与攻击音效联动，回放过程生动震撼。
+- **横屏下卡牌费用被生命值遮挡缺陷修复（Card Cost Gem & Stat Badge Overlap Resolution in Landscape Mode）**：
+  - 彻底解决在 2700x1224 等宽屏手机高分辨率横屏下，底部手牌卡牌高度受限（~40-45px）时生物卡牌生命值徽章盖住法力费用徽章的问题。
+  - 将手牌中所有卡牌（生物与法术）的法力费用宝石统一右置并垂直居中（`top: 50%; right: 4px; transform: translateY(-50%);`，`z-index: 15`），使各系手牌纵列右侧费用数值整齐划一；
+  - 将生物卡牌的攻击力与生命值徽章以 Flex 弹性容器紧凑并排停靠于左下角（`bottom: 2px; left: 2px;`），彻底杜绝费用与生命值在垂直方向上的重叠冲突，卡面立绘与全系攻防费用信息 100% 完整清晰展示。
+- **英雄元素法力能量点高对比度重绘与模糊消除（High-Contrast Sharp Mana Counter Rendering）**：
+  - 针对小屏或手机横屏下双方英雄元素能量点（🔥、💧、⚡、🌿、🔮）文字过小且带重度发光模糊的问题，全面重构能量晶片（`hero-mana-chip`）。
+  - 去除大半径模糊阴影滤镜，数值文字升级为高对比度纯白粗体（`#ffffff`）搭配 1px 黑色锐利轮廓描边（`text-shadow: 1px 1px 0 #000, -1px -1px 0 #000...`），并在媒体查询中保障最低高度与字号，无论在任何高 DPI 屏幕下均一目了然、清晰锐利。
+- **安卓端音效资源池与背景音乐中断修复（Web Audio SFX Decoupling & Seamless BGM Looping）**：
+  - 查明并彻底解决“背景音乐突然中断、卡牌攻击声没有”的根本原因：此前音效调用 `plus.audio.createPlayer` 为每个音效创建安卓系统原生 `MediaPlayer` 句柄，瞬间耗尽系统底层媒体通道配额并导致底层 `mediaserver` 强杀 BGM 播放器、丢失攻击音效。
+  - 彻底解耦音频通路：所有短音效（点击、攻击 `attack.ogg`、召唤、法术等）全部经由低延迟、高并发的 Web Audio API 内存解码播放，零占用系统媒体句柄；5+ 原生播放器仅供背景音乐专属使用，并重构循环播放（`onBgmEnd`）时的无缝重载机制，彻底解决音乐中断与音效丢失。
+- **安卓系统状态栏彻底隐藏与沉浸式全屏（True Fullscreen & System Status Bar Hiding）**：
+  - 解决左上角显示系统时间、电量、通知图标遮挡游戏顶部操作按钮（“你的回合”及英雄头像）的问题。
+  - 在 `manifest.json` 中配置 `"fullscreen": true` 并关闭 `"immersed"` 重叠，同时在应用启动与 `plusready` 生命周期中自动调用 `plus.navigator.setFullscreen(true)` 与 `hideSystemNavigation()`，实现纯净全屏沉浸对决。
+- **Vite 开发服务器启动报错修复（Vite Dev Server ESM Compatibility）**：
+  - 修复 `vite.config.ts` 中的 `no-module-script` 插件在开发模式下移除 `<script type="module">` 导致控制台报错 `Uncaught SyntaxError: Cannot use import statement outside a module` 的问题，增加 `apply: 'build'` 约束使其仅在生产打包阶段生效，开发模式与生产构建双向完美兼容。
+- **全量卡牌立绘、英雄头像与 UI 边框相对路径全面修复（Full Card Art, Hero Avatars & UI Framing Relative Path Normalization）**：
+  - 彻底根除在 HBuilderX 模拟器与本地离线 `file://` 协议下卡牌立绘、英雄头像与边框呈现破损裂图（Broken Image）的致命缺陷。
+  - 针对原数据中以斜杠开头（如 `/cards/`、`/faces/`、`/ui/`）在本地 WebView 中会被错误解析为安卓操作系统根目录（`file:///cards/...`）的根本原因，全面将 `cards.json`、`campaign.json`、`tournament.json` 以及战斗、卡组构筑、图鉴、回放等全模块中所有图片路径重构为规范相对路径（`./cards/`、`./faces/`、`./ui/`）。
+  - 内置 `toRel()` 安全寻址转换器与 `index.html` 全局裂图捕获回退机制，确保在真机 APK、HBuilderX 模拟器基座与标准 Web 端图片均能毫秒级瞬时正常加载显示。
+- **HBuilderX 5+App 原生音频通道深度集成与离线多级回退（HBuilderX Native 5+ Audio & Multi-Tier Offline Engine）**：
+  - 针对安卓底层 `mediaserver` 进程无法跨权限读取 APK 私有资源目录导致标准 `<audio>` 静音、以及 Chromium 在本地协议下拦截 `fetch()` 的系统级限制，深度重构音频引擎：
+  - 首选接入 DCloud 5+App 原生音频播放器 `plus.audio.createPlayer('_www/audio/...')`，绕过所有浏览器媒体沙箱与自动播放阻断，完美解决模拟器无音乐问题；
+  - 强化 `plusready` 异步生命周期监听与用户首次触控唤醒机制，并在非 5+ 环境下自动降级至 Web Audio API（基于 XHR 内存 ArrayBuffer 解码）及 HTML5 Audio，彻底保障背景音乐与 93 种原版音效的完美流式播放。
+- **音频系统在本地 `file://` 协议下的 Fetch API 拦截修复（Audio Engine Local File Protocol & Scheme Compatibility）**：
+  - 针对在 HBuilderX 模拟器本地文件（`file://`）协议下报错 `Fetch API cannot load file:///audio/... URL scheme "file" is not supported` 的问题，彻底重构 [sound.ts](file:///d:/sync/project/Spectromancer/android/src/engine/sound.ts) 中的音频加载链路。
+  - 将所有音频资源的硬编码根绝对路径（`/audio/`）重构为相对寻址（`./audio/`），杜绝解析至操作系统根目录；
+  - 在检测到 `file:` 协议时，改用支持本地协议的 `XMLHttpRequest (arraybuffer)` 配合 HTML5 Audio 流式加载，彻底废弃 Chromium WebView 下对本地 `file:` 不受支持的 `fetch()` 调用，音效与背景音乐全面恢复正常播放。
+
+### Changed
+- **移动端离线 WebView 构建兼容性重塑（Offline WebView Compatibility: Relative Base & IIFE Bundle）**：
+  - 配置 `base: './'`，将资源索引路径从绝对路径 `/assets/` 转换为相对路径 `./assets/`，根除 Android WebView 在 `file://` 本地协议下将根路径解析为操作系统根目录导致的资源 404 白屏。
+  - 将构建产物重构为 `iife` 传统自执行脚本并自动替换 `type="module"` 为 `defer`，彻底绕开 Chromium WebView 在 `file://` 协议下的 CORS（Origin 为 null）限制与严格 MIME Type 检查，实现 HBuilderX 模拟器与本地 APK 的即开即玩。
+- **自组卡牌模式背景视觉重塑（Custom Deck Hub Background & Atmospheric Overhaul）**：
+  - 彻底移除此前错误作为全屏壁纸铺贴的原版 PC 弹窗切图（`CustomDeck_Bg.jpg`，该图原本为 PC 版带空框与藤蔓的对话框局部，拉伸后形成突兀的重叠弹窗视觉），消除多余旧版弹窗背景。
+  - 背景切换为游戏主视觉高清浮空城堡星空图（`MainMenuBg.jpg`），并叠加 `brightness(0.4) blur(3px)` 柔光景深与径向渐变暗角遮罩，将自组卡牌窗口的视觉焦点清晰突显，标题重塑为尊崇金（`#ffd700`）。
+- **启动主界面右下角版本号规范更新（Version Badge Updated to 1.0）**：
+  - 将启动主界面右下角显示的 `v 2.0.0` 统一更正为 `v 1.0`（`v 1.0 Mobile · HD`），并将 `package.json` 版本号同步更新为 `1.0.0`。
+
+### Added
+- **移动端竖屏自适应响应式布局支持（Adaptive Portrait Mode Responsive Layout）**：
+  - 在 `manifest.json` 与 CSS 媒体查询中全面开启竖屏支持（`portrait-primary` / `portrait-secondary`）。
+  - 新增完整的 `@media (orientation: portrait)` 响应式架构：
+    - 主界面启动页：Logo 与功能卡片自动流式单列垂直排列，适配单手握持；
+    - 对决战场：界面自上而下自适应重构为【顶部操作栏 + 双方英雄横向并列 HUD】→【中部 6 槽位战场全宽对阵】→【底部 5 系手牌纵列流式出牌区】，实现无需横放手机即可流畅操控对局；
+    - 弹窗与设置面板：全宽自适应填充，保障纵向阅读与触控体验。
+- **HBuilderX 5+App 与云打包专属配置文件（HBuilderX 5+App Manifest & Cloud Build Support）**：
+  - 新增标准 [manifest.json](file:///d:/sync/project/Spectromancer/android/public/manifest.json)，预置强制全屏横屏展示（`landscape-primary` / `landscape-secondary`）、沉浸式状态栏与应用元数据，支持在 HBuilderX 中直接打开构建产物进行模拟器实时调试与免本地环境的一键云打包 APK。
+- **帮助弹窗【卡牌资料】全系图鉴（Comprehensive Cards Codex & Compendium）**：
+  - 帮助弹窗中加入“🃏 卡牌资料”分类标签，完整呈现全系 120 张官方卡牌数据（4 大基础元素及 11 大法师流派专属牌）。
+  - 支持按系别（全部、火、水、气、土及各流派）快捷筛选过滤，直观浏览卡牌立绘、中英文名称、法力费用、攻防数值徽章、类型与完整技能机制描述。
+- **浅雅温润象牙羊皮纸贴图（Light Ivory Antique Parchment Texture）**：
+  - 针对原深色贴图色调偏重的问题，重新生成色调淡雅、温暖柔和的象牙米黄色古典羊皮纸贴图（`Paper.png`），去除厚重焦黑斑块，文字阅读舒适明澈，四周柔和微晕全覆盖且绝对杜绝白边。
+- **原版官方磅礴史诗主题音乐还原（Restored Epic Authentic Official Soundtrack）**：
+  - 恢复搭载正统官方原版完整史诗交响主题曲（`menu1.ogg`），气势浩瀚磅礴、交响乐与合唱女声气象万千，并适度调优播放声响，呈现纯正的大师级视听体验。
+- **主界面左上角 Logo 全面做大与字体/副标题重塑（Majestic Typography & Scaled Brand Logo）**：
+  - 引入 Google 高端字体家族（`Cinzel Decorative` 与优雅书道宋体），替换原本单薄普通的默认字体，赋予“元素秘境”极具仙魔史诗感的苍劲书法浮雕质感。
+  - 下方副标题“✦ 魔 导 对 决 ✦”字号大幅放大至 20px，搭配璀璨金芒椭圆徽章与两翼星钻饰纹，极为醒目抢眼。
+  - 整个 Logo 尺寸上限显著放大（高度提升至 `clamp(82px, 13vh, 126px)`，宽度扩至 `640px`），金辉流光四溢，主界面震撼度全面进阶。
+- **荣誉成就徽章图标 404 修复（All 12 Authentic Achievement Badges Restored）**：
+  - 修正成就数据中指向不存在文件名的图标引用，完整对齐 12 项正统成就官方徽章图片，所有成就 Icon 均完整正常显示。
+- **战役模式与联赛模式剧情排版全宽自适应（Full-Width Responsive Campaign & League Narrative Text Flow）**：
+  - 解决战役模式与联赛模式底部剧情说明文字只占区块左侧一半的问题。彻底清除从原版数据中提取附带的单硬换行符（`\r\n`），使文字随羊皮纸区块自适应 100% 宽度自然流式换行排版。
+- **游戏帮助弹窗顶部标题规范化（Game Help Modal Title Standardization）**：
+  - 帮助弹窗顶部标题规范调整为“📖 游戏帮助 (Help)”，去除冗余花哨的前缀与后缀英文。
+
+### Removed
+- **英雄联赛主界面多余“帮助”按钮（Clean 4-Button Grid for League Standings）**：
+  - 移除英雄联赛右下侧操作栏中冗余的“帮助”按钮，使右侧按钮组恢复为 4 个（开始战斗、角色档案、选项、主菜单），饱满对称对齐 2×2 网格布局。
+- **帮助弹窗“制作团队”选项卡与底部来源文字（Streamlined Help Codex Navigation）**：
+  - 帮助弹窗中移除“📜 制作团队”Tab 选项，移除左下角多余的“来源：Spectromancer...”说明文字，底部栏仅保留“关闭”按钮。
+
+## [1.0.0] - 2026-09-30
 
 ### Added
 - **荣誉成就系统原版视觉重构与高对比度易读优化（Authentic PC Achievement Badges & Crystal-Clear High-Contrast UI）**：

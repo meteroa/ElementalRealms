@@ -6,6 +6,28 @@ import cardsData from './data/cards.json';
 import tournamentData from './data/tournament.json';
 import { sound } from './engine/sound';
 
+export function toRel(url: string | undefined): string {
+  if (!url) return '';
+  if (url.startsWith('./')) return url;
+  if (url.startsWith('/')) return '.' + url;
+  if (!url.startsWith('http') && !url.startsWith('data:') && !url.startsWith('blob:')) {
+    return './' + url;
+  }
+  return url;
+}
+
+// Normalize all static JSON data paths in memory
+(cardsData as CardDef[]).forEach((c) => {
+  if (c.imgUrl) c.imgUrl = toRel(c.imgUrl);
+  if (c.imgBigUrl) c.imgBigUrl = toRel(c.imgBigUrl);
+});
+(campaignData as any[]).forEach((l) => {
+  if (l.face) l.face = toRel(l.face);
+});
+(tournamentData as any[]).forEach((t) => {
+  if (t.face) t.face = toRel(t.face);
+});
+
 type ViewMode =
   | 'menu'
   | 'single_duel_setup'
@@ -26,45 +48,152 @@ let aiFaceIndex = 5; // Face6 (Archmage)
 let aiClassIndex = 0; // 0 = 随机
 let showClassGridPickerFor: 'player' | 'ai' | null = null;
 let showHelpModal: boolean = false;
-let activeHelpTab: 'play' | 'combat' | 'deck' | 'classes' | 'modes' | 'credits' = 'play';
+let activeHelpTab: 'play' | 'combat' | 'deck' | 'classes' | 'modes' | 'cards' = 'play';
+let codexCardFilter: string = 'all';
 let showOptionsModal: boolean = false;
 let showSurrenderModal: boolean = false;
 let showOpponentHand: boolean = false;
 let aiAnnouncedCard: CardDef | null = null;
 
 // ==========================================
-// CAMPAIGN MAP STATE (Image 1)
+// CAMPAIGN MAP STATE & MULTI-CHARACTER PROFILES
 // ==========================================
 const CAMPAIGN_COMPLETED_KEY = 'spectromancer_campaign_completed';
 const CAMPAIGN_UNLOCKED_KEY = 'spectromancer_campaign_unlocked';
-let completedCampaignLevels: number[] = (() => {
-  try {
-    return JSON.parse(localStorage.getItem(CAMPAIGN_COMPLETED_KEY) || '[]');
-  } catch {
-    return [];
-  }
-})();
-let unlockedCampaignLevels: number[] = (() => {
-  try {
-    const raw = localStorage.getItem(CAMPAIGN_UNLOCKED_KEY);
-    return raw ? JSON.parse(raw) : [1];
-  } catch {
-    return [1];
-  }
-})();
-let selectedCampaignLevelId: number = 1;
+const CAMPAIGN_PROFILES_KEY = 'spectromancer_campaign_profiles';
+
+export interface CampaignProfile {
+  id: string;
+  playerName: string;
+  playerFaceId: number;
+  playerClassIdx: number;
+  difficultyIdx: number;
+  difficulty: string;
+  completedLevels: number[];
+  unlockedLevels: number[];
+  selectedLevelId: number;
+  createdAt: string;
+}
+
 const campaignDifficulties = ['容易', '普通', '困难', '大法师'];
-let campaignDifficultyIndex = 0;
+
+let campaignProfiles: CampaignProfile[] = (() => {
+  try {
+    const raw = localStorage.getItem(CAMPAIGN_PROFILES_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const legacyComp = localStorage.getItem(CAMPAIGN_COMPLETED_KEY);
+    const comp = legacyComp ? JSON.parse(legacyComp) : [];
+    const legacyUnl = localStorage.getItem(CAMPAIGN_UNLOCKED_KEY);
+    const unl = legacyUnl ? JSON.parse(legacyUnl) : [1];
+    return [{
+      id: 'campaign_' + Date.now(),
+      playerName: '传奇法师',
+      playerFaceId: 1,
+      playerClassIdx: 0,
+      difficultyIdx: 0,
+      difficulty: '容易',
+      completedLevels: comp,
+      unlockedLevels: unl,
+      selectedLevelId: 1,
+      createdAt: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    }];
+  } catch {}
+  return [];
+})();
+
+let activeCampaignId: string = campaignProfiles[0]?.id || '';
+let activeCampaign: CampaignProfile | null = campaignProfiles.find(p => p.id === activeCampaignId) || campaignProfiles[0] || null;
+
+let completedCampaignLevels: number[] = activeCampaign?.completedLevels || [];
+let unlockedCampaignLevels: number[] = activeCampaign?.unlockedLevels || [1];
+let selectedCampaignLevelId: number = activeCampaign?.selectedLevelId || 1;
+let campaignDifficultyIndex: number = activeCampaign?.difficultyIdx || 0;
+
+let showCampaignHubModal = false;
+let showCampaignSetupModal = false;
+let campaignPlayerName = '战役领主';
+let campaignPlayerFaceId = 1;
+let campaignPlayerClassIdx = 0;
+let campaignPlayerDifficultyIdx = 0;
+
+function syncActiveCampaign() {
+  if (activeCampaign) {
+    completedCampaignLevels = activeCampaign.completedLevels || [];
+    unlockedCampaignLevels = activeCampaign.unlockedLevels || [1];
+    selectedCampaignLevelId = activeCampaign.selectedLevelId || 1;
+    campaignDifficultyIndex = activeCampaign.difficultyIdx || 0;
+  } else {
+    completedCampaignLevels = [];
+    unlockedCampaignLevels = [1];
+    selectedCampaignLevelId = 1;
+    campaignDifficultyIndex = 0;
+  }
+}
+
+function saveCampaignProfiles() {
+  if (activeCampaign) {
+    activeCampaign.completedLevels = completedCampaignLevels;
+    activeCampaign.unlockedLevels = unlockedCampaignLevels;
+    activeCampaign.selectedLevelId = selectedCampaignLevelId;
+    activeCampaign.difficultyIdx = campaignDifficultyIndex;
+    activeCampaign.difficulty = campaignDifficulties[campaignDifficultyIndex] || '容易';
+  }
+  try {
+    localStorage.setItem(CAMPAIGN_PROFILES_KEY, JSON.stringify(campaignProfiles));
+    localStorage.setItem(CAMPAIGN_COMPLETED_KEY, JSON.stringify(completedCampaignLevels));
+    localStorage.setItem(CAMPAIGN_UNLOCKED_KEY, JSON.stringify(unlockedCampaignLevels));
+  } catch {}
+}
+
+function createNewCampaignProfile(name: string, faceId: number, classIdx: number, diffIdx: number) {
+  const newProfile: CampaignProfile = {
+    id: 'campaign_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    playerName: name.trim() || '战役领主',
+    playerFaceId: faceId,
+    playerClassIdx: classIdx,
+    difficultyIdx: diffIdx,
+    difficulty: campaignDifficulties[diffIdx] || '容易',
+    completedLevels: [],
+    unlockedLevels: [1],
+    selectedLevelId: 1,
+    createdAt: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  };
+  campaignProfiles.unshift(newProfile);
+  activeCampaignId = newProfile.id;
+  activeCampaign = newProfile;
+  syncActiveCampaign();
+  saveCampaignProfiles();
+}
+
+function deleteCampaignProfile(id: string) {
+  openCustomConfirm(
+    '删除战役角色档案',
+    '确定要删除该战役英雄角色及其通关进度吗？此操作无法撤销。',
+    () => {
+      campaignProfiles = campaignProfiles.filter(p => p.id !== id);
+      if (activeCampaignId === id) {
+        activeCampaign = campaignProfiles[0] || null;
+        activeCampaignId = activeCampaign?.id || '';
+        syncActiveCampaign();
+      }
+      saveCampaignProfiles();
+      render();
+    }
+  );
+}
 
 const CAMPAIGN_MAP1_NODES = [
-  { levelId: 1, name: '德米尔', face: '/faces/Face6.jpg', x: 18.5, y: 43.0, landmark: '麦田' },
-  { levelId: 2, name: '闪银', face: '/faces/Face7.jpg', x: 34.0, y: 39.0, landmark: '农舍' },
-  { levelId: 3, name: '费德米尔', face: '/faces/Face8.jpg', x: 30.5, y: 57.5, landmark: '风车' },
-  { levelId: 4, name: '尼瑞恩', face: '/faces/Face14.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
-  { levelId: 5, name: '维兰娜', face: '/faces/Face21.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
-  { levelId: 6, name: '艾瑞欧', face: '/faces/Face25.jpg', x: 62.0, y: 46.0, landmark: '东境要塞' },
-  { levelId: 7, name: '卡特拉', face: '/faces/Face30.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
-  { levelId: 8, name: '风火领主', face: '/faces/Face35.jpg', x: 82.0, y: 38.0, landmark: '风火天峰' },
+  { levelId: 1, name: '德米尔', face: './faces/Face6.jpg', x: 18.5, y: 43.0, landmark: '麦田' },
+  { levelId: 2, name: '闪银', face: './faces/Face7.jpg', x: 34.0, y: 39.0, landmark: '农舍' },
+  { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 30.5, y: 57.5, landmark: '风车' },
+  { levelId: 4, name: '尼瑞恩', face: './faces/Face14.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
+  { levelId: 5, name: '维兰娜', face: './faces/Face21.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
+  { levelId: 6, name: '艾瑞欧', face: './faces/Face25.jpg', x: 62.0, y: 46.0, landmark: '东境要塞' },
+  { levelId: 7, name: '卡特拉', face: './faces/Face30.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
+  { levelId: 8, name: '风火领主', face: './faces/Face35.jpg', x: 82.0, y: 38.0, landmark: '风火天峰' },
 ];
 
 // ==========================================
@@ -86,8 +215,14 @@ interface LeagueState {
   playerFaceId: number;
   playerClassIdx: number;
   difficulty: string;
-  currentMatch: number; // 1..8
+  totalContestants?: number; // default 10, max 16
+  currentMatch: number; // 1 .. totalMatches
+  totalMatches?: number; // (totalContestants - 1) + 2
   standings: LeagueCompetitor[];
+  matchSchedule?: number[]; // indices in tournamentData
+  semiFinalOpponentIndex?: number;
+  finalOpponentIndex?: number;
+  phase?: 'regular' | 'semifinal' | 'final' | 'completed';
   createdAt?: string;
 }
 
@@ -96,6 +231,9 @@ let leaguePlayerFaceId = 2; // Face2
 let leaguePlayerClassIdx = 3; // 战争牧师 (cleric)
 let leagueDifficultyIdx = 0; // 容易
 const leagueDifficulties = ['容易', '普通', '困难', '大法师'];
+const leagueContestantCountChoices = [8, 10, 12, 16];
+let leagueContestantCountIdx = 1; // Default 10 contestants
+
 
 const LEAGUE_PROFILES_KEY = 'spectromancer_league_profiles';
 let leagueProfiles: LeagueState[] = (() => {
@@ -146,9 +284,9 @@ function createInitialDemoReplay(): BattleReplay {
     dateStr: '精彩对决示范',
     mode: '单局对战 (大法师示范)',
     playerName: '神圣领主',
-    playerFace: '/faces/Face2.jpg',
+    playerFace: './faces/Face2.jpg',
     enemyName: '深渊死灵师',
-    enemyFace: '/faces/Face6.jpg',
+    enemyFace: './faces/Face6.jpg',
     result: 'victory',
     totalTurns: 2,
     steps: [
@@ -162,12 +300,12 @@ function createInitialDemoReplay(): BattleReplay {
       },
       {
         turn: 1, side: 'player', action: 'creature', desc: '玩家 在 [1号位] 召唤了【火灵学徒】(3/12)',
-        cardName: '火灵学徒', cardId: 'fire_apprentice', cardImg: '/cards/fire_apprentice.jpg', targetSlot: 0,
+        cardName: '火灵学徒', cardId: 'fire_apprentice', cardImg: './cards/fire_apprentice.jpg', targetSlot: 0,
         playerHp: 60, enemyHp: 60,
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: '/cards/fire_apprentice.jpg', imgBigUrl: '/cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
@@ -178,38 +316,38 @@ function createInitialDemoReplay(): BattleReplay {
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: '/cards/fire_apprentice.jpg', imgBigUrl: '/cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
       },
       {
         turn: 1, side: 'enemy', action: 'creature', desc: '深渊死灵师 在 [1号位] 召唤了【骷髅守卫】(2/10) 进行战线拦截',
-        cardName: '骷髅守卫', cardId: 'death_skeleton', cardImg: '/cards/Skeleton.jpg', targetSlot: 0,
+        cardName: '骷髅守卫', cardId: 'death_skeleton', cardImg: './cards/Skeleton.jpg', targetSlot: 0,
         playerHp: 60, enemyHp: 57,
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 0, death: 0, holy: 0, mechanics: 0, control: 0, chaos: 0, illusion: 0 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: '/cards/fire_apprentice.jpg', imgBigUrl: '/cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [
-          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 10, image: 'Skeleton', imgUrl: '/cards/Skeleton.jpg', imgBigUrl: '/cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 10, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 10, image: 'Skeleton', imgUrl: './cards/Skeleton.jpg', imgBigUrl: './cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 10, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
       },
       {
         turn: 2, side: 'player', action: 'spell', desc: '玩家 施放了法术【闪电箭】，直击敌方【骷髅守卫】造成 8 点雷霆暴击！',
-        cardName: '闪电箭', cardId: 'air_lightning', cardImg: '/cards/lightning.jpg', targetSlot: 0,
+        cardName: '闪电箭', cardId: 'air_lightning', cardImg: './cards/lightning.jpg', targetSlot: 0,
         playerHp: 60, enemyHp: 57,
         playerMana: { fire: 3, water: 6, air: 2, earth: 6, special: 3, death: 3, holy: 3, mechanics: 3, control: 3, chaos: 3, illusion: 3 },
         enemyMana: { fire: 5, water: 5, air: 5, earth: 5, special: 1, death: 1, holy: 1, mechanics: 1, control: 1, chaos: 1, illusion: 1 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: '/cards/fire_apprentice.jpg', imgBigUrl: '/cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [
-          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 2, image: 'Skeleton', imgUrl: '/cards/Skeleton.jpg', imgBigUrl: '/cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 2, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 2, image: 'Skeleton', imgUrl: './cards/Skeleton.jpg', imgBigUrl: './cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 2, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
       },
@@ -219,7 +357,7 @@ function createInitialDemoReplay(): BattleReplay {
         playerMana: { fire: 3, water: 6, air: 2, earth: 6, special: 3, death: 3, holy: 3, mechanics: 3, control: 3, chaos: 3, illusion: 3 },
         enemyMana: { fire: 5, water: 5, air: 5, earth: 5, special: 1, death: 1, holy: 1, mechanics: 1, control: 1, chaos: 1, illusion: 1 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: '/cards/fire_apprentice.jpg', imgBigUrl: '/cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
@@ -246,8 +384,247 @@ let isReplayAutoPlaying = false;
 let replayPlaybackTimer: any = null;
 let replayPlaybackSpeed = 1;
 
+let recordReplaysEnabled: boolean = (() => {
+  try {
+    const raw = localStorage.getItem('setting_record_replays');
+    return raw !== null ? JSON.parse(raw) : true;
+  } catch {
+    return true;
+  }
+})();
+
+interface BattlefieldScenario {
+  id: string;
+  name: string;
+  icon: string;
+  theme: string;
+  playerHp: number;
+  enemyHp: number;
+  rule: string;
+  extraPlayerMana?: Record<string, number>;
+  extraEnemyMana?: Record<string, number>;
+  initialPlayerCreatures?: Array<{ slot: number; cardId: string }>;
+  initialEnemyCreatures?: Array<{ slot: number; cardId: string }>;
+}
+
+const SINGLE_DUEL_DIFFICULTIES = ['容易', '普通', '困难', '大法师'];
+let singleDuelDifficultyIdx: number = 1; // Default '普通'
+
+const BATTLEFIELD_SCENARIOS: BattlefieldScenario[] = [
+  {
+    id: 'random',
+    name: '🎲 随机奇遇',
+    icon: '🎲',
+    theme: 'citadel',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '随机奇遇法则：开局随机抽取特殊战场环境（特殊生命、元素充能、开局随从与场景主题）。',
+  },
+  {
+    id: 'sanctuary',
+    name: '🏛️ 星辉圣殿',
+    icon: '🏛️',
+    theme: 'citadel',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '经典圣殿法则：双方 60 点初始生命值，遵循正统决斗法则，能量常规匀速增长。',
+  },
+  {
+    id: 'forest',
+    name: '🌲 永恒密林',
+    icon: '🌲',
+    theme: 'forest',
+    playerHp: 70,
+    enemyHp: 70,
+    rule: '密林生机庇佑：双方初始生命提升至 70 点，土系初始能量额外 +2，双方正中第3位各预置【巨型蜘蛛】护场！',
+    extraPlayerMana: { earth: 2 },
+    extraEnemyMana: { earth: 2 },
+    initialPlayerCreatures: [{ slot: 2, cardId: 'earth_giant_spider' }],
+    initialEnemyCreatures: [{ slot: 2, cardId: 'earth_giant_spider' }],
+  },
+  {
+    id: 'inferno',
+    name: '🌋 熔岩炼狱',
+    icon: '🌋',
+    theme: 'volcano',
+    playerHp: 50,
+    enemyHp: 50,
+    rule: '烈焰焚天法则：双方初始生命降为 50 点，火系初始能量额外 +3，开局双方 1号位各入场一名【火焰祭司】对峙！',
+    extraPlayerMana: { fire: 3 },
+    extraEnemyMana: { fire: 3 },
+    initialPlayerCreatures: [{ slot: 0, cardId: 'fire_priest_of_fire' }],
+    initialEnemyCreatures: [{ slot: 0, cardId: 'fire_priest_of_fire' }],
+  },
+  {
+    id: 'sky_peak',
+    name: '☁️ 天界圣峰',
+    icon: '☁️',
+    theme: 'sky',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '狂风雷霆法则：气系初始能量额外 +3，双方前锋 6号位各拥有高傲巡弋的【狮鹫】！',
+    extraPlayerMana: { air: 3 },
+    extraEnemyMana: { air: 3 },
+    initialPlayerCreatures: [{ slot: 5, cardId: 'air_griffin' }],
+    initialEnemyCreatures: [{ slot: 5, cardId: 'air_griffin' }],
+  },
+  {
+    id: 'styx',
+    name: '💀 幽暗冥河',
+    icon: '💀',
+    theme: 'citadel',
+    playerHp: 45,
+    enemyHp: 45,
+    rule: '亡者死斗法则：双方初始生命仅 45 点，快节奏生死决斗，考验每一步精准致命斩杀！',
+    extraPlayerMana: { special: 2 },
+    extraEnemyMana: { special: 2 },
+  },
+  {
+    id: 'clockwork',
+    name: '⚙️ 机械要塞',
+    icon: '⚙️',
+    theme: 'sky',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '钢铁共振法则：双方生命 65 点，全系初始能量各 +1，双方第2位各部署一名【哥布林狂战士】贴身搏击！',
+    extraPlayerMana: { fire: 1, water: 1, air: 1, earth: 1, special: 1 },
+    extraEnemyMana: { fire: 1, water: 1, air: 1, earth: 1, special: 1 },
+    initialPlayerCreatures: [{ slot: 1, cardId: 'fire_goblin_berserker' }],
+    initialEnemyCreatures: [{ slot: 1, cardId: 'fire_goblin_berserker' }],
+  },
+  {
+    id: 'chaos_rift',
+    name: '🌀 混沌裂隙',
+    icon: '🌀',
+    theme: 'volcano',
+    playerHp: 80,
+    enemyHp: 80,
+    rule: '时空奇点法则：双方初始生命激增至 80 点史诗持久战，所有元素初始充能 +2，双方预置【混沌维和者】！',
+    extraPlayerMana: { fire: 2, water: 2, air: 2, earth: 2, special: 2 },
+    extraEnemyMana: { fire: 2, water: 2, air: 2, earth: 2, special: 2 },
+    initialPlayerCreatures: [{ slot: 0, cardId: 'chaos_peacekeeper' }],
+    initialEnemyCreatures: [{ slot: 0, cardId: 'chaos_peacekeeper' }],
+  },
+  {
+    id: 'frost_glacier',
+    name: '🌊 极地冰冠',
+    icon: '🌊',
+    theme: 'citadel',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '极地严寒法则：双方生命提升至 65 点，水系初始能量额外 +3，开局法力冰川充盈！',
+    extraPlayerMana: { water: 3 },
+    extraEnemyMana: { water: 3 },
+  },
+  {
+    id: 'iron_bulwark',
+    name: '🛡️ 坚壁阵地',
+    icon: '🛡️',
+    theme: 'forest',
+    playerHp: 75,
+    enemyHp: 75,
+    rule: '守护壁垒法则：双方生命提升至 75 点，土系初始能量 +2，双方前线 3、4号位展开厚重石壁对垒！',
+    extraPlayerMana: { earth: 2 },
+    extraEnemyMana: { earth: 2 },
+    initialPlayerCreatures: [{ slot: 2, cardId: 'earth_giant_spider' }],
+    initialEnemyCreatures: [{ slot: 3, cardId: 'earth_giant_spider' }],
+  },
+  {
+    id: 'arcane_surge',
+    name: '🔮 奥术狂潮',
+    icon: '🔮',
+    theme: 'sky',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '流派共鸣法则：双方各自流派专属能量开局直接大幅充能 +4，起手即可展开专属流派神术！',
+    extraPlayerMana: { special: 4 },
+    extraEnemyMana: { special: 4 },
+  },
+  {
+    id: 'grandmaster',
+    name: '👑 宗师擂台',
+    icon: '👑',
+    theme: 'citadel',
+    playerHp: 90,
+    enemyHp: 90,
+    rule: '巅峰对决法则：双方初始生命高达 90 点，全系能量各 +3，大后期神仙打架高阶战略大师局！',
+    extraPlayerMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
+    extraEnemyMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
+  },
+];
+let singleDuelScenarioIdx: number = 0;
+let showLeagueAdviceModal: boolean = false;
+let showCampaignTreasuresModal: boolean = false;
+let showLeagueCompletionModal: boolean = false;
+let pendingConfirmDialog: {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  onConfirm: () => void;
+  onCancel?: () => void;
+} | null = null;
+
+function openCustomConfirm(
+  title: string,
+  message: string,
+  onConfirm: () => void,
+  onCancel?: () => void,
+  confirmText = '确定',
+  cancelText = '取消'
+) {
+  pendingConfirmDialog = {
+    title,
+    message,
+    confirmText,
+    cancelText,
+    onConfirm: () => {
+      onConfirm();
+    },
+    onCancel: () => {
+      if (onCancel) onCancel();
+    }
+  };
+  render();
+}
+
+function renderCustomConfirmModal(): string {
+  if (!pendingConfirmDialog) return '';
+  return `
+    <div class="modal-overlay" id="custom-confirm-overlay" style="z-index:99999;">
+      <div class="stone-options-dialog" style="width:clamp(360px, 44vw, 520px); max-height:85vh; display:flex; flex-direction:column; border:2px solid #d4af37; box-shadow:0 12px 38px rgba(0,0,0,0.9);">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%); flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 18px;">
+          <div class="options-title-text" style="color:#fef08a; font-size:17.5px;">⚠️ ${pendingConfirmDialog.title}</div>
+          <button class="modal-close-btn" id="btn-pending-confirm-cancel-x" style="position:static; width:32px; height:32px; font-size:20px; cursor:pointer;" title="取消">×</button>
+        </div>
+        <div style="padding:22px 22px; font-size:15px; color:#3b2308; line-height:1.6; background:#fdfbf7;">
+          ${pendingConfirmDialog.message.replace(/\n/g, '<br>')}
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; padding:12px 18px; background:#f5eee1; border-top:1px solid #d4b378; border-radius:0 0 10px 10px;">
+          <button class="campaign-pc-btn" id="btn-pending-confirm-cancel" style="padding:8px 20px; font-size:14px; min-width:80px;">${pendingConfirmDialog.cancelText || '取消'}</button>
+          <button class="campaign-pc-btn start-btn" id="btn-pending-confirm-ok" style="padding:8px 22px; font-size:14px; min-width:90px;">${pendingConfirmDialog.confirmText || '确定'}</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+
+function isFriendlyTargetSpell(card?: CardDef | null): boolean {
+  if (!card || !card.requiresTarget) return false;
+  return (
+    card.id.includes('rescue') ||
+    card.id.includes('glory') ||
+    card.id.includes('natures_ritual') ||
+    card.id.includes('healing_spray') ||
+    card.id.includes('haste') ||
+    card.id.includes('explosion') ||
+    card.id.includes('blood_ritual')
+  );
+}
+
 // ==========================================
-// ACHIEVEMENTS SYSTEM STATE
+// ACHIEVEMENTS SYSTEM STATE (Authentic PC Badges)
 // ==========================================
 const ACHIEVEMENTS_KEY = 'spectromancer_achievements';
 interface AchievementDef {
@@ -258,18 +635,58 @@ interface AchievementDef {
 }
 
 const ACHIEVEMENTS_LIST: AchievementDef[] = [
-  { id: 'first_win', badgeImg: '/ui/rewards/R1001.jpg', title: '王牌徽章 (Ace Badge)', desc: '在单局对战模式击败大法师' },
-  { id: 'double_ace', badgeImg: '/ui/rewards/R1002.jpg', title: '双重王牌徽章 (Double Ace)', desc: '连续在决斗或联赛中取得 3 场胜利' },
-  { id: 'overrun', badgeImg: '/ui/rewards/R1004.jpg', title: '全面压制徽章 (Overrun)', desc: '玩家场上拥有 5 个或以上未被阻挡的生物' },
-  { id: 'storm_lord', badgeImg: '/ui/rewards/R1006.jpg', title: '风暴领主徽章 (Storm Lord)', desc: '在单场对决中累计施放至少 4 次强力法术' },
-  { id: 'dragon_master', badgeImg: '/ui/rewards/R1007.jpg', title: '御龙大师徽章 (Dragon Master)', desc: '召唤能量消耗 8 点以上的传说高阶巨龙君临战场' },
-  { id: 'rock_is_strong', badgeImg: '/ui/rewards/R1008.jpg', title: '岩石就是力量徽章 (Rock is Strong)', desc: '施展土系或坚壁法术构筑坚不可摧的防线' },
-  { id: 'still_standing', badgeImg: '/ui/rewards/R1011.jpg', title: '屹立不倒徽章 (Still Standing)', desc: '生命值仅剩 1~5 点时完成惊天绝地逆转获胜' },
-  { id: 'campaign_stage1', badgeImg: '/ui/rewards/R2001.jpg', title: '神圣牧师战役徽章 (Campaign)', desc: '远征战役模式中成功讨伐首个领地据点' },
-  { id: 'campaign_branch', badgeImg: '/ui/rewards/R2002.jpg', title: '死灵法师战役徽章 (Conquest)', desc: '战役模式中攻克至少 3 个分支领地据点' },
-  { id: 'league_win', badgeImg: '/ui/rewards/R3001.jpg', title: '大师级神圣牧师徽章 (Master)', desc: '在英雄联赛 8 轮天梯排位赛中赢得对决' },
-  { id: 'league_champ', badgeImg: '/ui/rewards/R3002.jpg', title: '巅峰王座徽章 (Champion)', desc: '完成英雄联赛全部 8 轮挑战并夺得榜首' },
-  { id: 'custom_builder', badgeImg: '/ui/rewards/R5001.jpg', title: '大师构筑徽章 (Custom Deck)', desc: '使用自编 20 张专属定制卡组击败电脑对手' },
+  // 1. 决斗大师系列
+  { id: 'ace', badgeImg: './ui/achievements/AceBadge.png', title: '王牌徽章 (Ace)', desc: '连续 5 次在单局对战模式击败大法师' },
+  { id: 'double_ace', badgeImg: './ui/achievements/DoubleAceBadge.png', title: '双重王牌徽章 (Double Ace)', desc: '连续 10 次在单局对战模式击败大法师' },
+  { id: 'wide_open', badgeImg: './ui/achievements/WideOpenBadge.png', title: '大门开敞徽章 (Wide Open)', desc: '对方场上拥有 6 个未被阻挡的生物' },
+  { id: 'overrun', badgeImg: './ui/achievements/OverrunBadge.png', title: '全面压制徽章 (Overrun)', desc: '玩家场上拥有 6 个未被阻挡的生物' },
+  { id: 'share_the_pain', badgeImg: './ui/achievements/SharethePainBadge.png', title: '痛苦分享徽章 (Share the Pain)', desc: '单场对战中召唤 10 只海妖生物' },
+  { id: 'storm_lord', badgeImg: './ui/achievements/StormLordBadge.png', title: '风暴领主徽章 (Storm Lord)', desc: '单场对战施放 5 次雷神之箭' },
+  { id: 'dragon_master', badgeImg: './ui/achievements/DragonMasterBadge.png', title: '御龙大师徽章 (Dragon Master)', desc: '单场对战召唤 3 只以上火龙君临战场' },
+  { id: 'rock_is_strong', badgeImg: './ui/achievements/RockisStrongBadge.png', title: '岩石就是力量徽章 (Rock is Strong)', desc: '单场对战施放 4 次石雨术构筑防线' },
+  { id: 'big_spender', badgeImg: './ui/achievements/BigSpenderBadge.png', title: '大肆挥霍徽章 (Big Spender)', desc: '单场不使用费用低于 3 点的卡牌并获胜' },
+  { id: 'the_whale', badgeImg: './ui/achievements/TheWhaleBadge.png', title: '巨鲸徽章 (The Whale)', desc: '在一局对战中本体生命值达到 150 点' },
+  { id: 'still_standing', badgeImg: './ui/achievements/StillStandingBadge.png', title: '屹立不倒徽章 (Still Standing)', desc: '对战中累计承受 3000 点战斗伤害' },
+  { id: 'quarterback', badgeImg: './ui/achievements/QuarterbackBadge.png', title: '四分卫徽章 (Quarterback)', desc: '单场对战中累计跳过 10 次出牌回合' },
+  { id: 'photo_finish', badgeImg: './ui/achievements/PhotoFinishBadge.png', title: '鹰眼判定成功徽章 (Photo Finish)', desc: '在一场对战获胜时玩家生命不超过 5 点' },
+  { id: 'photo_finished', badgeImg: './ui/achievements/PhotoFinishedBadge.png', title: '鹰眼判定失败徽章 (Photo Finished)', desc: '在一场对战失败时对方生命不超过 5 点' },
+  { id: 'fire_suppression', badgeImg: './ui/achievements/FireSuppressionBadge.png', title: '拒绝火系徽章 (Fire Suppression)', desc: '在一场对战中不使用任何火系卡牌并取得胜利' },
+  { id: 'water_suppression', badgeImg: './ui/achievements/WaterSuppressionBadge.png', title: '拒绝水系徽章 (Water Suppression)', desc: '在一场对战中不使用任何水系卡牌并取得胜利' },
+  { id: 'air_suppression', badgeImg: './ui/achievements/AirSuppresstionBadge.png', title: '拒绝气系徽章 (Air Suppression)', desc: '在一场对战中不使用任何气系卡牌并取得胜利' },
+  { id: 'earth_suppression', badgeImg: './ui/achievements/EarthSupressionBadge.png', title: '拒绝土系徽章 (Earth Suppression)', desc: '在一场对战中不使用任何土系卡牌并取得胜利' },
+  { id: 'biding_time', badgeImg: './ui/achievements/BidingTimeBadge.png', title: '伺机而动徽章 (Biding Time)', desc: '单场积累 12 点特殊专属流派能量' },
+  { id: 'arms_race', badgeImg: './ui/achievements/ArmsRaceBadge.png', title: '强悍助力徽章 (Arms Race)', desc: '在场上拥有一个攻击力达到 30 以上的生物' },
+  { id: 'rebirth', badgeImg: './ui/achievements/RebirthBadge.png', title: '重生徽章 (Rebirth)', desc: '在场上同时拥有 4 个具有复活/再生特性的生物' },
+  { id: 'wall_of_bodies', badgeImg: './ui/achievements/WallofBodiesBadge.png', title: '堆尸如山徽章 (Wall of Bodies)', desc: '单场对战中累计战死失去 30 个生物' },
+  { id: 'scorched_earth', badgeImg: './ui/achievements/ScorchedEarthBadge.png', title: '烈焰焦土徽章 (Scorched Earth)', desc: '单场对战中累计击杀摧毁 30 个敌方生物' },
+  { id: 'veterinarian', badgeImg: './ui/achievements/VeterinarianBadge.png', title: '兽医徽章 (Veterinarian)', desc: '单场对战中使己方生物累计回复 50 点生命' },
+  { id: 'death_dealer', badgeImg: './ui/achievements/DeathDealerBadge.png', title: '死亡散布徽章 (Death Dealer)', desc: '对战中累计造成 3000 点伤害' },
+  { id: 'death_of_cuts', badgeImg: './ui/achievements/DeathofaThousandCutsBadge.png', title: '千刀万剐徽章 (Thousand Cuts)', desc: '对战中累计承受 10000 点伤害' },
+  { id: 'armageddon', badgeImg: './ui/achievements/ArmageddonBadge.png', title: '末日审判徽章 (Armageddon)', desc: '对战中累计造成 10000 点毁灭伤害' },
+
+  // 2. 战役通关徽章
+  { id: 'campaign_cleric', badgeImg: './ui/achievements/ClericCampaignBadge.png', title: '神圣牧师战役徽章', desc: '以神圣牧师为职业完成战役' },
+  { id: 'campaign_necromancer', badgeImg: './ui/achievements/NecromancerCampaignBadge.png', title: '死灵法师战役徽章', desc: '以死灵法师为职业完成战役' },
+  { id: 'campaign_mechanician', badgeImg: './ui/achievements/MechanicianCampaignBadge.png', title: '机械师战役徽章', desc: '以机械师为职业完成战役' },
+  { id: 'campaign_chaosmaster', badgeImg: './ui/achievements/ChaosmasterCampaignBadge.png', title: '混沌之主战役徽章', desc: '以混沌之主为职业完成战役' },
+  { id: 'campaign_illusionist', badgeImg: './ui/achievements/IllusionistCampaignBadge.png', title: '幻像师战役徽章', desc: '以幻像师为职业完成战役' },
+  { id: 'campaign_dominator', badgeImg: './ui/achievements/DominatorCampaignBadge.png', title: '统御使战役徽章', desc: '以统御使为职业完成战役' },
+
+  // 3. 大师级徽章 (最高难度完成)
+  { id: 'master_cleric', badgeImg: './ui/achievements/MasterClericBadge.png', title: '大师级神圣牧师徽章', desc: '以神圣牧师为职业完成最高难度战役' },
+  { id: 'master_necromancer', badgeImg: './ui/achievements/MasterNecromancerBadge.png', title: '大师级死灵法师徽章', desc: '以死灵法师为职业完成最高难度战役' },
+  { id: 'master_mechanician', badgeImg: './ui/achievements/MasterMechanicianBadge.png', title: '大师级机械师徽章', desc: '以机械师为职业完成最高难度战役' },
+  { id: 'master_chaosmaster', badgeImg: './ui/achievements/MasterChaosmasterBadge.png', title: '大师级混沌之主徽章', desc: '以混沌之主为职业完成最高难度战役' },
+  { id: 'master_illusionist', badgeImg: './ui/achievements/MasterIllusionistBadge.png', title: '大师级幻像师徽章', desc: '以幻像师为职业完成最高难度战役' },
+  { id: 'master_dominator', badgeImg: './ui/achievements/MasterDominatorBadge.png', title: '大师级统御使徽章', desc: '以统御使为职业完成最高难度战役' },
+
+  // 4. 联赛与选手徽章
+  { id: 'duelist_cleric', badgeImg: './ui/achievements/ClericCompetitorBadge.png', title: '神圣牧师选手徽章', desc: '以神圣牧师职业赢得联赛或高级对战' },
+  { id: 'duelist_necromancer', badgeImg: './ui/achievements/NecromancerDuelistBadge.png', title: '死灵法师选手徽章', desc: '以死灵法师职业赢得联赛或高级对战' },
+  { id: 'duelist_mechanician', badgeImg: './ui/achievements/MechanicianDuelistBadge.png', title: '机械师选手徽章', desc: '以机械师职业赢得联赛或高级对战' },
+  { id: 'duelist_chaosmaster', badgeImg: './ui/achievements/ChaosmasterDuelistBadge.png', title: '混沌之主选手徽章', desc: '以混沌之主职业赢得联赛或高级对战' },
+  { id: 'duelist_illusionist', badgeImg: './ui/achievements/IllusionistDuelistBadge.png', title: '幻像师选手徽章', desc: '以幻像师职业赢得联赛或高级对战' },
+  { id: 'duelist_dominator', badgeImg: './ui/achievements/DominatorDuelistBadge.png', title: '统御使选手徽章', desc: '以统御使职业赢得联赛或高级对战' },
 ];
 
 let unlockedAchievements: Record<string, string> = (() => {
@@ -381,10 +798,10 @@ if (!spellFxLayer) {
 let currentBattlefieldTheme: string = localStorage.getItem('battlefield_theme') || 'citadel';
 
 const battlefieldBgs: Record<string, string> = {
-  citadel: '/ui/battlefield_citadel.jpg',
-  sky: '/ui/battlefield_sky.jpg',
-  volcano: '/ui/battlefield_volcano.jpg',
-  forest: '/ui/battlefield_forest.jpg',
+  citadel: './ui/battlefield_citadel.jpg',
+  sky: './ui/battlefield_sky.jpg',
+  volcano: './ui/battlefield_volcano.jpg',
+  forest: './ui/battlefield_forest.jpg',
 };
 
 function getThemeName(key: string): string {
@@ -429,14 +846,15 @@ function showAchievementToast(ach: AchievementDef) {
 }
 
 function saveCompletedBattleReplay(eng: SpectromancerEngine, mode: string) {
+  if (!recordReplaysEnabled) return;
   const pName = eng.player.name || '玩家';
   const eName = eng.enemy.name || '对手';
-  const pFace = `/faces/Face${playerFaceIndex + 1}.jpg`;
+  const pFace = `./faces/Face${playerFaceIndex + 1}.jpg`;
   const eFace = currentBattleSource === 'campaign' 
-    ? (CAMPAIGN_MAP1_NODES.find(n => n.levelId === selectedCampaignLevelId)?.face || `/faces/Face${aiFaceIndex + 1}.jpg`)
+    ? (CAMPAIGN_MAP1_NODES.find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
     : (currentBattleSource === 'league'
-      ? (activeLeague?.standings[(activeLeague.currentMatch - 1) % activeLeague.standings.length]?.face || `/faces/Face${aiFaceIndex + 1}.jpg`)
-      : `/faces/Face${aiFaceIndex + 1}.jpg`);
+      ? (activeLeague?.standings[(activeLeague.currentMatch - 1) % activeLeague.standings.length]?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
+      : `./faces/Face${aiFaceIndex + 1}.jpg`);
 
   const replay: BattleReplay = {
     id: 'replay_' + Date.now(),
@@ -459,9 +877,63 @@ function saveCompletedBattleReplay(eng: SpectromancerEngine, mode: string) {
   } catch {}
 }
 
+function showCombatDamageEffect(side: 'player' | 'enemy', slot: number | 'hero', amount: number) {
+  if (amount <= 0) return;
+  let targetEl: HTMLElement | null = null;
+  if (slot === 'hero') {
+    targetEl = document.querySelector(`.combat-hero-portrait-frame.${side === 'player' ? 'bottom' : 'top'}`) ||
+               document.querySelector(`.combat-hero-row.${side === 'player' ? 'player' : 'opponent'}`);
+  } else {
+    targetEl = document.querySelector(`.combat-board-slot[data-side="${side}"][data-slot-index="${slot}"]`) ||
+               document.querySelector(`.board-slot[data-side="${side}"][data-slot="${slot}"]`);
+  }
+
+  const fl = floatingLayer || document.getElementById('floating-text-layer');
+  if (targetEl && fl) {
+    const rect = targetEl.getBoundingClientRect();
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating-combat-text damage';
+    floatEl.innerText = `-${amount}`;
+    floatEl.style.left = `${rect.left + rect.width / 2}px`;
+    floatEl.style.top = `${rect.top + rect.height * 0.25}px`;
+    fl.appendChild(floatEl);
+    setTimeout(() => floatEl.remove(), 1000);
+  }
+
+  if (amount >= 8) {
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 350);
+  }
+}
+
+function showCombatHealEffect(side: 'player' | 'enemy', slot: number | 'hero', amount: number) {
+  if (amount <= 0) return;
+  let targetEl: HTMLElement | null = null;
+  if (slot === 'hero') {
+    targetEl = document.querySelector(`.combat-hero-portrait-frame.${side === 'player' ? 'bottom' : 'top'}`) ||
+               document.querySelector(`.combat-hero-row.${side === 'player' ? 'player' : 'opponent'}`);
+  } else {
+    targetEl = document.querySelector(`.combat-board-slot[data-side="${side}"][data-slot-index="${slot}"]`) ||
+               document.querySelector(`.board-slot[data-side="${side}"][data-slot="${slot}"]`);
+  }
+
+  const fl = floatingLayer || document.getElementById('floating-text-layer');
+  if (targetEl && fl) {
+    const rect = targetEl.getBoundingClientRect();
+    const floatEl = document.createElement('div');
+    floatEl.className = 'floating-combat-text heal';
+    floatEl.innerText = `+${amount}`;
+    floatEl.style.left = `${rect.left + rect.width / 2}px`;
+    floatEl.style.top = `${rect.top + rect.height * 0.25}px`;
+    fl.appendChild(floatEl);
+    setTimeout(() => floatEl.remove(), 1000);
+  }
+}
+
 function applyReplayStep(stepIdx: number) {
   if (!activeViewingReplay || !activeViewingReplay.steps || activeViewingReplay.steps.length === 0) return;
   const clampedIdx = Math.max(0, Math.min(stepIdx, activeViewingReplay.steps.length - 1));
+  const prevStep = activeViewingReplay.steps[replayCurrentStepIdx];
   replayCurrentStepIdx = clampedIdx;
   const step = activeViewingReplay.steps[clampedIdx];
   if (!step) return;
@@ -475,16 +947,69 @@ function applyReplayStep(stepIdx: number) {
   if (step.playerBoard) engine.playerBoard = step.playerBoard.map(c => c ? { ...c, card: { ...c.card } } : null);
   if (step.enemyBoard) engine.enemyBoard = step.enemyBoard.map(c => c ? { ...c, card: { ...c.card } } : null);
 
-  if (step.action === 'creature') {
-    sound.play('summon');
-  } else if (step.action === 'spell') {
-    sound.play('spellcast');
-  } else if (step.action === 'attack_phase') {
-    sound.play('attack');
-  }
-
   engine.log(`[回放 第${step.turn}回合] ${step.desc}`, 'info');
   render();
+
+  // Trigger floating combat animations on freshly updated DOM
+  if (prevStep && clampedIdx > 0) {
+    if (step.playerHp < prevStep.playerHp) {
+      showCombatDamageEffect('player', 'hero', prevStep.playerHp - step.playerHp);
+    } else if (step.playerHp > prevStep.playerHp) {
+      showCombatHealEffect('player', 'hero', step.playerHp - prevStep.playerHp);
+    }
+
+    if (step.enemyHp < prevStep.enemyHp) {
+      showCombatDamageEffect('enemy', 'hero', prevStep.enemyHp - step.enemyHp);
+    } else if (step.enemyHp > prevStep.enemyHp) {
+      showCombatHealEffect('enemy', 'hero', step.enemyHp - prevStep.enemyHp);
+    }
+
+    for (let i = 0; i < 6; i++) {
+      const pPrev = prevStep.playerBoard ? prevStep.playerBoard[i] : null;
+      const pNext = step.playerBoard ? step.playerBoard[i] : null;
+      if (pPrev && pNext && pNext.currentLife < pPrev.currentLife) {
+        showCombatDamageEffect('player', i, pPrev.currentLife - pNext.currentLife);
+      } else if (pPrev && pNext && pNext.currentLife > pPrev.currentLife) {
+        showCombatHealEffect('player', i, pNext.currentLife - pPrev.currentLife);
+      }
+
+      const ePrev = prevStep.enemyBoard ? prevStep.enemyBoard[i] : null;
+      const eNext = step.enemyBoard ? step.enemyBoard[i] : null;
+      if (ePrev && eNext && eNext.currentLife < ePrev.currentLife) {
+        showCombatDamageEffect('enemy', i, ePrev.currentLife - eNext.currentLife);
+      } else if (ePrev && eNext && eNext.currentLife > ePrev.currentLife) {
+        showCombatHealEffect('enemy', i, eNext.currentLife - ePrev.currentLife);
+      }
+    }
+  }
+
+  if (step.action === 'creature') {
+    sound.play('summon');
+    if (step.targetSlot !== undefined) {
+      const cardEl = document.querySelector(`.combat-board-slot[data-side="${step.side}"][data-slot-index="${step.targetSlot}"] .board-card`);
+      if (cardEl) {
+        cardEl.classList.add('card-summon-settle');
+        setTimeout(() => cardEl.classList.remove('card-summon-settle'), 800);
+      }
+    }
+  } else if (step.action === 'spell') {
+    const spellCard = allCardsList.find((c: CardDef) => c.id === step.cardId || c.nameCn === step.cardName);
+    if (spellCard) {
+      void playSpellVFX(step.side, spellCard, step.targetSlot);
+    } else {
+      sound.play('flamewave');
+    }
+  } else if (step.action === 'attack_phase') {
+    sound.play('attack');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 350);
+    const attackingBoard = step.side === 'player' ? step.playerBoard : step.enemyBoard;
+    attackingBoard?.forEach((c, sIdx) => {
+      if (c && c.currentAttack > 0) {
+        if (engine.onAttackLunge) engine.onAttackLunge(step.side, sIdx);
+      }
+    });
+  }
 }
 
 function startWatchingReplay(replay: BattleReplay) {
@@ -493,6 +1018,11 @@ function startWatchingReplay(replay: BattleReplay) {
   isReplayAutoPlaying = false;
   showReplayModal = false;
   currentView = 'replay_viewer';
+
+  const rMode = replay.mode || 'duel';
+  if (rMode === 'league') sound.playBgm('combat2');
+  else if (rMode === 'custom_deck') sound.playBgm('combat3');
+  else sound.playBgm('combat1');
 
   engine.player.name = replay.playerName;
   engine.player.face = replay.playerFace;
@@ -532,20 +1062,56 @@ function stopReplayAutoPlay() {
   render();
 }
 
-function createNewLeagueProfile(name: string, faceId: number, classIdx: number, diffIdx: number) {
+function getNextOpponentForLeague(): any {
+  const tourList = tournamentData as any[];
+  if (!activeLeague) return tourList[0];
+  const N = activeLeague.totalContestants || 10;
+  const regMatches = N - 1;
+  const schedule = (activeLeague.matchSchedule && activeLeague.matchSchedule.length > 0)
+    ? activeLeague.matchSchedule
+    : Array.from({ length: regMatches }, (_, i) => i % tourList.length);
+
+  if (activeLeague.currentMatch <= regMatches) {
+    const oppIdx = (activeLeague.currentMatch - 1) % schedule.length;
+    const tourIdx = schedule[oppIdx];
+    return tourList[tourIdx] || tourList[0];
+  } else if (activeLeague.currentMatch === N) {
+    // Semi-Finals
+    const oppIdx = activeLeague.semiFinalOpponentIndex ?? schedule[0] ?? 0;
+    return tourList[oppIdx] || tourList[0];
+  } else {
+    // Grand Final
+    const oppIdx = activeLeague.finalOpponentIndex ?? schedule[1] ?? 1;
+    return tourList[oppIdx] || tourList[1];
+  }
+}
+
+function createNewLeagueProfile(name: string, faceId: number, classIdx: number, diffIdx: number, contestantCount = 10) {
   const chosenClass = HERO_CLASSES[classIdx] || HERO_CLASSES[3];
   const tourList = tournamentData as any[];
+
+  // Choose (contestantCount - 1) unique AI opponents from tournamentData
+  const aiCount = contestantCount - 1;
+  const pool = tourList.map((_, idx) => idx);
+  const shuffledIndices: number[] = [];
+  while (shuffledIndices.length < aiCount && pool.length > 0) {
+    const r = Math.floor(Math.random() * pool.length);
+    shuffledIndices.push(pool.splice(r, 1)[0]);
+  }
+
+  const selectedOpponents = shuffledIndices.map(idx => tourList[idx]);
+
   const initialStandings: LeagueCompetitor[] = [
     {
       name: name.trim() || '玩家',
-      face: `/faces/Face${faceId}.jpg`,
+      face: `./faces/Face${faceId}.jpg`,
       className: chosenClass.id === 'random' ? 'sorcery' : (chosenClass.id as HeroClass),
       classCn: chosenClass.nameCn,
       wins: 0,
       score: 0,
       isPlayer: true
     },
-    ...tourList.map((t: any) => ({
+    ...selectedOpponents.map((t: any) => ({
       name: t.cnName,
       face: t.face,
       className: t.className,
@@ -556,14 +1122,20 @@ function createNewLeagueProfile(name: string, faceId: number, classIdx: number, 
     }))
   ];
 
+  const totalMatches = aiCount + 2; // (N - 1) regular + 1 semi-final + 1 final
+
   const newProfile: LeagueState = {
     id: 'league_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     playerName: name.trim() || '玩家',
     playerFaceId: faceId,
     playerClassIdx: classIdx,
     difficulty: leagueDifficulties[diffIdx] || '容易',
+    totalContestants: contestantCount,
     currentMatch: 1,
+    totalMatches,
     standings: initialStandings,
+    matchSchedule: shuffledIndices,
+    phase: 'regular',
     createdAt: new Date().toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
   };
 
@@ -577,20 +1149,28 @@ function createNewLeagueProfile(name: string, faceId: number, classIdx: number, 
 }
 
 function deleteLeagueProfile(id: string) {
-  leagueProfiles = leagueProfiles.filter(p => p.id !== id);
-  if (activeLeagueId === id) {
-    activeLeague = leagueProfiles[0] || null;
-    activeLeagueId = activeLeague?.id || '';
-  }
-  try {
-    localStorage.setItem(LEAGUE_PROFILES_KEY, JSON.stringify(leagueProfiles));
-    if (activeLeague) {
-      localStorage.setItem(LEAGUE_STATE_KEY, JSON.stringify(activeLeague));
-    } else {
-      localStorage.removeItem(LEAGUE_STATE_KEY);
+  openCustomConfirm(
+    '删除联赛角色',
+    '确定要删除该英雄角色及其联赛进度吗？此操作无法撤销。',
+    () => {
+      leagueProfiles = leagueProfiles.filter(p => p.id !== id);
+      if (activeLeagueId === id) {
+        activeLeague = leagueProfiles[0] || null;
+        activeLeagueId = activeLeague?.id || '';
+      }
+      try {
+        localStorage.setItem(LEAGUE_PROFILES_KEY, JSON.stringify(leagueProfiles));
+        if (activeLeague) {
+          localStorage.setItem(LEAGUE_STATE_KEY, JSON.stringify(activeLeague));
+        } else {
+          localStorage.removeItem(LEAGUE_STATE_KEY);
+        }
+      } catch {}
+      render();
     }
-  } catch {}
+  );
 }
+
 
 function saveActiveLeague() {
   if (!activeLeague) return;
@@ -680,6 +1260,11 @@ function saveCurrentBattle(): boolean {
   try {
     const battleData = {
       timestamp: Date.now(),
+      battleSource: currentBattleSource,
+      campaignProfileId: activeCampaign?.id || null,
+      campaignLevelId: selectedCampaignLevelId || 1,
+      leagueProfileId: activeLeague?.id || null,
+      leagueMatch: activeLeague?.currentMatch || 1,
       engineState: {
         playerClass: engine.player.className,
         playerFace: engine.player.face,
@@ -703,6 +1288,8 @@ function saveCurrentBattle(): boolean {
         enemyRevealedCardIds: Array.from(engine.enemyRevealedCardIds),
         gameOver: engine.gameOver,
         winner: engine.winner,
+        leagueRule: engine.leagueRule,
+        difficulty: engine.difficulty,
       },
       currentBattlefieldTheme,
     };
@@ -748,11 +1335,32 @@ function loadSavedBattle(): boolean {
     engine.enemyRevealedCardIds = new Set(s.enemyRevealedCardIds || []);
     engine.gameOver = s.gameOver || false;
     engine.winner = s.winner || null;
+    engine.leagueRule = s.leagueRule;
+    engine.difficulty = s.difficulty || '普通';
+
+    if (data.battleSource) {
+      currentBattleSource = data.battleSource;
+    }
+    if (data.campaignLevelId) {
+      selectedCampaignLevelId = data.campaignLevelId;
+    }
+    if (data.campaignProfileId) {
+      const prof = campaignProfiles.find(p => p.id === data.campaignProfileId);
+      if (prof) activeCampaign = prof;
+    }
+    if (data.leagueProfileId) {
+      const l = leagueProfiles.find(p => p.id === data.leagueProfileId);
+      if (l) {
+        activeLeague = l;
+        activeLeagueId = l.id;
+      }
+    }
 
     if (data.currentBattlefieldTheme) {
       currentBattlefieldTheme = data.currentBattlefieldTheme;
     }
 
+    setupEngineCallbacks();
     selectedCard = null;
     inspectedCard = null;
     showOpponentHand = false;
@@ -762,6 +1370,35 @@ function loadSavedBattle(): boolean {
     return false;
   }
 }
+
+function getSavedBattleInfo(): any | null {
+  try {
+    const raw = localStorage.getItem(SAVE_BATTLE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    if (data && data.engineState && !data.engineState.gameOver) {
+      return data;
+    }
+  } catch {}
+  return null;
+}
+
+function hasSavedCampaignBattle(profileId?: string): boolean {
+  const data = getSavedBattleInfo();
+  if (!data) return false;
+  if (data.battleSource !== 'campaign') return false;
+  if (profileId && data.campaignProfileId && data.campaignProfileId !== profileId) return false;
+  return true;
+}
+
+function hasSavedLeagueBattle(profileId?: string): boolean {
+  const data = getSavedBattleInfo();
+  if (!data) return false;
+  if (data.battleSource !== 'league') return false;
+  if (profileId && data.leagueProfileId && data.leagueProfileId !== profileId) return false;
+  return true;
+}
+
 
 // Start Menu Music on launch
 sound.playBgm('menu1');
@@ -805,8 +1442,10 @@ async function animateCardToSlot(
   // 1. SPELL CARDS: Authentic "放大进入" (Big Spell Presentation)
   // ========================================================
   if (card.type === 'spell') {
-    const targetCenterX = window.innerWidth * 0.5;
-    const targetCenterY = window.innerHeight * 0.38;
+    const arenaEl = document.querySelector('.combat-slots-arena') || document.querySelector('.combat-main-field') || document.querySelector('.combat-battlefield-section');
+    const arenaRect = arenaEl ? arenaEl.getBoundingClientRect() : null;
+    const targetCenterX = (arenaRect && arenaRect.width > 0) ? (arenaRect.left + arenaRect.width / 2) : (window.innerWidth * 0.5);
+    const targetCenterY = (arenaRect && arenaRect.height > 0) ? (arenaRect.top + arenaRect.height / 2) : (window.innerHeight * 0.38);
     const bigCardW = 160;
     const bigCardH = 220;
 
@@ -822,11 +1461,11 @@ async function animateCardToSlot(
 
     spellShowcase.innerHTML = `
       <div class="big-spell-banner">
-        <img src="/ui/vfx/usecardtextbar.png" class="banner-bg" alt="banner" />
+        <img src="./ui/vfx/usecardtextbar.png" class="banner-bg" alt="banner" />
         <span class="banner-text">${who === 'player' ? '施放法术' : '敌方施法'}：【${card.nameCn}】</span>
       </div>
       <div class="big-spell-frame elem-${card.element}">
-        <img src="${card.imgBigUrl || card.imgUrl}" class="big-spell-art" alt="${card.nameCn}" />
+        <img src="${toRel(card.imgBigUrl || card.imgUrl)}" class="big-spell-art" alt="${card.nameCn}" />
         <div class="big-spell-gem elem-${card.element}">${card.cost}</div>
         <div class="big-spell-title">${card.nameCn}</div>
       </div>
@@ -856,9 +1495,10 @@ async function animateCardToSlot(
 
     // Execute the spell visual effect on target/field
     let destEl: HTMLElement | null = null;
-    const oppSide = who === 'player' ? 'enemy' : 'player';
+    const isFriendly = isFriendlyTargetSpell(card);
+    const targetSide = isFriendly ? who : (who === 'player' ? 'enemy' : 'player');
     if (targetSlot !== undefined) {
-      destEl = document.querySelector(`.combat-board-slot[data-side="${oppSide}"][data-slot-index="${targetSlot}"]`);
+      destEl = document.querySelector(`.combat-board-slot[data-side="${targetSide}"][data-slot-index="${targetSlot}"]`);
     }
 
     await playSpellVFX(who, card, targetSlot, destEl);
@@ -922,7 +1562,7 @@ async function animateCardToSlot(
 
   ghost.innerHTML = `
     <div class="board-card vertical ${card.flying ? 'flying' : ''}">
-      <img src="${cardImg}" class="board-card-art" alt="${card.nameCn}" />
+      <img src="${toRel(cardImg)}" class="board-card-art" alt="${card.nameCn}" />
       <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
       <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
       <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
@@ -1066,40 +1706,43 @@ async function triggerAuthenticLightning(
   const originX = startX ?? (targetX + (Math.random() - 0.5) * 50);
   const originY = 0;
 
-  // Animate 3 rapid crackling discharge frames
-  const frames = [
-    { alpha: 1.0, glow: 30, width: 5 },
-    { alpha: 0.85, glow: 20, width: 3.5 },
-    { alpha: 0.45, glow: 15, width: 2 }
-  ];
+  try {
+    // Animate 3 rapid crackling discharge frames without hardware shadowBlur (prevents x86 GPU shader crash)
+    const frames = [
+      { alpha: 1.0, width: 4.5 },
+      { alpha: 0.85, width: 3.2 },
+      { alpha: 0.45, width: 2.0 }
+    ];
 
-  for (const f of frames) {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'bevel';
+    for (const f of frames) {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'bevel';
 
-    // Outer cyan electric glow
-    ctx.strokeStyle = '#38bdf8';
-    ctx.lineWidth = f.width * 2.2;
-    ctx.shadowColor = '#00d0ff';
-    ctx.shadowBlur = f.glow;
-    ctx.globalAlpha = f.alpha;
-    drawBranchingLightning(ctx, originX, originY, targetX, targetY);
+      // 1. Wide outer electric cyan haze
+      ctx.strokeStyle = `rgba(56, 189, 248, ${f.alpha * 0.35})`;
+      ctx.lineWidth = f.width * 3.6;
+      drawBranchingLightning(ctx, originX, originY, targetX, targetY);
 
-    // Inner blinding white core
-    ctx.strokeStyle = '#ffffff';
-    ctx.lineWidth = f.width;
-    ctx.shadowColor = '#ffffff';
-    ctx.shadowBlur = f.glow * 0.5;
-    ctx.globalAlpha = f.alpha;
-    drawBranchingLightning(ctx, originX, originY, targetX, targetY);
+      // 2. Focused vibrant cyan core aura
+      ctx.strokeStyle = `rgba(0, 208, 255, ${f.alpha * 0.85})`;
+      ctx.lineWidth = f.width * 1.8;
+      drawBranchingLightning(ctx, originX, originY, targetX, targetY);
 
-    ctx.restore();
-    await new Promise((r) => setTimeout(r, 65));
+      // 3. Inner blinding white lightning core
+      ctx.strokeStyle = `rgba(255, 255, 255, ${f.alpha})`;
+      ctx.lineWidth = f.width;
+      drawBranchingLightning(ctx, originX, originY, targetX, targetY);
+
+      ctx.restore();
+      await new Promise((r) => setTimeout(r, 65));
+    }
+  } catch (err) {
+    console.warn('Lightning animation warning:', err);
+  } finally {
+    canvas.remove();
   }
-
-  canvas.remove();
 }
 
 async function playSpellVFX(
@@ -1110,9 +1753,11 @@ async function playSpellVFX(
 ): Promise<void> {
   const layer = spellFxLayer || document.getElementById('spell-fx-layer') || document.body;
   const oppSide = who === 'player' ? 'enemy' : 'player';
+  const isFriendly = isFriendlyTargetSpell(card);
+  const targetSide = isFriendly ? who : oppSide;
 
   if (!destEl && targetSlot !== undefined) {
-    destEl = document.querySelector(`.combat-board-slot[data-side="${oppSide}"][data-slot-index="${targetSlot}"]`);
+    destEl = document.querySelector(`.combat-board-slot[data-side="${targetSide}"][data-slot-index="${targetSlot}"]`);
   }
 
   let targetX = window.innerWidth * 0.5;
@@ -1995,7 +2640,7 @@ function renderMainMenu(): string {
       <!-- TOP HEADER / BRANDING & UTILITY BAR -->
       <div class="mobile-menu-header">
         <div class="mobile-menu-brand">
-          <img src="/ui/game_logo.svg" class="mobile-menu-logo" alt="元素秘境" />
+          <img src="./ui/game_logo.svg" class="mobile-menu-logo" alt="元素秘境" />
         </div>
 
         <div class="mobile-menu-util-bar">
@@ -2094,7 +2739,7 @@ function renderMainMenu(): string {
         <div class="menu-footer-left">
           <span class="footer-tip">💡 提示：在战斗中轻触任意卡牌或生物，可在羊皮纸中查看详尽战术技能</span>
         </div>
-        <div class="menu-version-text">v 2.0.0 Mobile · HD</div>
+        <div class="menu-version-text">v 1.0 Mobile · HD</div>
       </div>
     </div>
   `;
@@ -2104,15 +2749,42 @@ function renderSingleDuelSetup(): string {
   const pClassObj = HERO_CLASSES[playerClassIndex];
   const aiClassObj = HERO_CLASSES[aiClassIndex];
 
-  const pFaceUrl = `/faces/Face${playerFaceIndex + 1}.jpg`;
-  const aiFaceUrl = `/faces/Face${aiFaceIndex + 1}.jpg`;
+  const pFaceUrl = `./faces/Face${playerFaceIndex + 1}.jpg`;
+  const aiFaceUrl = `./faces/Face${aiFaceIndex + 1}.jpg`;
+  const curScenario = BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx];
 
   return `
     <div class="main-menu-view" style="filter: brightness(0.4) blur(4px);"></div>
     <div class="single-duel-overlay" id="single-duel-overlay">
       <div class="single-duel-frame">
         <div class="single-duel-title-banner">
-          <div class="single-duel-title">单局对战</div>
+          <div class="single-duel-title">单局对战 · 决斗设定</div>
+          <button class="modal-close-btn" id="btn-close-duel" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <!-- SETTINGS PANEL: DIFFICULTY & BATTLEFIELD SCENARIO (MOVED TO TOP) -->
+        <div class="single-duel-settings-panel" style="margin-top:0; margin-bottom:6px;">
+          <div class="single-duel-setting-row">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span class="single-duel-setting-label">⚔️ 难度:</span>
+              <div class="league-choice-stepper" style="margin:0;">
+                <button class="campaign-diff-btn" id="btn-duel-diff-prev">◀</button>
+                <span class="league-choice-val diff" style="min-width:64px; text-align:center;">${SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx]}</span>
+                <button class="campaign-diff-btn" id="btn-duel-diff-next">▶</button>
+              </div>
+            </div>
+            <div style="display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end;">
+              <span class="single-duel-setting-label">🗺️ 战场场景:</span>
+              <div class="league-choice-stepper" style="margin:0;">
+                <button class="campaign-diff-btn" id="btn-duel-scene-prev">◀</button>
+                <span class="league-choice-val" style="min-width:120px; text-align:center;">${curScenario.name}</span>
+                <button class="campaign-diff-btn" id="btn-duel-scene-next">▶</button>
+              </div>
+            </div>
+          </div>
+          <div class="single-duel-rule-desc">
+            ⚡ <strong>场景法则：</strong>${curScenario.rule}
+          </div>
         </div>
 
         <div class="duel-combatants-row">
@@ -2139,6 +2811,14 @@ function renderSingleDuelSetup(): string {
             <div class="duel-class-desc">${pClassObj.desc}</div>
           </div>
 
+          <!-- CENTER VS DUEL ACTION ZONE -->
+          <div class="duel-vs-center-col">
+            <div class="duel-vs-emblem">VS</div>
+            <button class="campaign-pc-btn start-btn duel-center-start-btn" id="btn-start-duel">
+              ⚔ 开始对决
+            </button>
+          </div>
+
           <!-- AI (大法师) -->
           <div class="duel-combatant-card">
             <div class="duel-name-plate">大法师</div>
@@ -2161,12 +2841,6 @@ function renderSingleDuelSetup(): string {
             </div>
             <div class="duel-class-desc">${aiClassObj.desc}</div>
           </div>
-        </div>
-
-        <!-- BOTTOM BUTTONS -->
-        <div class="duel-actions-row">
-          <button class="duel-stone-action-btn start" id="btn-start-duel">⚔ 开始对决</button>
-          <button class="duel-stone-action-btn close" id="btn-close-duel">关闭</button>
         </div>
       </div>
     </div>
@@ -2199,39 +2873,6 @@ function renderClassGridPickerModal(target: 'player' | 'ai'): string {
 
 function renderCodexPageContent(tab: string): string {
   switch (tab) {
-    case 'combat':
-      return `
-        <div class="codex-section-card">
-          <div class="codex-section-title">⚔️ 战斗回合的四大阶段</div>
-          <div class="codex-section-body">
-            每个对战回合由四个严格阶段按序进行：<br>
-            <strong>1. 获得能量阶段：</strong> 双方英雄各系基础元素自然增长 +1 点（部分法术或生物可提供额外成长率加成）。<br>
-            <strong>2. 生物被动效果阶段：</strong> 战线生物的毒素衰减、自然再生、治疗英雄等光环与被动特技按序生效。<br>
-            <strong>3. 玩家操作出牌阶段：</strong> 当前行动方根据各系剩余能量召唤生物或施放即时法术，亦可主动选择跳过出牌。<br>
-            <strong>4. 生物攻击结算阶段：</strong> 己方阵线存活且具备攻击力的生物由左至右依次发动对位攻击！
-          </div>
-        </div>
-
-        <div class="codex-section-card">
-          <div class="codex-section-title">📜 “从左到右”结算核心铁律</div>
-          <div class="codex-section-body">
-            这是 Spectromancer 判定一切生物攻击与法术伤害生效顺序的核心准则：<br>
-            • 在生物攻击阶段，严格由<strong>左侧 1 号位至右侧 6 号位</strong>生物依次发动突袭。<br>
-            • 施放群体伤害法术（如【石雨术】、【酸雨术】）时，优先对敌方从左至右结算，再对己方生物从左至右结算。<br>
-            • 左侧生物先击破敌方生物后，后续友军不会遭到对应格挡。
-          </div>
-        </div>
-
-        <div class="codex-section-card">
-          <div class="codex-section-title">🎯 对位交锋与本体直击伤害</div>
-          <div class="codex-section-body">
-            • <strong>阵线格挡：</strong> 若所对格位有敌方生物，攻击力将直接扣减该生物生命值，生命降至 0 即战死离场。<br>
-            • <strong>直穿本体：</strong> 若所对格位为空格（未被阻挡），生物将越过阵线直接打击敌方英雄本体生命！<br>
-            • <strong>飞行特技：</strong> 拥有飞行特技的生物可无视地面阻挡生物，直接贯穿轰击敌方英雄！
-          </div>
-        </div>
-      `;
-
     case 'deck':
       return `
         <div class="codex-section-card">
@@ -2302,27 +2943,91 @@ function renderCodexPageContent(tab: string): string {
         </div>
       `;
 
-    case 'credits':
+    case 'cards': {
+      const filterGroups = [
+        { id: 'all', label: '全部' },
+        { id: 'fire', label: '🔥 火系' },
+        { id: 'water', label: '💧 水系' },
+        { id: 'air', label: '⚡ 气系' },
+        { id: 'earth', label: '🌿 土系' },
+        { id: 'sorcery', label: '🔮 巫术' },
+        { id: 'necromancer', label: '💀 死灵' },
+        { id: 'cleric', label: '✨ 战争牧师' },
+        { id: 'mechanician', label: '⚙️ 机械师' },
+        { id: 'dominator', label: '👁️ 支配者' },
+        { id: 'chaosmaster', label: '🌀 混沌大师' },
+        { id: 'illusionist', label: '🎭 幻术师' },
+        { id: 'demonologist', label: '😈 恶魔学者' },
+        { id: 'beastmaster', label: '🐺 驯兽师' },
+        { id: 'chronomancer', label: '⏳ 时空术士' },
+        { id: 'goblin', label: '👺 地精' },
+      ];
+
+      const filteredCards = allCardsList.filter(c => {
+        if (codexCardFilter === 'all') return true;
+        if (['fire', 'water', 'air', 'earth'].includes(codexCardFilter)) {
+          return c.element === codexCardFilter;
+        }
+        return c.className === codexCardFilter;
+      });
+
+      const elementLabels: Record<string, string> = {
+        fire: '火系',
+        water: '水系',
+        air: '气系',
+        earth: '土系',
+        special: '专属'
+      };
+
       return `
-        <div class="codex-section-card">
-          <div class="codex-section-title">📜 传奇开发阵容致敬</div>
-          <div class="codex-section-body" style="line-height:1.8;">
-            <strong>初期构思 & 游戏设计 (Initial Concept & Game Design)：</strong><br>
-            Alexey Stankevich<br><br>
-            <strong>游戏开发 (Game Development)：</strong><br>
-            Richard Garfield (万智牌创始人 / Creator of Magic: The Gathering)<br>
-            Skaff Elias (资深游戏架构师 / Veteran Game Designer)<br><br>
-            <strong>首席程序员 (Lead Programmer)：</strong><br>
-            Ivan Polyacov<br><br>
-            <strong>背景故事与编辑 (Story & Editorial)：</strong><br>
-            Richard Garfield, Skaff Elias, Paul Peterson, Michael Hacker<br><br>
-            <strong>艺术美术设计 (Artwork & Visuals)：</strong><br>
-            George Rukosuev, Ivan Dribas, Viktor Solovyov<br><br>
-            <strong>音乐与音效 (Audio & Sound Effects)：</strong><br>
-            DJ MoHaX
-          </div>
+        <div class="codex-cards-filter-bar">
+          ${filterGroups.map(fg => {
+            const count = allCardsList.filter(c => {
+              if (fg.id === 'all') return true;
+              if (['fire', 'water', 'air', 'earth'].includes(fg.id)) return c.element === fg.id;
+              return c.className === fg.id;
+            }).length;
+            const isActive = codexCardFilter === fg.id;
+            return `
+              <button class="codex-filter-btn ${isActive ? 'active' : ''}" data-filter="${fg.id}">
+                ${fg.label} <span class="codex-filter-count">(${count})</span>
+              </button>
+            `;
+          }).join('')}
+        </div>
+
+        <div class="codex-cards-grid">
+          ${filteredCards.map(c => {
+            const elemBadgeName = c.className
+              ? (HERO_CLASSES.find(cls => cls.id === c.className)?.nameCn || '专属')
+              : (elementLabels[c.element] || '基础');
+            const typeBadgeName = c.isWall ? '城墙' : (c.type === 'creature' ? '生物' : '法术');
+            return `
+              <div class="codex-card-item">
+                <div class="codex-card-thumb-wrap">
+                  <img src="${toRel(c.imgUrl)}" class="codex-card-thumb" alt="${c.nameCn}" loading="lazy" />
+                  <div class="codex-card-badge-cost" title="能量消耗: ${c.cost}">${c.cost}</div>
+                  ${c.type === 'creature' ? `
+                    <div class="codex-card-badges-row">
+                      <span class="codex-card-badge-atk" title="攻击力: ${c.attack}">⚔️ ${c.attack}</span>
+                      <span class="codex-card-badge-life" title="生命值: ${c.life}">❤️ ${c.life}</span>
+                    </div>
+                  ` : ''}
+                </div>
+                <div class="codex-card-info">
+                  <div class="codex-card-top-line">
+                    <span class="codex-card-title">${c.nameCn}</span>
+                    <span class="codex-card-subtitle">${c.name}</span>
+                    <span class="codex-card-tag ${c.element}">${elemBadgeName} · ${typeBadgeName}</span>
+                  </div>
+                  <div class="codex-card-desc">${c.desc}</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
         </div>
       `;
+    }
 
     default: // 'play'
       return `
@@ -2355,6 +3060,36 @@ function renderCodexPageContent(tab: string): string {
             • 新召唤的生物通常需要待机一轮（具备【迅捷】特性的生物入场即可攻击）。
           </div>
         </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">⚔️ 战斗回合的四大阶段</div>
+          <div class="codex-section-body">
+            每个对战回合由四个严格阶段按序进行：<br>
+            <strong>1. 获得能量阶段：</strong> 双方英雄各系基础元素自然增长 +1 点（部分法术或生物可提供额外成长率加成）。<br>
+            <strong>2. 生物被动效果阶段：</strong> 战线生物的毒素衰减、自然再生、治疗英雄等光环与被动特技按序生效。<br>
+            <strong>3. 玩家操作出牌阶段：</strong> 当前行动方根据各系剩余能量召唤生物或施放即时法术，亦可主动选择跳过出牌。<br>
+            <strong>4. 生物攻击结算阶段：</strong> 己方阵线存活且具备攻击力的生物由左至右依次发动对位攻击！
+          </div>
+        </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">📜 “从左到右”结算核心铁律</div>
+          <div class="codex-section-body">
+            这是 Spectromancer 判定一切生物攻击与法术伤害生效顺序的核心准则：<br>
+            • 在生物攻击阶段，严格由<strong>左侧 1 号位至右侧 6 号位</strong>生物依次发动突袭。<br>
+            • 施放群体伤害法术（如【石雨术】、【酸雨术】）时，优先对敌方从左至右结算，再对己方生物从左至右结算。<br>
+            • 左侧生物先击破敌方生物后，后续友军不会遭到对应格挡。
+          </div>
+        </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">🎯 对位交锋与本体直击伤害</div>
+          <div class="codex-section-body">
+            • <strong>阵线格挡：</strong> 若所对格位有敌方生物，攻击力将直接扣减该生物生命值，生命降至 0 即战死离场。<br>
+            • <strong>直穿本体：</strong> 若所对格位为空格（未被阻挡），生物将越过阵线直接打击敌方英雄本体生命！<br>
+            • <strong>飞行特技：</strong> 拥有飞行特技的生物可无视地面阻挡生物，直接贯穿轰击敌方英雄！
+          </div>
+        </div>
       `;
   }
 }
@@ -2362,30 +3097,24 @@ function renderCodexPageContent(tab: string): string {
 function renderGameHelpModal(): string {
   return `
     <div class="modal-overlay" id="game-help-modal-overlay">
-      <div class="stone-options-dialog" style="width:clamp(640px, 72vw, 980px); max-height:88vh; display:flex; flex-direction:column;">
-        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);">
-          <div class="options-title-text" style="color:#e0e7ff;">📖 元素秘境 · 魔法大师全书 (Spectromancer Codex)</div>
+      <div class="stone-options-dialog" style="width:clamp(660px, 75vw, 1020px); height:88vh; max-height:88vh; display:flex; flex-direction:column;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%); flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+          <div class="options-title-text" style="color:#e0e7ff;">📖 游戏帮助 (Help)</div>
+          <button class="modal-close-btn" id="btn-close-help" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
         </div>
 
         <!-- Chapter Navigation Tabs -->
-        <div class="codex-tabs-bar">
+        <div class="codex-tabs-bar" style="flex-shrink:0;">
           <button class="codex-tab-btn ${activeHelpTab === 'play' ? 'active' : ''}" id="tab-codex-play">📖 如何游戏</button>
-          <button class="codex-tab-btn ${activeHelpTab === 'combat' ? 'active' : ''}" id="tab-codex-combat">⚔️ 战斗进阶</button>
           <button class="codex-tab-btn ${activeHelpTab === 'deck' ? 'active' : ''}" id="tab-codex-deck">🃏 卡组构筑</button>
           <button class="codex-tab-btn ${activeHelpTab === 'classes' ? 'active' : ''}" id="tab-codex-classes">🧙 16大流派</button>
           <button class="codex-tab-btn ${activeHelpTab === 'modes' ? 'active' : ''}" id="tab-codex-modes">🗺️ 游戏模式</button>
-          <button class="codex-tab-btn ${activeHelpTab === 'credits' ? 'active' : ''}" id="tab-codex-credits">📜 制作团队</button>
+          <button class="codex-tab-btn ${activeHelpTab === 'cards' ? 'active' : ''}" id="tab-codex-cards">🃏 卡牌资料</button>
         </div>
 
         <!-- Chapter Content Scroll Area -->
-        <div class="codex-page-scroll">
+        <div class="codex-page-scroll" style="flex:1;">
           ${renderCodexPageContent(activeHelpTab)}
-        </div>
-
-        <!-- Bottom Bar -->
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-top:1.5px solid rgba(142, 114, 58, 0.4); background:rgba(0,0,0,0.25);">
-          <span style="font-size:12.5px; color:#ffd700; font-weight:700;">来源：Spectromancer 官方规则指南与机制典籍</span>
-          <button class="campaign-pc-btn" id="btn-close-help" style="padding:8px 30px; font-size:clamp(14px, 1.15vw, 16px);">关闭典籍</button>
         </div>
       </div>
     </div>
@@ -2397,8 +3126,9 @@ function renderAchievementsModal(): string {
   return `
     <div class="modal-overlay" id="achievements-modal-overlay">
       <div class="stone-options-dialog" style="width:clamp(600px, 66vw, 920px); max-height:88vh; display:flex; flex-direction:column;">
-        <div class="options-header-banner" style="background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%);">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
           <div class="options-title-text" style="color:#fef08a;">🏆 荣誉与辉煌成就馆 (${unlockedCount} / ${ACHIEVEMENTS_LIST.length})</div>
+          <button class="modal-close-btn" id="btn-achievements-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
         </div>
 
         <div style="flex:1; overflow-y:auto; padding:clamp(12px, 1.8vh, 20px); display:flex; flex-direction:column; gap:10px;">
@@ -2422,11 +3152,6 @@ function renderAchievementsModal(): string {
             `;
           }).join('')}
         </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-top:1.5px solid rgba(142, 114, 58, 0.4); background:rgba(0,0,0,0.25);">
-          <span style="font-size:13px; color:#ffd700; font-weight:700;">完成战役挑战、排位赛与专属卡组可解锁全部 12 枚成就徽章</span>
-          <button class="campaign-pc-btn" id="btn-achievements-close" style="padding:8px 26px; font-size:clamp(14px, 1.15vw, 16px);">关闭</button>
-        </div>
       </div>
     </div>
   `;
@@ -2436,8 +3161,9 @@ function renderReplayManagerModal(): string {
   return `
     <div class="modal-overlay" id="replay-modal-overlay">
       <div class="stone-options-dialog" style="width:clamp(560px, 64vw, 880px); max-height:88vh; display:flex; flex-direction:column;">
-        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%);">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
           <div class="options-title-text" style="color:#c7d2fe;">📼 对战录像与回放馆</div>
+          <button class="modal-close-btn" id="btn-replay-modal-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
         </div>
 
         <div style="flex:1; overflow-y:auto; padding:clamp(12px, 1.8vh, 20px); display:flex; flex-direction:column; gap:12px;">
@@ -2449,24 +3175,28 @@ function renderReplayManagerModal(): string {
             <div style="display:flex; flex-direction:column; gap:10px;">
               ${battleReplays.map((rep) => `
                 <div class="replay-item-card">
-                  <div style="display:flex; align-items:center; gap:12px;">
-                    <img src="${rep.playerFace}" style="width:48px; height:48px; border-radius:8px; border:2px solid #8e723a; object-fit:cover;" alt="${rep.playerName}" />
-                    <span style="font-weight:900; font-size:15px; color:#5c2c10;">${rep.playerName}</span>
-                    <span style="font-weight:900; color:#dc2626; font-size:14px;">VS</span>
-                    <img src="${rep.enemyFace}" style="width:48px; height:48px; border-radius:8px; border:2px solid #8e723a; object-fit:cover;" alt="${rep.enemyName}" />
-                    <span style="font-weight:900; font-size:15px; color:#5c2c10;">${rep.enemyName}</span>
+                  <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <div class="replay-player-col">
+                      <img src="${rep.playerFace}" class="replay-avatar" alt="${rep.playerName}" />
+                      <span class="replay-name-sub" title="${rep.playerName}">${rep.playerName}</span>
+                    </div>
+                    <span style="font-weight:900; color:#dc2626; font-size:13px; margin:0 2px;">VS</span>
+                    <div class="replay-player-col">
+                      <img src="${rep.enemyFace}" class="replay-avatar" alt="${rep.enemyName}" />
+                      <span class="replay-name-sub" title="${rep.enemyName}">${rep.enemyName}</span>
+                    </div>
                   </div>
 
-                  <div style="flex:1; display:flex; flex-direction:column; gap:2px; padding:0 8px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
+                  <div class="replay-item-meta-col" style="flex:1; min-width:0; padding:0 10px; display:flex; flex-direction:column; gap:3px;">
+                    <div class="replay-badges-row" style="display:flex; align-items:center; gap:8px; white-space:nowrap;">
                       <span class="replay-mode-badge">${rep.mode}</span>
                       <span class="replay-result-tag ${rep.result}">${rep.result === 'victory' ? '🏆 决战胜利' : '💀 战局败北'}</span>
-                      <span style="font-size:12px; color:#785834; font-weight:800;">共 ${rep.totalTurns} 回合 · ${rep.steps.length} 个操作</span>
                     </div>
-                    <div style="font-size:11.5px; color:#6b4e33;">录制时间: ${rep.dateStr}</div>
+                    <div style="font-size:12px; color:#785834; font-weight:800; white-space:nowrap;">共 ${rep.totalTurns} 回合 · ${rep.steps.length} 个操作</div>
+                    <div style="font-size:11.5px; color:#6b4e33; white-space:nowrap;">录制时间: ${rep.dateStr}</div>
                   </div>
 
-                  <div style="display:flex; gap:8px;">
+                  <div style="display:flex; gap:8px; flex-shrink:0;">
                     <button class="duel-stone-action-btn start btn-watch-replay" data-replay-id="${rep.id}" style="padding:6px 14px; font-size:13px;">▶ 回放</button>
                     <button class="duel-stone-action-btn close btn-delete-replay" data-replay-id="${rep.id}" style="padding:6px 10px; font-size:13px;" title="删除录像">🗑️</button>
                   </div>
@@ -2474,11 +3204,6 @@ function renderReplayManagerModal(): string {
               `).join('')}
             </div>
           `}
-        </div>
-
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-top:1.5px solid rgba(142, 114, 58, 0.4); background:rgba(0,0,0,0.25);">
-          <span style="font-size:12.5px; color:#ffd700; font-weight:700;">系统自动保留最近 20 场激战录像</span>
-          <button class="campaign-pc-btn" id="btn-replay-modal-close" style="padding:8px 26px; font-size:clamp(14px, 1.15vw, 16px);">关闭</button>
         </div>
       </div>
     </div>
@@ -2510,8 +3235,12 @@ function renderLeagueHubModal(): string {
   return `
     <div class="modal-overlay" id="league-hub-modal-overlay">
       <div class="stone-options-dialog" style="width:clamp(540px, 60vw, 840px); max-height:88vh; display:flex; flex-direction:column;">
-        <div class="options-header-banner" style="background: linear-gradient(90deg, #3d2314 0%, #7c2d12 50%, #3d2314 100%);">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #3d2314 0%, #7c2d12 50%, #3d2314 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
           <div class="options-title-text" style="color:#ffd700;">英雄联赛 · 角色与联赛档案</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="campaign-pc-btn start-btn" id="btn-league-hub-create-new" style="padding:6px 18px; font-size:14px;">➕ 创建新角色</button>
+            <button class="modal-close-btn" id="btn-league-hub-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
+          </div>
         </div>
 
         <div style="flex:1; overflow-y:auto; padding:clamp(12px, 1.8vh, 20px); display:flex; flex-direction:column; gap:12px;">
@@ -2528,7 +3257,7 @@ function renderLeagueHubModal(): string {
                 const rankIdx = playerStanding.findIndex(s => s.isPlayer) + 1;
                 return `
                   <div class="league-profile-card ${isCur ? 'active' : ''}" data-profile-id="${p.id}">
-                    <img src="/faces/Face${p.playerFaceId}.jpg" class="league-profile-face" alt="${p.playerName}" />
+                    <img src="./faces/Face${p.playerFaceId}.jpg" class="league-profile-face" alt="${p.playerName}" />
                     <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
                       <div style="display:flex; align-items:center; gap:8px;">
                         <span style="font-size:clamp(16px, 1.3vw, 20px); font-weight:900; color:#ffd700; text-shadow:0 1px 3px #000;">${p.playerName}</span>
@@ -2550,10 +3279,109 @@ function renderLeagueHubModal(): string {
             </div>
           `}
         </div>
+      </div>
+    </div>
+  `;
+}
 
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:12px 20px; border-top:1.5px solid rgba(142, 114, 58, 0.4); background:rgba(0,0,0,0.25);">
-          <button class="campaign-pc-btn start-btn" id="btn-league-hub-create-new" style="padding:8px 22px; font-size:clamp(14px, 1.15vw, 16px);">➕ 创建新角色</button>
-          <button class="campaign-pc-btn" id="btn-league-hub-close" style="padding:8px 22px; font-size:clamp(14px, 1.15vw, 16px);">返回</button>
+function renderCampaignHubModal(): string {
+  return `
+    <div class="modal-overlay" id="campaign-hub-modal-overlay">
+      <div class="stone-options-dialog" style="width:clamp(540px, 60vw, 840px); max-height:88vh; display:flex; flex-direction:column;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e3a1e 0%, #15803d 50%, #1e3a1e 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#fef08a;">战役模式 · 角色与征战档案</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="campaign-pc-btn start-btn" id="btn-campaign-hub-create-new" style="padding:6px 18px; font-size:14px;">➕ 创建新角色</button>
+            <button class="modal-close-btn" id="btn-campaign-hub-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:clamp(12px, 1.8vh, 20px); display:flex; flex-direction:column; gap:12px;">
+          ${campaignProfiles.length === 0 ? `
+            <div style="text-align:center; padding:36px; color:#421e05; font-size:16px; font-weight:800;">
+              尚未创建任何战役角色档案。<br>点击下方【创建新角色】开启您的史诗战役征程！
+            </div>
+          ` : `
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              ${campaignProfiles.map((p) => {
+                const isCur = p.id === activeCampaignId;
+                const pClass = HERO_CLASSES[p.playerClassIdx] || HERO_CLASSES[0];
+                const clearedCount = (p.completedLevels || []).length;
+                return `
+                  <div class="league-profile-card ${isCur ? 'active' : ''}" data-campaign-id="${p.id}">
+                    <img src="./faces/Face${p.playerFaceId}.jpg" class="league-profile-face" alt="${p.playerName}" />
+                    <div style="flex:1; display:flex; flex-direction:column; gap:3px;">
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:clamp(16px, 1.3vw, 20px); font-weight:900; color:#ffd700; text-shadow:0 1px 3px #000;">${p.playerName}</span>
+                        <span style="font-size:12px; font-weight:900; background:#166534; color:#bbf7d0; padding:2px 8px; border-radius:4px; border:1px solid #d4af37;">${pClass.nameCn} · ${p.difficulty}</span>
+                        ${isCur ? '<span style="font-size:11px; background:#1e3a8a; color:#bfdbfe; padding:2px 6px; border-radius:4px; font-weight:900;">当前选择</span>' : ''}
+                      </div>
+                      <div style="font-size:clamp(12.5px, 1.05vw, 15px); color:#2b1f13; font-weight:800;">
+                        征战进度: 已通关 ${clearedCount} / 65 关 · 当前所选关卡: 第 ${p.selectedLevelId || 1} 关
+                      </div>
+                      ${p.createdAt ? `<div style="font-size:11px; color:#6b4e33;">创建时间: ${p.createdAt}</div>` : ''}
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                      <button class="duel-stone-action-btn start btn-select-campaign-profile" data-campaign-id="${p.id}" style="padding:6px 14px; font-size:13px;">进入</button>
+                      <button class="duel-stone-action-btn close btn-delete-campaign-profile" data-campaign-id="${p.id}" style="padding:6px 10px; font-size:13px;" title="删除角色">🗑️</button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCampaignSetupModal(): string {
+  const chosenClass = HERO_CLASSES[campaignPlayerClassIdx] || HERO_CLASSES[0];
+  return `
+    <div class="league-new-char-overlay" id="campaign-new-char-overlay">
+      <div class="league-new-char-modal">
+        <div class="league-modal-title-banner" style="background: linear-gradient(90deg, #1e3a1e 0%, #15803d 50%, #1e3a1e 100%); display:flex; justify-content:space-between; align-items:center; padding:8px 16px;">
+          <div class="league-modal-title" style="color:#fef08a;">战役模式 · 创建新角色</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="campaign-pc-btn start-btn" id="btn-campaign-create-char" style="padding:6px 20px; font-size:15px;">创建并开启</button>
+            <button class="modal-close-btn" id="btn-campaign-close-setup" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
+          </div>
+        </div>
+
+        <div class="league-modal-content-grid">
+          <div class="league-avatar-picker-col">
+            <button class="league-arrow-btn" id="btn-campaign-face-prev">◀</button>
+            <div class="league-avatar-portrait-wrap">
+              <img src="./faces/Face${campaignPlayerFaceId}.jpg" class="league-avatar-img" alt="头像" />
+            </div>
+            <button class="league-arrow-btn" id="btn-campaign-face-next">▶</button>
+          </div>
+
+          <div class="league-fields-col">
+            <div class="league-field-row">
+              <span class="league-field-label">英雄姓名:</span>
+              <input type="text" id="campaign-name-input" value="${campaignPlayerName}" class="league-text-input" maxlength="12" />
+            </div>
+
+            <div class="league-field-row">
+              <span class="league-field-label">职业流派:</span>
+              <div class="league-choice-stepper">
+                <button class="campaign-diff-btn" id="btn-campaign-class-prev">◀</button>
+                <span class="league-choice-val">${chosenClass.nameCn}</span>
+                <button class="campaign-diff-btn" id="btn-campaign-class-next">▶</button>
+              </div>
+            </div>
+
+            <div class="league-field-row">
+              <span class="league-field-label">战役难度:</span>
+              <div class="league-choice-stepper">
+                <button class="campaign-diff-btn" id="btn-campaign-setup-diff-prev">◀</button>
+                <span class="league-choice-val diff">${campaignDifficulties[campaignPlayerDifficultyIdx]}</span>
+                <button class="campaign-diff-btn" id="btn-campaign-setup-diff-next">▶</button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -2564,43 +3392,75 @@ function renderLeagueHubModal(): string {
 function renderOptionsModal(): string {
   return `
     <div class="modal-overlay" id="options-modal-overlay">
-      <div class="campaign-modal" style="max-width:400px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(198,155,63,0.3); padding-bottom:6px;">
-          <h2 style="font-size:18px; color:#ffd700; font-weight:900;">⚙️ 游戏选项与音频</h2>
-          <button class="modal-close-btn" id="btn-close-options" style="position:static; width:28px; height:28px;">×</button>
+      <div class="stone-options-dialog" style="width:clamp(560px, 58vw, 760px); max-height:88vh; display:flex; flex-direction:column;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #2b180d 0%, #4a2816 50%, #2b180d 100%); flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
+          <div class="options-title-text" style="color:#ffd700; font-size:clamp(18px, 1.5vw, 22px);">⚙️ 游戏选项与音频设置</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="modal-close-btn confirm-tick-btn" id="btn-confirm-options" style="position:static; width:34px; height:34px; font-size:20px; font-weight:bold; cursor:pointer;" title="确定完成">✓</button>
+            <button class="modal-close-btn" id="btn-close-options" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer; color:#f87171; background:rgba(239,68,68,0.18); border:1.5px solid #ef4444; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;" title="关闭">×</button>
+          </div>
         </div>
-        <div style="display:flex; flex-direction:column; gap:14px;">
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:14px; color:#f1f5f9;">背景音乐 (BGM)</span>
-            <button class="duel-stone-action-btn close" id="btn-toggle-bgm" style="padding:5px 16px; font-size:12px;">
+
+        <div style="flex:1; overflow-y:auto; padding:clamp(18px, 2.4vh, 28px); display:flex; flex-direction:column; gap:18px;">
+          <!-- BGM Setting -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div>
+              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🎵 游戏背景音乐 (BGM)</div>
+              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制主菜单、大地图与决斗战斗背景配乐</div>
+            </div>
+            <button class="duel-stone-action-btn ${sound.bgmEnabled ? 'start' : 'close'}" id="btn-toggle-bgm" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
               ${sound.bgmEnabled ? '🔊 已开启' : '🔇 已静音'}
             </button>
           </div>
-          <div style="display:flex; justify-content:space-between; align-items:center;">
-            <span style="font-size:14px; color:#f1f5f9;">战斗音效 (SFX)</span>
-            <button class="duel-stone-action-btn close" id="btn-toggle-sfx" style="padding:5px 16px; font-size:12px;">
+
+          <!-- SFX Setting -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div>
+              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🔔 战斗与技能音效 (SFX)</div>
+              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制生物召唤、攻击冲击、魔法轰击与界面音效</div>
+            </div>
+            <button class="duel-stone-action-btn ${sound.enabled ? 'start' : 'close'}" id="btn-toggle-sfx" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
               ${sound.enabled ? '🔔 已开启' : '🔕 已静音'}
             </button>
           </div>
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:14px; color:#f1f5f9;">对战战场背景</span>
-              <span style="font-size:12px; color:#ffd700; font-weight:800;">${getThemeName(currentBattlefieldTheme)}</span>
+
+          <!-- Record Replays Toggle (Interactive Slide Switch) -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div>
+              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">📼 自动记录对战录像</div>
+              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">对战结束后自动保存推演过程至录像馆（可在主界面查阅与复盘）</div>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:6px;">
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'citadel' ? 'start' : 'close'}" id="btn-theme-citadel" style="padding:4px 2px; font-size:11px; text-align:center;">星辉圣殿</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'sky' ? 'start' : 'close'}" id="btn-theme-sky" style="padding:4px 2px; font-size:11px; text-align:center;">天界圣峰</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'volcano' ? 'start' : 'close'}" id="btn-theme-volcano" style="padding:4px 2px; font-size:11px; text-align:center;">熔岩炼狱</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'forest' ? 'start' : 'close'}" id="btn-theme-forest" style="padding:4px 2px; font-size:11px; text-align:center;">永恒密林</button>
+            <div class="slide-toggle-track ${recordReplaysEnabled ? 'active' : ''}" id="btn-toggle-record-replays" role="switch" aria-checked="${recordReplaysEnabled}" title="切换自动录像">
+              <div class="slide-toggle-knob"></div>
             </div>
           </div>
+
+          <!-- Battlefield Background Theme -->
+          <div style="background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🗺️ 对战战场背景环境</div>
+                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">选择战斗对决主界面的远景圣所主题</div>
+              </div>
+              <span id="options-theme-label" style="font-size:clamp(14px, 1.2vw, 16px); color:#854d0e; font-weight:900; background:#fef3c7; border:1.5px solid #fde68a; padding:4px 14px; border-radius:8px;">
+                ${getThemeName(currentBattlefieldTheme)}
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
+              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'citadel' ? 'start' : 'close'}" id="btn-theme-citadel" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🏛️ 星辉圣殿</button>
+              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'sky' ? 'start' : 'close'}" id="btn-theme-sky" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">☁️ 天界圣峰</button>
+              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'volcano' ? 'start' : 'close'}" id="btn-theme-volcano" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🌋 熔岩炼狱</button>
+              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'forest' ? 'start' : 'close'}" id="btn-theme-forest" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🌲 永恒密林</button>
+            </div>
+          </div>
+
           ${currentView === 'battle' ? `
-            <div class="options-save-quit-box" style="border-top:1px solid rgba(198,155,63,0.3); padding-top:12px; margin-top:2px; display:flex; flex-direction:column; gap:6px;">
-              <button class="duel-stone-action-btn start" id="btn-options-save-quit" style="width:100%; height:40px; font-size:14.5px; font-weight:900; background:linear-gradient(180deg, #c2410c 0%, #7c2d12 100%); border-color:#ffd700; color:#fff;">
-                💾 保存战斗并返回主菜单
+            <div style="border-top:1.5px dashed rgba(198,155,63,0.4); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
+              <button class="campaign-pc-btn start-btn" id="btn-options-save-quit" style="width:100%; height:48px; font-size:clamp(15.5px, 1.3vw, 18px); font-weight:900;">
+                💾 保存战斗进度并返回主菜单
               </button>
-              <div style="font-size:11.5px; color:#cbd5e1; text-align:center; opacity:0.85;">
-                自动保存当前血量、能量、场上与手牌数据，主菜单可随时读取恢复
+              <div style="font-size:12.5px; color:#5c3d1e; text-align:center; font-weight:700;">
+                自动保存当前血量、能量、场上随从与手牌状态，可随时在主菜单恢复对决
               </div>
             </div>
           ` : ''}
@@ -2625,7 +3485,7 @@ function renderAiAnnouncementModal(card: CardDef): string {
         <div class="ai-announcement-card-frame">
           <!-- Left: Card in slot -->
           <div class="ai-announcement-card-slot">
-            <img src="${card.imgBigUrl || card.imgUrl}" class="ai-announcement-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+            <img src="${toRel(card.imgBigUrl || card.imgUrl)}" class="ai-announcement-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
             <div class="ai-card-cost">${card.cost}</div>
             <div class="ai-card-name">${card.nameCn}</div>
             ${isCreature ? `
@@ -2698,25 +3558,19 @@ function renderCombatScreen(): string {
       <div class="combat-left-panel">
         <!-- SUB-COLUMN 1: Far-Left Action Control Strip (一整列操作与状态按键) -->
         <div class="combat-actions-strip">
-          <!-- 1. 当前回合状态胶囊 -->
-          <div class="combat-strip-item turn-pill ${currentView === 'replay_viewer' ? 'active' : (engine.activeTurn === 'player' ? 'active' : 'waiting')}" id="status-combat-turn" title="当前回合">
-            <span class="strip-icon">${currentView === 'replay_viewer' ? '📼' : (engine.activeTurn === 'player' ? '👑' : '⏳')}</span>
-            <span class="strip-text">${currentView === 'replay_viewer' ? '对战回放' : (engine.activeTurn === 'player' ? '你的回合' : '敌方行动')}</span>
-          </div>
-
-          <!-- 2. 对手卡牌 / 己方卡牌 -->
+          <!-- 1. 对手卡牌 / 己方卡牌 -->
           <button class="combat-strip-item btn-toggle-cards ${showOpponentHand ? 'viewing-opponent' : ''}" id="btn-toggle-show-cards" title="切换查阅对手/己方手牌">
             <span class="strip-icon">👁️</span>
             <span class="strip-text">${showOpponentHand ? '己方卡牌' : '对手卡牌'}</span>
           </button>
 
-          <!-- 3. 设置 -->
-          <button class="combat-strip-item btn-options" id="btn-combat-options" title="音效、背景与主菜单设置">
-            <span class="strip-icon">⚙️</span>
-            <span class="strip-text">设置</span>
+          <!-- 2. 保存退出 -->
+          <button class="combat-strip-item btn-save-exit" id="btn-combat-save-exit" title="保存战斗进度并返回主菜单">
+            <span class="strip-icon">💾</span>
+            <span class="strip-text">保存退出</span>
           </button>
 
-          <!-- 3.5 战场规则 -->
+          <!-- 3. 战场规则 -->
           <button class="combat-strip-item btn-rules" id="btn-combat-rules" title="查看当前战场特殊规则">
             <span class="strip-icon">📜</span>
             <span class="strip-text">战场规则</span>
@@ -2753,41 +3607,43 @@ function renderCombatScreen(): string {
         <div class="combat-info-column">
           <!-- Top: Heroes Stack -->
           <div class="combat-heroes-stack">
-            <!-- Opponent Hero Card: Sinister Demonic Theme with Integrated Mana Bar -->
-            <div class="combat-hero-row opponent">
-              <div class="combat-hero-portrait-wrap">
-                <img src="${e.face}" class="combat-hero-avatar combat-hero-portrait-frame top" alt="${e.name}" />
-                <img src="/ui/Portraitramka.png" class="combat-hero-ramka" alt="Frame" />
-                <span class="combat-hero-badge-tag enemy">敌</span>
+            <!-- Opponent Hero Card: Sinister Demonic Theme with Full Width Mana Bar -->
+            <div class="combat-hero-row opponent ${engine.activeTurn === 'enemy' ? 'turn-active' : 'turn-inactive'}">
+              <div class="combat-hero-top-row">
+                <div class="combat-hero-portrait-wrap">
+                  <img src="${toRel(e.face)}" class="combat-hero-avatar combat-hero-portrait-frame top" alt="${e.name}" />
+                  <img src="./ui/Portraitramka.png" class="combat-hero-ramka" alt="Frame" />
+                  <span class="combat-hero-badge-tag enemy">敌</span>
+                </div>
+                <div class="combat-hero-info">
+                  <div class="combat-hero-name-plate">
+                    <span class="combat-hero-hp enemy">${e.hp}</span>
+                    <span class="combat-hero-name" title="${e.name}">${e.name}</span>
+                    <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
+                  </div>
+                </div>
               </div>
-              <div class="combat-hero-info">
-                <div class="combat-hero-name-plate">
-                  <span class="combat-hero-hp enemy">${e.hp}</span>
-                  <span class="combat-hero-name" title="${e.name}">${e.name}</span>
-                  <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
-                </div>
-                <div class="hero-mana-bar">
-                  ${['fire', 'water', 'air', 'earth', e.specialElement].map((elem, idx) => {
-                    const label = idx === 4 ? eSpecialName : elemNames[elem as ElementType];
-                    const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
-                    const icon = elemIcons[elem] || '🔮';
-                    const manaVal = e.mana[elem as ElementType] || 0;
-                    return `
-                      <div class="hero-mana-chip elem-${elem}" title="${label}能量: ${manaVal}">
-                        <span class="chip-icon">${icon}</span>
-                        <span class="chip-val">${manaVal}</span>
-                      </div>
-                    `;
-                  }).join('')}
-                </div>
+              <div class="hero-mana-bar opponent-full-width">
+                ${['fire', 'water', 'air', 'earth', e.specialElement].map((elem, idx) => {
+                  const label = idx === 4 ? eSpecialName : elemNames[elem as ElementType];
+                  const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
+                  const icon = elemIcons[elem] || '🔮';
+                  const manaVal = e.mana[elem as ElementType] || 0;
+                  return `
+                    <div class="hero-mana-chip elem-${elem}" title="${label}能量: ${manaVal}">
+                      <span class="chip-icon">${icon}</span>
+                      <span class="chip-val">${manaVal}</span>
+                    </div>
+                  `;
+                }).join('')}
               </div>
             </div>
 
-            <!-- Player Hero Card: Radiant Celestial Theme with Integrated Mana Bar -->
-            <div class="combat-hero-row player">
+            <!-- Player Hero Card: Radiant Celestial Theme without Mana Bar (Mana displayed in hand column header) -->
+            <div class="combat-hero-row player ${engine.activeTurn === 'player' ? 'turn-active' : 'turn-inactive'}">
               <div class="combat-hero-portrait-wrap">
-                <img src="${p.face}" class="combat-hero-avatar combat-hero-portrait-frame bottom" alt="${p.name}" />
-                <img src="/ui/Portraitramka.png" class="combat-hero-ramka" alt="Frame" />
+                <img src="${toRel(p.face)}" class="combat-hero-avatar combat-hero-portrait-frame bottom" alt="${p.name}" />
+                <img src="./ui/Portraitramka.png" class="combat-hero-ramka" alt="Frame" />
                 <span class="combat-hero-badge-tag player">我</span>
               </div>
               <div class="combat-hero-info">
@@ -2795,20 +3651,6 @@ function renderCombatScreen(): string {
                   <span class="combat-hero-hp player">${p.hp}</span>
                   <span class="combat-hero-name" title="${p.name}">${p.name}</span>
                   <span class="combat-hero-class-tag player">${pSpecialName}</span>
-                </div>
-                <div class="hero-mana-bar">
-                  ${['fire', 'water', 'air', 'earth', p.specialElement].map((elem, idx) => {
-                    const label = idx === 4 ? pSpecialName : elemNames[elem as ElementType];
-                    const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
-                    const icon = elemIcons[elem] || '🔮';
-                    const manaVal = p.mana[elem as ElementType] || 0;
-                    return `
-                      <div class="hero-mana-chip elem-${elem}" title="${label}能量: ${manaVal}">
-                        <span class="chip-icon">${icon}</span>
-                        <span class="chip-val">${manaVal}</span>
-                      </div>
-                    `;
-                  }).join('')}
                 </div>
               </div>
             </div>
@@ -2820,7 +3662,7 @@ function renderCombatScreen(): string {
             <div class="combat-inspect-parchment">
               ${previewCard ? `
                 <div class="parchment-card-top-row">
-                  <img src="${previewCard.imgBigUrl || previewCard.imgUrl}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
+                  <img src="${toRel(previewCard.imgBigUrl || previewCard.imgUrl)}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
                   <div class="parchment-card-meta">
                     <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费)</div>
                     <div class="parchment-card-sub">
@@ -2876,13 +3718,13 @@ function renderCombatScreen(): string {
             <!-- Enemy 6 Slots Row -->
             <div class="combat-slots-lane enemy-lane">
               ${engine.enemyBoard.map((c, idx) => {
-                const isTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget && c !== null;
+                const isTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget && !isFriendlyTargetSpell(selectedCard) && c !== null && !c.spellImmune;
                 return `
                   <div class="combat-board-slot top-slot ${isTarget ? 'active-target' : ''}" data-side="enemy" data-slot-index="${idx}">
                     <div class="slot-filigree top"></div>
                     ${c ? `
                       <div class="board-card vertical ${c.flying ? 'flying' : ''} ${c.uid === engine.lastSummonedUid ? 'card-summon-settle' : ''}">
-                        <img src="${c.card.imgBigUrl || c.card.imgUrl}" class="board-card-art" alt="${c.card.nameCn}" />
+                        <img src="${toRel(c.card.imgBigUrl || c.card.imgUrl)}" class="board-card-art" alt="${c.card.nameCn}" />
                         <div class="card-cost-gem">${c.card.cost}</div>
                         <div class="card-stat-atk ${c.buffedAttack || c.currentAttack > c.baseAttack ? 'buffed' : (c.currentAttack < c.baseAttack ? 'debuffed' : '')}" title="攻击力: ${c.currentAttack} (基础: ${c.baseAttack})">${c.currentAttack}</div>
                         <div class="card-stat-hp" title="生命值: ${c.currentLife}">${c.currentLife}</div>
@@ -2897,13 +3739,15 @@ function renderCombatScreen(): string {
             <!-- Player 6 Slots Row -->
             <div class="combat-slots-lane player-lane">
               ${engine.playerBoard.map((c, idx) => {
-                const isTarget = selectedCard?.type === 'creature' && c === null;
+                const isCreatureTarget = selectedCard?.type === 'creature' && c === null;
+                const isSpellTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget && isFriendlyTargetSpell(selectedCard) && c !== null;
+                const isTarget = isCreatureTarget || isSpellTarget;
                 return `
                   <div class="combat-board-slot bottom-slot ${isTarget ? 'active-target' : ''}" data-side="player" data-slot-index="${idx}">
                     <div class="slot-filigree top"></div>
                     ${c ? `
                       <div class="board-card vertical ${c.flying ? 'flying' : ''} ${c.uid === engine.lastSummonedUid ? 'card-summon-settle' : ''}">
-                        <img src="${c.card.imgBigUrl || c.card.imgUrl}" class="board-card-art" alt="${c.card.nameCn}" />
+                        <img src="${toRel(c.card.imgBigUrl || c.card.imgUrl)}" class="board-card-art" alt="${c.card.nameCn}" />
                         <div class="card-cost-gem">${c.card.cost}</div>
                         <div class="card-stat-atk ${c.buffedAttack || c.currentAttack > c.baseAttack ? 'buffed' : (c.currentAttack < c.baseAttack ? 'debuffed' : '')}" title="攻击力: ${c.currentAttack} (基础: ${c.baseAttack})">${c.currentAttack}</div>
                         <div class="card-stat-hp" title="生命值: ${c.currentLife}">${c.currentLife}</div>
@@ -2929,12 +3773,20 @@ function renderCombatScreen(): string {
               const colLabel = idx === 4 ? currentSpecialName : elemNames[elem];
               const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
               const icon = elemIcons[elem] || '🔮';
+              const colMana = (showOpponentHand ? e.mana[elem] : p.mana[elem]) || 0;
+
+              const labelFontSize = colLabel.length >= 4 
+                ? 'font-size: clamp(9px, 0.75vw, 11px);' 
+                : colLabel.length >= 3 
+                  ? 'font-size: clamp(10px, 0.85vw, 12px);' 
+                  : 'font-size: clamp(12px, 1vw, 14px);';
 
               return `
                 <div class="hand-column elem-${elem}">
                   <div class="hand-column-header elem-${elem}">
                     <span class="col-icon">${icon}</span>
-                    <span class="col-label">${colLabel}</span>
+                    <span class="col-label" style="${labelFontSize}" title="${colLabel}">${colLabel}</span>
+                    <span class="col-mana-badge" title="${colLabel}能量">${colMana}</span>
                   </div>
                   <div class="hand-column-cards">
                     ${cardsOfElem.map((card) => {
@@ -2946,11 +3798,13 @@ function renderCombatScreen(): string {
                         if (isRevealed) {
                           return `
                             <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
-                              <img src="${cardImg}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+                              <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                               <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
                               ${card.type === 'creature' ? `
-                                <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
-                                <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                                <div class="card-stats-badges">
+                                  <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+                                  <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                                </div>
                               ` : ''}
                             </div>
                           `;
@@ -2969,11 +3823,13 @@ function renderCombatScreen(): string {
                         const isSelected = selectedCard?.id === card.id;
                         return `
                           <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
-                            <img src="${cardImg}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+                            <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                             <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
                             ${card.type === 'creature' ? `
-                              <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
-                              <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                              <div class="card-stats-badges">
+                                <div class="card-stat-atk" title="攻击力: ${card.attack}">${card.attack}</div>
+                                <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                              </div>
                             ` : ''}
                           </div>
                         `;
@@ -2987,8 +3843,6 @@ function renderCombatScreen(): string {
         </div>
       </div>
     </div>
-    ${showHelpModal ? renderGameHelpModal() : ''}
-    ${showOptionsModal ? renderOptionsModal() : ''}
     ${showSurrenderModal ? renderSurrenderModal() : ''}
     ${aiAnnouncedCard ? renderAiAnnouncementModal(aiAnnouncedCard) : ''}
     ${showRulesModal ? renderBattlefieldRulesModal() : ''}
@@ -3041,11 +3895,14 @@ function renderBattlefieldRulesModal(): string {
       </div>
     `;
   } else {
-    title = '单场标准快速决斗';
+    title = '单局对决 · 战场环境法则';
+    const ruleText = engine.leagueRule || '标准单场对决：双方各 60 点生命值，每回合轮流召唤生物或施展法术。';
     bodyHtml = `
-      <div style="font-size:clamp(16px, 1.3vw, 20px); line-height:1.7; color:#26180c; font-weight:700;">
-        <p style="margin:0 0 10px 0;"><strong>基本战规：</strong>由系统派发 20 张对战卡牌，每回合可打出一张生物或魔法卡牌。</p>
-        <p style="margin:0;"><strong>战斗推进：</strong>生物登场后在己方回合进行向前突刺攻击对位目标，生命值归零者离场。率先击败敌方英雄即获胜。</p>
+      <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:12px; color:#5c2c10; font-weight:900;">
+        对决难度：${engine.difficulty || '普通'} · 战场环境：${getThemeName(currentBattlefieldTheme)}
+      </div>
+      <div style="background:rgba(142,114,58,0.18); border-left:4px solid #8e723a; padding:12px 16px; border-radius:6px; font-size:clamp(16px, 1.3vw, 20px); line-height:1.65; color:#221508; font-weight:800;">
+        ⚡ <strong>场景法则：</strong>${ruleText}
       </div>
     `;
   }
@@ -3053,17 +3910,27 @@ function renderBattlefieldRulesModal(): string {
   return `
     <div class="combat-rules-modal-overlay" id="combat-rules-modal-overlay">
       <div class="combat-rules-modal">
-        <div class="combat-rules-title">
-          <span>📜</span>
-          <span>${title}</span>
+        <div class="combat-rules-title" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>📜</span>
+            <span>${title}</span>
+          </div>
+          <button class="modal-close-btn" id="btn-close-rules-modal" style="position:static; width:36px; height:36px; font-size:24px; font-weight:900; cursor:pointer;" title="关闭规则">×</button>
         </div>
         <div class="combat-rules-body">
           ${bodyHtml}
         </div>
-        <button class="combat-rules-close-btn" id="btn-close-rules-modal">了解并继续</button>
       </div>
     </div>
   `;
+}
+
+function formatStoryText(text: string): string {
+  if (!text) return '';
+  return text
+    .split(/\r?\n\r?\n/)
+    .map(paragraph => paragraph.replace(/\r?\n/g, ''))
+    .join('<br><br>');
 }
 
 // ==========================================
@@ -3085,7 +3952,7 @@ function renderCampaignMapScreen(): string {
   return `
     <div class="campaign-screen-view">
       <div class="campaign-map-viewport">
-        <img src="/ui/Campaign_Map1.jpg" class="campaign-map-bg" alt="战役大地图" />
+        <img src="./ui/Campaign_Map1.jpg" class="campaign-map-bg" alt="战役大地图" />
 
         <div class="campaign-top-banner-wrap">
           <div class="campaign-top-banner">
@@ -3113,8 +3980,12 @@ function renderCampaignMapScreen(): string {
 
       <div class="campaign-bottom-deck">
         <div class="campaign-deck-left">
-          <div class="campaign-shield-wrap">
-            <span class="campaign-shield-icon">🛡️</span>
+          <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" id="btn-campaign-avatar-click" title="点击查看/切换战役角色">
+            <img src="${activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg'}" style="width:40px; height:40px; border-radius:6px; border:1.5px solid #d4af37; object-fit:cover;" alt="Avatar" />
+            <div style="display:flex; flex-direction:column; text-align:left;">
+              <span style="font-size:13px; font-weight:900; color:#ffd700;">${activeCampaign ? activeCampaign.playerName : '战役法师'}</span>
+              <span style="font-size:11px; color:#fed7aa;">${HERO_CLASSES[activeCampaign?.playerClassIdx ?? 0]?.nameCn || '僧侣'}</span>
+            </div>
           </div>
           <div class="campaign-diff-box">
             <span class="campaign-diff-label">难度:</span>
@@ -3132,7 +4003,7 @@ function renderCampaignMapScreen(): string {
             <span class="campaign-story-hp">生命值: ${currentLvl.enemyHp}</span>
           </div>
           <div class="campaign-story-text">
-            ${currentLvl.story.replace(/\r?\n/g, '<br>')}
+            ${formatStoryText(currentLvl.story)}
           </div>
           ${currentLvl.rules ? `
             <div class="campaign-story-rules">
@@ -3142,9 +4013,12 @@ function renderCampaignMapScreen(): string {
         </div>
 
         <div class="campaign-deck-right">
+          ${hasSavedCampaignBattle(activeCampaign?.id) ? `
+            <button class="campaign-pc-btn start-btn" id="btn-campaign-resume-battle" style="background:linear-gradient(180deg,#15803d,#166534); border-color:#86efac; box-shadow:0 0 8px rgba(34,197,94,0.6);">接续战斗</button>
+          ` : ''}
           <button class="campaign-pc-btn start-btn" id="btn-campaign-start-battle">开始战斗</button>
+          <button class="campaign-pc-btn" id="btn-campaign-profile-hub">角色档案</button>
           <button class="campaign-pc-btn" id="btn-campaign-awards">奖品</button>
-          <button class="campaign-pc-btn" id="btn-campaign-options">选项</button>
           <button class="campaign-pc-btn" id="btn-campaign-main-menu">主菜单</button>
         </div>
       </div>
@@ -3160,15 +4034,19 @@ function renderLeagueSetupModal(): string {
   return `
     <div class="league-new-char-overlay" id="league-new-char-overlay">
       <div class="league-new-char-modal">
-        <div class="league-modal-title-banner">
+        <div class="league-modal-title-banner" style="display:flex; justify-content:space-between; align-items:center; padding:8px 16px;">
           <div class="league-modal-title">新角色</div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <button class="campaign-pc-btn start-btn" id="btn-league-create-char" style="padding:6px 20px; font-size:15px;">创建</button>
+            <button class="modal-close-btn" id="btn-league-close-setup" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
+          </div>
         </div>
 
         <div class="league-modal-content-grid">
           <div class="league-avatar-picker-col">
             <button class="league-arrow-btn" id="btn-league-face-prev">◀</button>
             <div class="league-avatar-portrait-wrap">
-              <img src="/faces/Face${leaguePlayerFaceId}.jpg" class="league-avatar-img" alt="头像" />
+              <img src="./faces/Face${leaguePlayerFaceId}.jpg" class="league-avatar-img" alt="头像" />
             </div>
             <button class="league-arrow-btn" id="btn-league-face-next">▶</button>
           </div>
@@ -3196,12 +4074,278 @@ function renderLeagueSetupModal(): string {
                 <button class="campaign-diff-btn" id="btn-league-diff-next">▶</button>
               </div>
             </div>
+
+            <div class="league-field-row">
+              <span class="league-field-label">选手数量:</span>
+              <div class="league-choice-stepper">
+                <button class="campaign-diff-btn" id="btn-league-contestants-prev">◀</button>
+                <span class="league-choice-val diff" id="league-contestants-count-val">${leagueContestantCountChoices[leagueContestantCountIdx]} 人 (含玩家)</span>
+                <button class="campaign-diff-btn" id="btn-league-contestants-next">▶</button>
+              </div>
+            </div>
           </div>
         </div>
+      </div>
+    </div>
+  `;
+}
 
-        <div class="league-modal-actions">
-          <button class="league-action-btn" id="btn-league-create-char">创建</button>
-          <button class="league-action-btn" id="btn-league-close-setup">关闭</button>
+function renderCampaignTreasuresModal(): string {
+  const beaten = completedCampaignLevels;
+  const relics = [
+    {
+      id: 'gryphon',
+      name: '伴生驯化狮鹫 (Tamed Gryphon)',
+      img: './cards/Griffin.jpg',
+      req: '通关关卡 1（德米尔）',
+      unlocked: beaten.includes(1),
+      desc: '在每一场战役开始时，伴生狮鹫（攻击 3 / 生命 18 / 飞行）将直接入驻玩家第 3 号槽位，开局即可形成强大空中火力压制！',
+    },
+    {
+      id: 'health',
+      name: '健康护符 (Talisman of Health)',
+      img: './ui/rewards/R2001.jpg',
+      req: '通关关卡 2（闪银）',
+      unlocked: beaten.includes(2),
+      desc: '远古守护石碑雕刻的神圣护符，使你在所有战役对决中的基础生命上限由 60 点永久提升至 65 点！',
+    },
+    {
+      id: 'tome',
+      name: '狮鹫学之书 (Tome of Gryphonology)',
+      img: './ui/rewards/R3001.jpg',
+      req: '通关关卡 3（费德米尔）',
+      unlocked: beaten.includes(3),
+      desc: '古代驯兽大师失传的典籍，使你的伴生狮鹫获得涅槃之术，若在战场阵亡，将自动重铸生机！',
+    },
+    {
+      id: 'signets',
+      name: '元素圣戒 (Signets of the Elements)',
+      img: './ui/rewards/R4001.jpg',
+      req: '通关关卡 4（尼瑞恩）',
+      unlocked: beaten.includes(4),
+      desc: '火、水、气、土四大元素圣戒，赋予佩戴者澎湃的元素共鸣，每场战役开局时基础四大元素能量各 +1！',
+    },
+    {
+      id: 'blood',
+      name: '巨魔之血药剂 (Vial of Troll Blood)',
+      img: './cards/Troll.jpg',
+      req: '通关关卡 5（维兰娜）',
+      unlocked: beaten.includes(5),
+      desc: '淬炼野蛮巨魔旺盛生命力的魔法药剂，使伴生狮鹫获得每回合自动治愈自愈 +2 生命之强韧被动！',
+    },
+    {
+      id: 'telescope',
+      name: '全知望远镜 (Farseeing Telescope)',
+      img: './ui/rewards/R3005.jpg',
+      req: '通关关卡 6（艾瑞欧）',
+      unlocked: beaten.includes(6),
+      desc: '能够看穿以太迷雾的古法透镜，在战役对决中洞悉敌方法师的法术底牌！',
+    },
+    {
+      id: 'prism',
+      name: '铎拉克巨棱镜碎片 (Fragment of Great Prism)',
+      img: './ui/rewards/R5000.jpg',
+      req: '通关战役终战（风火天峰）',
+      unlocked: beaten.length >= 8,
+      desc: '上古传奇法师铎拉克镇压混沌世界的无上神器碎片，象征战役终极救世主的至高殿堂荣耀！',
+    },
+  ];
+
+  return `
+    <div class="modal-overlay" id="campaign-treasures-modal-overlay">
+      <div class="stone-options-dialog" style="width:clamp(560px, 62vw, 860px); max-height:88vh; display:flex; flex-direction:column; background: linear-gradient(155deg, rgba(32, 24, 18, 0.98) 0%, rgba(16, 12, 10, 0.99) 100%); border: 2px solid #a8843c;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #16361c 0%, #265930 50%, #16361c 100%); border-bottom: 2px solid #ca8a04; display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#fef08a; font-size:clamp(17px, 1.4vw, 21px); font-weight:900; letter-spacing:1px;">🏆 战役圣物殿堂 · 战利品 (Campaign Relics)</div>
+          <button class="modal-close-btn" id="btn-close-campaign-treasures" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:clamp(14px, 2vh, 22px); display:flex; flex-direction:column; gap:12px;">
+          <div style="background:linear-gradient(135deg, rgba(34,197,94,0.18) 0%, rgba(21,128,61,0.12) 100%); border:1.5px solid #4ade80; border-radius:8px; padding:10px 16px; font-size:12.5px; color:#dcfce7; line-height:1.5;">
+            📜 <strong>圣物法则：</strong>击败战役不同区域守护者即可解锁对应上古圣物。已激活的圣物会在后续所有战役对决中自动赋予英雄初始随从、能量增益与被动特权！
+          </div>
+
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            ${relics.map(r => `
+              <div style="background:linear-gradient(135deg, rgba(28, 22, 17, 0.95) 0%, rgba(16, 12, 10, 0.98) 100%); border:1.5px solid ${r.unlocked ? '#ca8a04' : '#4b3c2a'}; border-radius:9px; padding:10px 14px; display:flex; align-items:center; gap:14px; box-shadow:0 4px 12px rgba(0,0,0,0.7), inset 0 0 10px rgba(0,0,0,0.5); opacity:${r.unlocked ? '1' : '0.65'};">
+                <div style="width:clamp(52px, 5.5vw, 68px); height:clamp(52px, 5.5vw, 68px); border-radius:8px; border:2px solid ${r.unlocked ? '#ffd700' : '#574632'}; overflow:hidden; flex-shrink:0; box-shadow:0 3px 8px rgba(0,0,0,0.8); position:relative; background:#0a0807;">
+                  <img src="${r.img}" alt="${r.name}" style="width:100%; height:100%; object-fit:cover; filter:${r.unlocked ? 'contrast(1.08) brightness(1.05)' : 'grayscale(0.9) brightness(0.55)'};" />
+                  ${r.unlocked ? '<div style="position:absolute; inset:0; box-shadow:inset 0 0 8px rgba(255,215,0,0.35); pointer-events:none;"></div>' : ''}
+                </div>
+                <div style="flex:1; min-width:0;">
+                  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
+                    <span style="font-size:clamp(14px, 1.2vw, 16px); font-weight:900; color:${r.unlocked ? '#ffd700' : '#a8947b'}; text-shadow:0 1px 2px #000;">${r.name}</span>
+                    <span style="font-size:11.5px; font-weight:900; padding:2px 8px; border-radius:5px; white-space:nowrap; ${r.unlocked ? 'background: linear-gradient(135deg, #854d0e, #a16207); color: #fef08a; border: 1px solid #fde047; box-shadow: 0 0 8px rgba(250, 204, 21, 0.4);' : 'background: rgba(40, 35, 30, 0.8); color: #8c7860; border: 1px solid #574632;'}">
+                      ${r.unlocked ? '🌟 已激活生效' : `🔒 未解锁 (${r.req})`}
+                    </span>
+                  </div>
+                  <div style="font-size:12px; color:${r.unlocked ? '#f5dfbe' : '#73614c'}; margin-top:4px; line-height:1.45;">
+                    ${r.desc}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLeagueOpponentAdviceModal(): string {
+  if (!activeLeague) return '';
+  const curOpponent = getNextOpponentForLeague();
+
+  const classAdviceMap: Record<string, { strengths: string; weaknesses: string; tip: string }> = {
+    sorcery: {
+      strengths: '法术直接伤害高、闪电爆发与直接斩杀能力极强。',
+      weaknesses: '随从身板普遍较为脆弱，消耗大量特殊法术能量。',
+      tip: '建议早期利用低费生物占据多个槽位，利用石墙或水元素吸收法术火力，尽快压低其血线。',
+    },
+    necromancer: {
+      strengths: '亡者复苏、吸血诅咒、持续消磨敌方生命。',
+      weaknesses: '启动偏慢，惧怕圣光净化与大范围群体直伤。',
+      tip: '避免留下残血生物被其亡灵吞噬，优先用火球或闪电秒杀其核心召唤物，不给其滚雪球的机会。',
+    },
+    cleric: {
+      strengths: '高额治疗回复、神圣护盾、审判圣裁。',
+      weaknesses: '缺乏速杀爆发力，依赖持续站场和随从防御。',
+      tip: '切忌拖入慢速消耗战！集中火力定点突破其脆弱槽位，直接打击本体阻断其治疗节奏。',
+    },
+    mechanician: {
+      strengths: '机械自爆装置、炮台阵列、护甲坚硬。',
+      weaknesses: '机械零件组装需要充能启动时间，灵活性不足。',
+      tip: '在其机械工事未成型前迅速抢攻，利用气系弹射或水系冰冻打乱其阵型配合。',
+    },
+    dominator: {
+      strengths: '心灵控制、操纵敌方生物为己用、扭曲意志。',
+      weaknesses: '本体防御羸弱，失去对手生物借力后输出匮乏。',
+      tip: '出怪需谨慎，尽量使用具有即时战吼价值的随从或法术，避免召唤超高攻击的大哥被其策反。',
+    },
+    chaosmaster: {
+      strengths: '随机骰子、极度不可预测的混沌波动、高上限爆发。',
+      weaknesses: '极其不稳定，下限极低且可能伤及自身。',
+      tip: '保持场面稳健，多铺设具有扎实生命值的随从，利用其混沌失控的反噬终结比赛。',
+    },
+    illusionist: {
+      strengths: '幻影替身、闪避致命伤害、虚实难辨。',
+      weaknesses: '幻象一旦被识破或承受轻微攻击即破碎消失。',
+      tip: '多使用多段伤害或低费 AOE 快速戳破其幻影，破除虚假防御后直捣黄龙。',
+    },
+    demonologist: {
+      strengths: '献祭恶魔、深渊烈焰、恐怖的自残高爆发。',
+      weaknesses: '自身生命消耗剧烈，容错率极低。',
+      tip: '防范其开局恶魔冲锋，稳住第一波冲击后，其自残扣血将让其迅速进入你的斩杀线。',
+    },
+    beastmaster: {
+      strengths: '野兽群奔、多路开花、狂暴增益。',
+      weaknesses: '单卡质量不高，极度惧怕大范围清场法术。',
+      tip: '保留水系酸雨、火系流星或气系闪电风暴，等其铺满野兽时一网打尽。',
+    },
+    chronomancer: {
+      strengths: '时间加速、回溯回合、重置技能冷却。',
+      weaknesses: '节奏极为严苛，一旦被扰乱关键轮次则前功尽弃。',
+      tip: '抓住其时间法术空档期全力输出，逼迫其提前交出保命技能。',
+    },
+    goblin: {
+      strengths: '人海战术、哥布林狂热冲锋、极速铺场抢血。',
+      weaknesses: '后劲极差，手牌消耗极快。',
+      tip: '起手优先抓取坚固阻挡随从与低费解场牌，只要撑过前 4 回合即胜券在握。',
+    },
+  };
+
+  const advice = classAdviceMap[curOpponent.className] || {
+    strengths: '综合流派实力强劲，擅长多属性法术协同。',
+    weaknesses: '能量分配较为分散。',
+    tip: '观察其能量储备最多的元素，提前针对其可能打出的强力法术进行防范。',
+  };
+
+  return `
+    <div class="modal-overlay" id="league-advice-modal-overlay">
+      <div class="stone-options-dialog" style="width:clamp(560px, 60vw, 840px); max-height:88vh; display:flex; flex-direction:column;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#fef08a;">📜 针对下轮对手的对战建议与战术秘卷</div>
+          <button class="modal-close-btn" id="btn-close-league-advice" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:clamp(14px, 2vh, 22px); display:flex; flex-direction:column; gap:14px;">
+          <!-- Opponent Profile Box -->
+          <div style="background:linear-gradient(135deg, rgba(255,215,0,0.15) 0%, rgba(142,114,58,0.1) 100%); border:1.5px solid #d4af37; border-radius:8px; padding:12px 18px; display:flex; align-items:center; gap:16px;">
+            <img src="${curOpponent.face}" style="width:68px; height:68px; border-radius:50%; border:2px solid #d4af37; object-fit:cover; box-shadow:0 2px 6px rgba(0,0,0,0.2);" alt="${curOpponent.cnName}" />
+            <div style="flex:1;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px; font-weight:900; color:#3b2308;">${curOpponent.cnName}</span>
+                <span style="font-size:13px; color:#b45309; background:#fef3c7; border:1px solid #fde68a; padding:2px 8px; border-radius:6px; font-weight:bold;">${curOpponent.classCn}</span>
+              </div>
+              <div style="font-size:13px; color:#5c4028; margin-top:4px;">
+                ${curOpponent.rule ? `<strong>特技规则：</strong>${curOpponent.rule.replace(/\r?\n/g, ' ')}` : '精通本流派各阶法术与战斗生物'}
+              </div>
+            </div>
+          </div>
+
+          <!-- Tactical Breakdown -->
+          <div style="background:#ffffff; border:1px solid #d4af37; border-radius:8px; padding:14px 18px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            <div style="font-size:15px; font-weight:900; color:#92400e; margin-bottom:8px;">⚔️ 对手流派特点剖析</div>
+            <div style="font-size:13.5px; color:#334155; line-height:1.6;">
+              • <strong>核心优势：</strong>${advice.strengths}<br>
+              • <strong>潜在弱点：</strong>${advice.weaknesses}
+            </div>
+          </div>
+
+          <!-- Counter Strategy -->
+          <div style="background:linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border:1.5px solid #86efac; border-radius:8px; padding:14px 18px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+            <div style="font-size:15px; font-weight:900; color:#166534; margin-bottom:8px;">💡 军师锦囊：克制策略与破局之法</div>
+            <div style="font-size:13.5px; color:#14532d; line-height:1.6;">
+              ${advice.tip}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderLeagueCompletionModal(): string {
+  if (!activeLeague) return '';
+  const sorted = [...activeLeague.standings].sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return b.wins - a.wins;
+  });
+  const playerRank = sorted.findIndex(s => s.isPlayer) + 1;
+  const isChampion = playerRank === 1;
+
+  return `
+    <div class="modal-overlay" id="league-completion-modal-overlay">
+      <div class="stone-options-dialog" style="width:clamp(480px, 52vw, 680px); max-height:85vh; display:flex; flex-direction:column; text-align:center;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #451a03 0%, #78350f 50%, #451a03 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#fef08a;">🏆 ${activeLeague.difficulty}联赛 · 赛季荣耀结算</div>
+          <button class="modal-close-btn" id="btn-close-league-completion" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <div style="padding:28px 24px; display:flex; flex-direction:column; align-items:center; gap:16px;">
+          <div style="font-size:64px; line-height:1;">
+            ${isChampion ? '👑' : playerRank === 2 ? '🥈' : playerRank === 3 ? '🥉' : '🎖️'}
+          </div>
+          <div style="font-size:24px; font-weight:900; color:#92400e;">
+            ${isChampion ? '恭喜加冕联赛总冠军！' : `荣获第 ${playerRank} 名！`}
+          </div>
+          <div style="font-size:14.5px; color:#475569; max-width:440px; line-height:1.6;">
+            经过常规赛与残酷的淘汰赛角逐，${activeLeague.playerName} 以出色的发挥完成了全部赛程！
+          </div>
+
+          <div style="display:flex; justify-content:center; gap:20px; margin-top:8px;">
+            <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px 24px;">
+              <div style="font-size:12px; color:#854d0e;">最终名次</div>
+              <div style="font-size:22px; font-weight:900; color:#b45309;">第 ${playerRank} 名</div>
+            </div>
+            <div style="background:#fef3c7; border:1px solid #fde68a; border-radius:8px; padding:10px 24px;">
+              <div style="font-size:12px; color:#854d0e;">累计积分</div>
+              <div style="font-size:22px; font-weight:900; color:#b45309;">${sorted.find(s => s.isPlayer)?.score || 0} 分</div>
+            </div>
+          </div>
+
+          <button class="campaign-pc-btn start-btn" id="btn-league-completion-ok" style="margin-top:16px; padding:10px 36px; font-size:16px;">
+            重返联赛大厅
+          </button>
         </div>
       </div>
     </div>
@@ -3218,16 +4362,29 @@ function renderLeagueStandingsScreen(): string {
     return b.wins - a.wins;
   });
 
-  const tourList = tournamentData as any[];
-  const curOpponent = tourList[(activeLeague.currentMatch - 1) % tourList.length] || tourList[0];
+  const curOpponent = getNextOpponentForLeague();
+  const N = activeLeague.totalContestants || 10;
+  const regMatches = N - 1;
+  const totalMatches = activeLeague.totalMatches || (N + 1);
+
+  let roundText = `场次 ${activeLeague.currentMatch} / ${totalMatches}`;
+  if (activeLeague.currentMatch <= regMatches) {
+    roundText = `常规赛 · 场次 ${activeLeague.currentMatch} / ${regMatches}`;
+  } else if (activeLeague.currentMatch === N) {
+    roundText = `四强半决赛 · 淘汰赛`;
+  } else if (activeLeague.currentMatch === N + 1) {
+    roundText = `巅峰总决赛 · 冠军之战`;
+  } else {
+    roundText = `联赛已圆满完赛`;
+  }
 
   return `
     <div class="league-standings-view">
-      <img src="/ui/Tournament_Bg.jpg" class="league-standings-bg" alt="联赛背景" />
+      <img src="./ui/Tournament_Bg_New.jpg" class="league-standings-bg" alt="联赛背景" />
 
       <div class="league-header-banner">
         <div class="league-header-title">${activeLeague.difficulty}联赛</div>
-        <div class="league-header-round">场次 ${activeLeague.currentMatch} / 8</div>
+        <div class="league-header-round">${roundText}</div>
       </div>
 
       <div class="league-table-container">
@@ -3241,14 +4398,26 @@ function renderLeagueStandingsScreen(): string {
             </tr>
           </thead>
           <tbody>
-            ${sorted.map((item, idx) => `
-              <tr class="${item.isPlayer ? 'player-row' : ''}">
-                <td>${idx + 1}</td>
-                <td>${item.name}${item.isPlayer ? ' 👑' : ''}</td>
-                <td>${item.wins}</td>
-                <td>${item.score}</td>
-              </tr>
-            `).join('')}
+            ${sorted.map((item, idx) => {
+              const isPlayer = item.isPlayer;
+              const isNextOpponent = !isPlayer && (item.name === curOpponent.cnName || item.name === curOpponent.name);
+              let rowClass = '';
+              if (isPlayer) rowClass = 'player-row';
+              else if (isNextOpponent) rowClass = 'next-opponent-row';
+
+              return `
+                <tr class="${rowClass}">
+                  <td>${idx + 1}</td>
+                  <td>
+                    ${item.name}
+                    ${isPlayer ? ' 👑' : ''}
+                    ${isNextOpponent ? ' <span class="next-opp-badge">⚔️ 下轮对手</span>' : ''}
+                  </td>
+                  <td>${item.wins}</td>
+                  <td>${item.score}</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
       </div>
@@ -3267,18 +4436,20 @@ function renderLeagueStandingsScreen(): string {
         <div class="campaign-deck-center">
           <div class="campaign-story-header">
             <span class="campaign-story-title">${curOpponent.cnName}，${curOpponent.classCn}</span>
-            <span class="campaign-story-hp">场次 ${activeLeague.currentMatch} / 8</span>
+            <span class="campaign-story-hp">${roundText}</span>
           </div>
           <div class="campaign-story-text" style="font-size:clamp(15px, 1.25vw, 19px); padding:6px 0; line-height:1.6;">
-            ${curOpponent.rule.replace(/\r?\n/g, '<br>')}
+            ${formatStoryText(curOpponent.rule)}
           </div>
         </div>
 
         <div class="campaign-deck-right">
+          ${hasSavedLeagueBattle(activeLeague.id) ? `
+            <button class="campaign-pc-btn start-btn" id="btn-league-resume-match" style="background:linear-gradient(180deg,#15803d,#166534); border-color:#86efac; box-shadow:0 0 8px rgba(34,197,94,0.6);">接续对决</button>
+          ` : ''}
           <button class="campaign-pc-btn start-btn" id="btn-league-start-match">开始战斗</button>
           <button class="campaign-pc-btn" id="btn-league-open-hub" style="color:#ffd700;">角色档案</button>
-          <button class="campaign-pc-btn" id="btn-league-help">帮助</button>
-          <button class="campaign-pc-btn" id="btn-league-options">选项</button>
+          <button class="campaign-pc-btn" id="btn-league-advice" style="color:#fef08a;">对战建议</button>
           <button class="campaign-pc-btn" id="btn-league-menu">主菜单</button>
         </div>
       </div>
@@ -3295,7 +4466,8 @@ function renderCustomDeckHubScreen(): string {
 
   return `
     <div class="custom-deck-hub-view">
-      <img src="/ui/CustomDeck_Bg.jpg" class="custom-deck-hub-bg" alt="自组卡牌模式" />
+      <img src="./ui/MainMenuBg.jpg" class="custom-deck-hub-bg" alt="自组卡牌背景" />
+      <div class="custom-deck-hub-overlay"></div>
 
       <div class="custom-deck-hub-window">
         <div class="custom-deck-hub-title-banner">
@@ -3392,7 +4564,7 @@ function renderCustomDeckBuilderScreen(): string {
 
   return `
     <div class="deck-builder-view">
-      <img src="/ui/CreateDeck_Bg.jpg" class="deck-builder-bg" alt="自组卡组编辑器" />
+      <img src="./ui/CreateDeck_Bg.jpg" class="deck-builder-bg" alt="自组卡组编辑器" />
 
       <div class="deck-builder-top-bar">
         <div class="deck-builder-top-left" style="display:flex; align-items:center; gap:clamp(10px, 1.2vw, 18px);">
@@ -3430,7 +4602,7 @@ function renderCustomDeckBuilderScreen(): string {
                            data-slot-idx="${slotIdx}"
                            style="${isSelected ? 'border-color:#ffd700; box-shadow:0 0 12px #ffd700;' : ''}">
                         ${card ? `
-                          <img src="${card.imgUrl}" class="deck-slot-card-img" alt="${card.nameCn}" />
+                          <img src="${toRel(card.imgUrl)}" class="deck-slot-card-img" alt="${card.nameCn}" />
                           <div class="deck-slot-cost">${card.cost}</div>
                           ${card.type === 'creature' ? `
                             <div class="deck-slot-atk">${card.attack}</div>
@@ -3473,7 +4645,7 @@ function renderCustomDeckBuilderScreen(): string {
               const isEquipped = editingDeck.cards.some(slotCard => slotCard && slotCard.id === c.id);
               return `
                 <div class="deck-pool-item ${isEquipped ? 'already-equipped' : ''}" data-card-id="${c.id}" title="${c.nameCn} (${c.cost}耗能)${isEquipped ? ' - 已配置在卡组中' : ''}">
-                  <img src="${c.imgUrl}" class="deck-slot-card-img" alt="${c.nameCn}" />
+                  <img src="${toRel(c.imgUrl)}" class="deck-slot-card-img" alt="${c.nameCn}" />
                   <div class="deck-slot-cost">${c.cost}</div>
                   ${c.type === 'creature' ? `
                     <div class="deck-slot-atk">${c.attack}</div>
@@ -3553,25 +4725,54 @@ function renderGameOverModal(): string {
   `;
 }
 
+function getCombatBgmForCurrentBattle(): 'combat1' | 'combat2' | 'combat3' {
+  if (currentBattleSource === 'league') {
+    return 'combat2';
+  }
+  if (currentBattleSource === 'custom_deck') {
+    return 'combat3';
+  }
+  if (currentBattleSource === 'campaign' || engine.currentCampaign) {
+    const lvlId = selectedCampaignLevelId || engine.currentCampaign?.id || 1;
+    if (lvlId <= 20) return 'combat1';
+    if (lvlId <= 45) return 'combat2';
+    return 'combat3';
+  }
+  return 'combat1';
+}
+
+function syncModeBgm() {
+  if (currentView === 'battle') {
+    sound.playBgm(getCombatBgmForCurrentBattle());
+  } else if (currentView === 'replay_viewer') {
+    const rMode = activeViewingReplay?.mode || 'duel';
+    if (rMode === 'league') sound.playBgm('combat2');
+    else if (rMode === 'custom_deck') sound.playBgm('combat3');
+    else sound.playBgm('combat1');
+  } else {
+    sound.playBgm('menu1');
+  }
+}
+
 export function render() {
+  syncModeBgm();
   if (currentView === 'menu') {
     app.innerHTML = renderMainMenu();
-    if (showOptionsModal) app.innerHTML += renderOptionsModal();
-    if (showHelpModal) app.innerHTML += renderGameHelpModal();
     if (showReplayModal) app.innerHTML += renderReplayManagerModal();
     if (showAchievementsModal) app.innerHTML += renderAchievementsModal();
     if (showLeagueHubModal) app.innerHTML += renderLeagueHubModal();
+    if (showCampaignHubModal) app.innerHTML += renderCampaignHubModal();
+    if (showCampaignSetupModal) app.innerHTML += renderCampaignSetupModal();
   } else if (currentView === 'single_duel_setup') {
     app.innerHTML = renderSingleDuelSetup();
   } else if (currentView === 'campaign') {
     app.innerHTML = renderCampaignMapScreen();
-    if (showOptionsModal) app.innerHTML += renderOptionsModal();
+    if (showCampaignHubModal) app.innerHTML += renderCampaignHubModal();
+    if (showCampaignSetupModal) app.innerHTML += renderCampaignSetupModal();
   } else if (currentView === 'league_setup') {
     app.innerHTML = renderMainMenu() + renderLeagueSetupModal();
   } else if (currentView === 'league_table') {
     app.innerHTML = renderLeagueStandingsScreen();
-    if (showOptionsModal) app.innerHTML += renderOptionsModal();
-    if (showHelpModal) app.innerHTML += renderGameHelpModal();
     if (showLeagueHubModal) app.innerHTML += renderLeagueHubModal();
   } else if (currentView === 'custom_deck_hub') {
     app.innerHTML = renderCustomDeckHubScreen();
@@ -3579,7 +4780,6 @@ export function render() {
     app.innerHTML = renderCustomDeckBuilderScreen();
   } else if (currentView === 'replay_viewer') {
     app.innerHTML = renderCombatScreen() + renderReplayBattlefieldDock();
-    if (showOptionsModal) app.innerHTML += renderOptionsModal();
   } else if (currentView === 'battle') {
     app.innerHTML = renderCombatScreen();
     if (engine.gameOver) {
@@ -3589,6 +4789,13 @@ export function render() {
       app.innerHTML += renderGameOverModal();
     }
   }
+
+  if (showHelpModal) app.innerHTML += renderGameHelpModal();
+  if (showOptionsModal) app.innerHTML += renderOptionsModal();
+  if (showCampaignTreasuresModal) app.innerHTML += renderCampaignTreasuresModal();
+  if (showLeagueAdviceModal) app.innerHTML += renderLeagueOpponentAdviceModal();
+  if (showLeagueCompletionModal) app.innerHTML += renderLeagueCompletionModal();
+  if (pendingConfirmDialog) app.innerHTML += renderCustomConfirmModal();
 
   attachEventListeners();
 
@@ -3610,7 +4817,11 @@ function attachEventListeners() {
 
   document.getElementById('btn-menu-campaign')?.addEventListener('click', () => {
     sound.play('click');
-    currentView = 'campaign';
+    if (campaignProfiles.length === 0) {
+      showCampaignSetupModal = true;
+    } else {
+      currentView = 'campaign';
+    }
     render();
   });
 
@@ -3648,13 +4859,38 @@ function attachEventListeners() {
     render();
   });
 
-  ['play', 'combat', 'deck', 'classes', 'modes', 'credits'].forEach((t) => {
+  function bindCodexCardFilterEvents() {
+    document.querySelectorAll('.codex-filter-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        sound.play('click');
+        codexCardFilter = (e.currentTarget as HTMLElement).dataset.filter || 'all';
+        const scrollArea = document.querySelector('#game-help-modal-overlay .codex-page-scroll');
+        if (scrollArea) {
+          scrollArea.innerHTML = renderCodexPageContent('cards');
+          bindCodexCardFilterEvents();
+        }
+      });
+    });
+  }
+
+  ['play', 'combat', 'deck', 'classes', 'modes', 'cards'].forEach((t) => {
     document.getElementById(`tab-codex-${t}`)?.addEventListener('click', () => {
       sound.play('click');
       activeHelpTab = t as any;
-      render();
+      document.querySelectorAll('.codex-tab-btn').forEach((b) => b.classList.remove('active'));
+      document.getElementById(`tab-codex-${t}`)?.classList.add('active');
+      const scrollArea = document.querySelector('#game-help-modal-overlay .codex-page-scroll');
+      if (scrollArea) {
+        scrollArea.innerHTML = renderCodexPageContent(activeHelpTab);
+        scrollArea.scrollTop = 0;
+        if (activeHelpTab === 'cards') {
+          bindCodexCardFilterEvents();
+        }
+      }
     });
   });
+
+  bindCodexCardFilterEvents();
 
   document.getElementById('btn-close-help')?.addEventListener('click', () => {
     sound.play('click');
@@ -3714,9 +4950,8 @@ function attachEventListeners() {
       e.stopPropagation();
       sound.play('click');
       const pid = (btn as HTMLElement).dataset.profileId;
-      if (confirm('确定要删除该英雄角色及其联赛进度吗？')) {
-        deleteLeagueProfile(pid!);
-        render();
+      if (pid) {
+        deleteLeagueProfile(pid);
       }
     });
   });
@@ -3752,6 +4987,7 @@ function attachEventListeners() {
     sound.play('click');
     stopReplayAutoPlay();
     currentView = 'menu';
+    sound.playBgm('menu1');
     showReplayModal = true;
     render();
   };
@@ -3928,9 +5164,43 @@ function attachEventListeners() {
     });
   });
 
+  document.getElementById('btn-duel-diff-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelDifficultyIdx = (singleDuelDifficultyIdx - 1 + SINGLE_DUEL_DIFFICULTIES.length) % SINGLE_DUEL_DIFFICULTIES.length;
+    render();
+  });
+  document.getElementById('btn-duel-diff-next')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelDifficultyIdx = (singleDuelDifficultyIdx + 1) % SINGLE_DUEL_DIFFICULTIES.length;
+    render();
+  });
+
+  document.getElementById('btn-duel-scene-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelScenarioIdx = (singleDuelScenarioIdx - 1 + BATTLEFIELD_SCENARIOS.length) % BATTLEFIELD_SCENARIOS.length;
+    render();
+  });
+  document.getElementById('btn-duel-scene-next')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelScenarioIdx = (singleDuelScenarioIdx + 1) % BATTLEFIELD_SCENARIOS.length;
+    render();
+  });
+
   document.getElementById('btn-start-duel')?.addEventListener('click', () => {
     sound.play('click');
-    sound.playBgm('combat1');
+    currentBattleSource = 'duel';
+
+    const chosenDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
+
+    // Determine Scenario
+    let scenario = BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx];
+    if (scenario.id === 'random') {
+      const candidates = BATTLEFIELD_SCENARIOS.filter(s => s.id !== 'random');
+      scenario = candidates[Math.floor(Math.random() * candidates.length)];
+    }
+
+    currentBattlefieldTheme = scenario.theme;
+    sound.playBgm(getCombatBgmForCurrentBattle());
 
     const availableClasses: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
@@ -3945,13 +5215,37 @@ function attachEventListeners() {
       ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
       : (HERO_CLASSES[aiClassIndex].id as HeroClass);
 
+    const allCards = cardsData as CardDef[];
+    const initPlayerCreatures: Array<{ slot: number; card: CardDef }> = [];
+    if (scenario.initialPlayerCreatures) {
+      for (const item of scenario.initialPlayerCreatures) {
+        const c = allCards.find(card => card.id === item.cardId);
+        if (c) initPlayerCreatures.push({ slot: item.slot, card: c });
+      }
+    }
+
+    const initEnemyCreatures: Array<{ slot: number; card: CardDef }> = [];
+    if (scenario.initialEnemyCreatures) {
+      for (const item of scenario.initialEnemyCreatures) {
+        const c = allCards.find(card => card.id === item.cardId);
+        if (c) initEnemyCreatures.push({ slot: item.slot, card: c });
+      }
+    }
+
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: '玩家',
-      playerFace: `/faces/Face${playerFaceIndex + 1}.jpg`,
+      playerFace: `./faces/Face${playerFaceIndex + 1}.jpg`,
       enemyName: '大法师',
-      enemyFace: `/faces/Face${aiFaceIndex + 1}.jpg`,
+      enemyFace: `./faces/Face${aiFaceIndex + 1}.jpg`,
       enemyClass: eClass,
-      enemyHp: 60,
+      playerHp: scenario.playerHp,
+      enemyHp: scenario.enemyHp,
+      difficulty: chosenDiff,
+      leagueRule: scenario.rule,
+      initialPlayerCreatures: initPlayerCreatures,
+      initialEnemyCreatures: initEnemyCreatures,
+      extraPlayerMana: scenario.extraPlayerMana,
+      extraEnemyMana: scenario.extraEnemyMana,
     });
 
     setupEngineCallbacks();
@@ -3961,6 +5255,7 @@ function attachEventListeners() {
     showOptionsModal = false;
     currentView = 'battle';
     render();
+    showToastNotice(`⚔️ 对战开启！【${scenario.name}】(${chosenDiff}难度)`);
   });
 
   // ===================================
@@ -3979,7 +5274,9 @@ function attachEventListeners() {
       const lvl = (campaignData as CampaignLevel[]).find((l) => l.id === lvlId);
       if (lvl) {
         sound.play('click');
-        sound.playBgm('combat1');
+        currentBattleSource = 'campaign';
+        selectedCampaignLevelId = lvlId;
+        sound.playBgm(getCombatBgmForCurrentBattle());
         engine = new SpectromancerEngine('sorcery', lvl);
         setupEngineCallbacks();
         selectedCard = null;
@@ -3995,13 +5292,20 @@ function attachEventListeners() {
   // ===================================
   document.getElementById('btn-combat-main-menu')?.addEventListener('click', () => {
     sound.play('click');
-    if (confirm('确定要返回主菜单吗？当前战局将退出。')) {
-      sound.playBgm('menu1');
-      showHelpModal = false;
-      showOptionsModal = false;
-      currentView = 'menu';
-      render();
-    }
+    openCustomConfirm(
+      '退出当前对决',
+      '确定要返回主菜单吗？若未保存当前对局，未保存的回合进度将丢失。您也可通过【⚙️】设置保存当前战局。',
+      () => {
+        sound.playBgm('menu1');
+        showHelpModal = false;
+        showOptionsModal = false;
+        currentView = 'menu';
+        render();
+      },
+      undefined,
+      '退出对决',
+      '继续战斗'
+    );
   });
 
   document.getElementById('btn-combat-help')?.addEventListener('click', () => {
@@ -4016,16 +5320,25 @@ function attachEventListeners() {
     render();
   });
 
-  document.getElementById('btn-combat-options')?.addEventListener('click', () => {
+  document.getElementById('btn-combat-save-exit')?.addEventListener('click', () => {
     sound.play('click');
-    showOptionsModal = true;
+    if (saveCurrentBattle()) {
+      showToastNotice('💾 战斗进度已保存！随时可继续对决。');
+    }
+    currentView = 'menu';
+    sound.playBgm('menu1');
     render();
   });
 
-  document.getElementById('btn-close-options')?.addEventListener('click', () => {
+  const handleCloseOptions = () => {
     sound.play('click');
     showOptionsModal = false;
     render();
+  };
+  document.getElementById('btn-close-options')?.addEventListener('click', handleCloseOptions);
+  document.getElementById('btn-confirm-options')?.addEventListener('click', handleCloseOptions);
+  document.getElementById('options-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) handleCloseOptions();
   });
 
   document.getElementById('btn-combat-rules')?.addEventListener('click', () => {
@@ -4056,7 +5369,7 @@ function attachEventListeners() {
     if (loadSavedBattle()) {
       showToastNotice('⚔️ 已成功载入战斗存档！继续对决。');
       currentView = 'battle';
-      sound.playBgm('battle1');
+      sound.playBgm('combat1');
       render();
     } else {
       showToastNotice('ℹ️ 暂无未完成的对战存档');
@@ -4070,41 +5383,78 @@ function attachEventListeners() {
   document.getElementById('btn-toggle-bgm')?.addEventListener('click', () => {
     sound.play('click');
     sound.toggleBgm();
-    render();
+    const btn = document.getElementById('btn-toggle-bgm');
+    if (btn) {
+      btn.className = `duel-stone-action-btn ${sound.bgmEnabled ? 'start' : 'close'}`;
+      btn.textContent = sound.bgmEnabled ? '🔊 已开启' : '🔇 已静音';
+    }
   });
 
   document.getElementById('btn-toggle-sfx')?.addEventListener('click', () => {
     sound.play('click');
     sound.toggleMute();
-    render();
+    const btn = document.getElementById('btn-toggle-sfx');
+    if (btn) {
+      btn.className = `duel-stone-action-btn ${sound.enabled ? 'start' : 'close'}`;
+      btn.textContent = sound.enabled ? '🔔 已开启' : '🔕 已静音';
+    }
   });
+
+  document.getElementById('btn-toggle-record-replays')?.addEventListener('click', () => {
+    sound.play('click');
+    recordReplaysEnabled = !recordReplaysEnabled;
+    try {
+      localStorage.setItem('setting_record_replays', JSON.stringify(recordReplaysEnabled));
+    } catch {}
+    const track = document.getElementById('btn-toggle-record-replays');
+    if (track) {
+      if (recordReplaysEnabled) {
+        track.classList.add('active');
+        track.setAttribute('aria-checked', 'true');
+      } else {
+        track.classList.remove('active');
+        track.setAttribute('aria-checked', 'false');
+      }
+    }
+  });
+
+  const updateThemeButtons = () => {
+    const lbl = document.getElementById('options-theme-label');
+    if (lbl) lbl.textContent = getThemeName(currentBattlefieldTheme);
+    (['citadel', 'sky', 'volcano', 'forest'] as const).forEach(t => {
+      const b = document.getElementById(`btn-theme-${t}`);
+      if (b) {
+        b.className = `duel-stone-action-btn ${currentBattlefieldTheme === t ? 'start' : 'close'}`;
+      }
+    });
+  };
 
   document.getElementById('btn-theme-citadel')?.addEventListener('click', () => {
     sound.play('click');
     currentBattlefieldTheme = 'citadel';
     localStorage.setItem('battlefield_theme', 'citadel');
-    render();
+    updateThemeButtons();
   });
 
   document.getElementById('btn-theme-sky')?.addEventListener('click', () => {
     sound.play('click');
     currentBattlefieldTheme = 'sky';
     localStorage.setItem('battlefield_theme', 'sky');
-    render();
+    updateThemeButtons();
   });
 
   document.getElementById('btn-theme-volcano')?.addEventListener('click', () => {
     sound.play('click');
     currentBattlefieldTheme = 'volcano';
     localStorage.setItem('battlefield_theme', 'volcano');
-    render();
+    updateThemeButtons();
   });
 
   document.getElementById('btn-theme-forest')?.addEventListener('click', () => {
     sound.play('click');
     currentBattlefieldTheme = 'forest';
     localStorage.setItem('battlefield_theme', 'forest');
-    render();
+    updateThemeButtons();
   });
 
 
@@ -4231,16 +5581,29 @@ function attachEventListeners() {
         return;
       }
 
-      if (side === 'player' && selectedCard.type === 'creature' && engine.playerBoard[slotIdx] === null) {
-        isActionPending = true;
-        const cardToPlay = selectedCard;
-        try {
-          await engine.playCard('player', cardToPlay, slotIdx);
-        } finally {
-          selectedCard = null;
-          isActionPending = false;
+      if (side === 'player') {
+        if (selectedCard.type === 'creature' && engine.playerBoard[slotIdx] === null) {
+          isActionPending = true;
+          const cardToPlay = selectedCard;
+          try {
+            await engine.playCard('player', cardToPlay, slotIdx);
+          } finally {
+            selectedCard = null;
+            isActionPending = false;
+          }
+        } else if (selectedCard.type === 'spell' && selectedCard.requiresTarget && isFriendlyTargetSpell(selectedCard)) {
+          if (engine.playerBoard[slotIdx]) {
+            isActionPending = true;
+            const cardToPlay = selectedCard;
+            try {
+              await engine.playCard('player', cardToPlay, slotIdx);
+            } finally {
+              selectedCard = null;
+              isActionPending = false;
+            }
+          }
         }
-      } else if (side === 'enemy' && selectedCard.type === 'spell' && selectedCard.requiresTarget) {
+      } else if (side === 'enemy' && selectedCard.type === 'spell' && selectedCard.requiresTarget && !isFriendlyTargetSpell(selectedCard)) {
         if (engine.enemyBoard[slotIdx] && !engine.enemyBoard[slotIdx]!.spellImmune) {
           isActionPending = true;
           const cardToPlay = selectedCard;
@@ -4270,39 +5633,228 @@ function attachEventListeners() {
   document.getElementById('btn-campaign-diff-prev')?.addEventListener('click', () => {
     sound.play('click');
     campaignDifficultyIndex = (campaignDifficultyIndex - 1 + campaignDifficulties.length) % campaignDifficulties.length;
+    saveCampaignProfiles();
     render();
   });
   document.getElementById('btn-campaign-diff-next')?.addEventListener('click', () => {
     sound.play('click');
     campaignDifficultyIndex = (campaignDifficultyIndex + 1) % campaignDifficulties.length;
+    saveCampaignProfiles();
     render();
+  });
+
+  document.getElementById('btn-campaign-resume-battle')?.addEventListener('click', () => {
+    sound.play('click');
+    if (loadSavedBattle()) {
+      currentView = 'battle';
+      sound.playBgm(getCombatBgmForCurrentBattle());
+      render();
+    }
   });
 
   document.getElementById('btn-campaign-start-battle')?.addEventListener('click', () => {
     sound.play('click');
-    sound.playBgm('combat1');
-    const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
     currentBattleSource = 'campaign';
-    engine = new SpectromancerEngine('cleric', currentLvl, {
+    sound.playBgm(getCombatBgmForCurrentBattle());
+    const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
+    const rawClassId = activeCampaign ? (HERO_CLASSES[activeCampaign.playerClassIdx]?.id || 'cleric') : 'cleric';
+    const pClass: HeroClass = rawClassId === 'random' ? 'cleric' : rawClassId;
+    const pName = activeCampaign ? activeCampaign.playerName : '战役法师';
+    const pFace = activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg';
+
+    // PC Spectromancer Campaign Initial Battlefield Creatures & Relics
+    const initialPlayerCreatures: Array<{ slot: number; card: CardDef }> = [];
+    const initialEnemyCreatures: Array<{ slot: number; card: CardDef }> = [];
+    const allCards = cardsData as CardDef[];
+
+    // Level 1 (Demir): Player starts with a Priest of Fire at slot 2
+    if (selectedCampaignLevelId === 1) {
+      const priest = allCards.find(c => c.id === 'fire_priest_of_fire');
+      if (priest) initialPlayerCreatures.push({ slot: 2, card: priest });
+    }
+
+    // Relic: Tamed Gryphon (Unlocked if level 1 is completed)
+    if (completedCampaignLevels.includes(1) && selectedCampaignLevelId !== 1) {
+      const gryphon = allCards.find(c => c.id === 'air_griffin');
+      if (gryphon) initialPlayerCreatures.push({ slot: 2, card: gryphon });
+    }
+
+    // Level 2 (Silver): Enemy starts with Water/Ice Elemental or Golem
+    if (selectedCampaignLevelId === 2) {
+      const elem = allCards.find(c => c.id === 'water_water_elemental') || allCards.find(c => c.id === 'water_ice_golem');
+      if (elem) initialEnemyCreatures.push({ slot: 2, card: elem });
+    }
+
+    // Level 3 (Fedemir): Enemy starts with Mech / Chaos Peacemaker or Guardian
+    if (selectedCampaignLevelId === 3) {
+      const guard = allCards.find(c => c.id === 'mech_steel_golem') || allCards.find(c => c.id === 'sorcery_spectral_assassin');
+      if (guard) initialEnemyCreatures.push({ slot: 2, card: guard });
+    }
+
+    // Level 5 (Lorana / Vilan): Enemy starts with two Goblin Berserkers
+    if (selectedCampaignLevelId === 5) {
+      const goblin = allCards.find(c => c.id === 'fire_goblin_berserker');
+      if (goblin) {
+        initialEnemyCreatures.push({ slot: 1, card: goblin });
+        initialEnemyCreatures.push({ slot: 4, card: goblin });
+      }
+    }
+
+    // Relic: Talisman of Health (+5 max HP if level 2 completed)
+    const pMaxHp = completedCampaignLevels.includes(2) ? 65 : 60;
+
+    // Relic: Signets of the Elements (+1 initial mana if level 4 completed)
+    const extraPlayerMana: Partial<Record<ElementType, number>> = {
+      fire: completedCampaignLevels.includes(4) ? 1 : 0,
+      water: completedCampaignLevels.includes(4) ? 1 : 0,
+      air: completedCampaignLevels.includes(4) ? 1 : 0,
+      earth: completedCampaignLevels.includes(4) ? 1 : 0,
+      special: 0,
+    };
+
+    engine = new SpectromancerEngine(pClass, currentLvl, {
+      playerName: pName,
+      playerFace: pFace,
+      playerHp: pMaxHp,
       enemyHp: currentLvl.enemyHp,
       enemyName: currentLvl.oppName,
       enemyFace: currentLvl.face,
+      initialPlayerCreatures,
+      initialEnemyCreatures,
+      extraPlayerMana,
     });
     setupEngineCallbacks();
     currentView = 'battle';
     render();
   });
 
-  document.getElementById('btn-campaign-awards')?.addEventListener('click', () => {
-    sound.play('btn1');
-    alert(`🏆【战役奖品与徽章】\n已通关关卡数: ${completedCampaignLevels.length} / 65 关\n持续讨伐各领地法师，唤醒星灵之殿的永恒荣耀！`);
-  });
-
-  document.getElementById('btn-campaign-options')?.addEventListener('click', () => {
+  document.getElementById('btn-campaign-profile-hub')?.addEventListener('click', () => {
     sound.play('click');
-    showOptionsModal = true;
+    showCampaignHubModal = true;
     render();
   });
+
+  document.getElementById('btn-campaign-avatar-click')?.addEventListener('click', () => {
+    sound.play('click');
+    showCampaignHubModal = true;
+    render();
+  });
+
+  document.getElementById('btn-campaign-hub-close')?.addEventListener('click', () => {
+    sound.play('click');
+    showCampaignHubModal = false;
+    render();
+  });
+
+  document.getElementById('btn-campaign-hub-create-new')?.addEventListener('click', () => {
+    sound.play('click');
+    showCampaignHubModal = false;
+    showCampaignSetupModal = true;
+    render();
+  });
+
+  document.getElementById('btn-campaign-close-setup')?.addEventListener('click', () => {
+    sound.play('click');
+    showCampaignSetupModal = false;
+    if (campaignProfiles.length > 0) {
+      showCampaignHubModal = true;
+    }
+    render();
+  });
+
+  document.getElementById('btn-campaign-face-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerFaceId = ((campaignPlayerFaceId - 2 + 78) % 78) + 1;
+    render();
+  });
+
+  document.getElementById('btn-campaign-face-next')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerFaceId = (campaignPlayerFaceId % 78) + 1;
+    render();
+  });
+
+  document.getElementById('btn-campaign-class-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerClassIdx = (campaignPlayerClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
+    render();
+  });
+
+  document.getElementById('btn-campaign-class-next')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerClassIdx = (campaignPlayerClassIdx + 1) % HERO_CLASSES.length;
+    render();
+  });
+
+  document.getElementById('btn-campaign-setup-diff-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerDifficultyIdx = (campaignPlayerDifficultyIdx - 1 + campaignDifficulties.length) % campaignDifficulties.length;
+    render();
+  });
+
+  document.getElementById('btn-campaign-setup-diff-next')?.addEventListener('click', () => {
+    sound.play('click');
+    campaignPlayerDifficultyIdx = (campaignPlayerDifficultyIdx + 1) % campaignDifficulties.length;
+    render();
+  });
+
+  document.getElementById('btn-campaign-create-char')?.addEventListener('click', () => {
+    sound.play('click');
+    const nameInput = document.getElementById('campaign-name-input') as HTMLInputElement;
+    const name = nameInput ? nameInput.value : campaignPlayerName;
+    createNewCampaignProfile(name, campaignPlayerFaceId, campaignPlayerClassIdx, campaignPlayerDifficultyIdx);
+    showCampaignSetupModal = false;
+    currentView = 'campaign';
+    render();
+  });
+
+  document.querySelectorAll('.btn-select-campaign-profile').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      sound.play('click');
+      const pid = (e.currentTarget as HTMLElement).getAttribute('data-campaign-id');
+      const found = campaignProfiles.find(p => p.id === pid);
+      if (found) {
+        activeCampaignId = found.id;
+        activeCampaign = found;
+        syncActiveCampaign();
+        showCampaignHubModal = false;
+        currentView = 'campaign';
+        render();
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete-campaign-profile').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const pid = (e.currentTarget as HTMLElement).getAttribute('data-campaign-id');
+      if (pid) {
+        sound.play('click');
+        deleteCampaignProfile(pid);
+      }
+    });
+  });
+
+  document.getElementById('btn-campaign-awards')?.addEventListener('click', () => {
+    sound.play('btn1');
+    showCampaignTreasuresModal = true;
+    render();
+  });
+
+  document.getElementById('btn-close-campaign-treasures')?.addEventListener('click', () => {
+    sound.play('click');
+    showCampaignTreasuresModal = false;
+    render();
+  });
+  document.getElementById('campaign-treasures-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      sound.play('click');
+      showCampaignTreasuresModal = false;
+      render();
+    }
+  });
+
+
 
   document.getElementById('btn-campaign-main-menu')?.addEventListener('click', () => {
     sound.play('click');
@@ -4350,6 +5902,17 @@ function attachEventListeners() {
     render();
   });
 
+  document.getElementById('btn-league-contestants-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    leagueContestantCountIdx = (leagueContestantCountIdx - 1 + leagueContestantCountChoices.length) % leagueContestantCountChoices.length;
+    render();
+  });
+  document.getElementById('btn-league-contestants-next')?.addEventListener('click', () => {
+    sound.play('click');
+    leagueContestantCountIdx = (leagueContestantCountIdx + 1) % leagueContestantCountChoices.length;
+    render();
+  });
+
   document.getElementById('btn-league-close-setup')?.addEventListener('click', () => {
     sound.play('click');
     if (leagueProfiles.length > 0) {
@@ -4365,22 +5928,31 @@ function attachEventListeners() {
     if (nameInput) {
       leaguePlayerName = nameInput.value.trim() || '玩家';
     }
-    createNewLeagueProfile(leaguePlayerName, leaguePlayerFaceId, leaguePlayerClassIdx, leagueDifficultyIdx);
+    const cCount = leagueContestantCountChoices[leagueContestantCountIdx] || 10;
+    createNewLeagueProfile(leaguePlayerName, leaguePlayerFaceId, leaguePlayerClassIdx, leagueDifficultyIdx, cCount);
     currentView = 'league_table';
     render();
+  });
+
+  document.getElementById('btn-league-resume-match')?.addEventListener('click', () => {
+    sound.play('click');
+    if (loadSavedBattle()) {
+      currentView = 'battle';
+      sound.playBgm(getCombatBgmForCurrentBattle());
+      render();
+    }
   });
 
   document.getElementById('btn-league-start-match')?.addEventListener('click', () => {
     if (!activeLeague) return;
     sound.play('click');
-    sound.playBgm('combat1');
-    const tourList = tournamentData as any[];
-    const curOpponent = tourList[(activeLeague.currentMatch - 1) % tourList.length] || tourList[0];
     currentBattleSource = 'league';
+    sound.playBgm(getCombatBgmForCurrentBattle());
+    const curOpponent = getNextOpponentForLeague();
     const pClass = activeLeague.standings.find((s) => s.isPlayer)?.className || 'cleric';
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: activeLeague.playerName,
-      playerFace: `/faces/Face${activeLeague.playerFaceId}.jpg`,
+      playerFace: `./faces/Face${activeLeague.playerFaceId}.jpg`,
       enemyName: curOpponent.cnName,
       enemyFace: curOpponent.face,
       enemyClass: curOpponent.className,
@@ -4391,14 +5963,56 @@ function attachEventListeners() {
     render();
   });
 
-  document.getElementById('btn-league-help')?.addEventListener('click', () => {
-    sound.play('btn1');
-    alert('📜【英雄排位联赛规则】\n循环联赛共计 8 场高强度对弈。每一轮对阵各派系顶尖大师，对手均具备独特的战场特殊法则。力争取胜以跃升联赛积分排行榜首！');
+  document.getElementById('btn-league-advice')?.addEventListener('click', () => {
+    sound.play('click');
+    showLeagueAdviceModal = true;
+    render();
   });
 
-  document.getElementById('btn-league-options')?.addEventListener('click', () => {
+  document.getElementById('btn-close-league-advice')?.addEventListener('click', () => {
     sound.play('click');
-    showOptionsModal = true;
+    showLeagueAdviceModal = false;
+    render();
+  });
+
+  document.getElementById('btn-close-league-completion')?.addEventListener('click', () => {
+    sound.play('click');
+    showLeagueCompletionModal = false;
+    render();
+  });
+
+  document.getElementById('btn-league-completion-ok')?.addEventListener('click', () => {
+    sound.play('click');
+    showLeagueCompletionModal = false;
+    if (activeLeague) {
+      activeLeague.currentMatch = 1;
+      activeLeague.phase = 'regular';
+      saveActiveLeague();
+    }
+    render();
+  });
+
+  document.getElementById('btn-pending-confirm-ok')?.addEventListener('click', () => {
+    sound.play('click');
+    const cb = pendingConfirmDialog?.onConfirm;
+    pendingConfirmDialog = null;
+    if (cb) cb();
+    render();
+  });
+
+  document.getElementById('btn-pending-confirm-cancel')?.addEventListener('click', () => {
+    sound.play('click');
+    const cb = pendingConfirmDialog?.onCancel;
+    pendingConfirmDialog = null;
+    if (cb) cb();
+    render();
+  });
+
+  document.getElementById('btn-pending-confirm-cancel-x')?.addEventListener('click', () => {
+    sound.play('click');
+    const cb = pendingConfirmDialog?.onCancel;
+    pendingConfirmDialog = null;
+    if (cb) cb();
     render();
   });
 
@@ -4455,7 +6069,7 @@ function attachEventListeners() {
       localStorage.setItem(CUSTOM_DECKS_KEY, JSON.stringify(customDecks));
       render();
     } else {
-      alert('⚠️ 至少需要保留一套卡组！');
+      showToastNotice('⚠️ 至少需要保留一套卡组！');
     }
   });
 
@@ -4499,13 +6113,14 @@ function attachEventListeners() {
 
   document.getElementById('btn-deck-start')?.addEventListener('click', () => {
     sound.play('click');
-    sound.playBgm('combat1');
+    currentBattleSource = 'custom_deck';
+    sound.playBgm(getCombatBgmForCurrentBattle());
     const d = customDecks[selectedDeckIdx] || customDecks[0];
     const oppName = customDeckOpponentList[selectedCustomOpponentIdx] || '大法师';
     currentBattleSource = 'custom_deck';
     engine = new SpectromancerEngine(d.className, undefined, {
       enemyName: oppName,
-      enemyFace: `/faces/Face${(selectedCustomOpponentIdx % 20) + 10}.jpg`,
+      enemyFace: `./faces/Face${(selectedCustomOpponentIdx % 20) + 10}.jpg`,
       customDeck: d.cards,
     });
     setupEngineCallbacks();
@@ -4682,7 +6297,7 @@ function attachEventListeners() {
       selectedDeckIdx = customDecks.length - 1;
     }
     localStorage.setItem(CUSTOM_DECKS_KEY, JSON.stringify(customDecks));
-    alert('✅ 牌组已成功保存！');
+    showToastNotice('✅ 牌组已成功保存！');
     render();
   });
 
@@ -4699,12 +6314,11 @@ function attachEventListeners() {
     if (engine.winner === 'player') {
       if (!completedCampaignLevels.includes(selectedCampaignLevelId)) {
         completedCampaignLevels.push(selectedCampaignLevelId);
-        localStorage.setItem(CAMPAIGN_COMPLETED_KEY, JSON.stringify(completedCampaignLevels));
       }
       if (selectedCampaignLevelId === 1) {
         unlockedCampaignLevels = [1, 2, 3, 4];
-        localStorage.setItem(CAMPAIGN_UNLOCKED_KEY, JSON.stringify(unlockedCampaignLevels));
       }
+      saveCampaignProfiles();
     }
     currentView = 'campaign';
     render();
@@ -4714,24 +6328,69 @@ function attachEventListeners() {
     sound.play('click');
     sound.playBgm('menu1');
     if (activeLeague) {
+      const N = activeLeague.totalContestants || 10;
+      const regMatches = N - 1;
+
       if (engine.winner === 'player') {
         const p = activeLeague.standings.find(s => s.isPlayer);
         if (p) {
           p.wins += 1;
-          p.score += 15;
+          p.score += activeLeague.currentMatch > regMatches ? 30 : 15;
         }
       }
+
+      // Simulate other AI matches
       activeLeague.standings.forEach(s => {
         if (!s.isPlayer && Math.random() > 0.45) {
           s.wins += 1;
           s.score += Math.floor(Math.random() * 8) + 4;
         }
       });
-      activeLeague.currentMatch += 1;
-      if (activeLeague.currentMatch > 8) {
-        alert(`🎉【英雄联赛第 8 轮排位赛完结】最终榜单已揭晓！恭喜完成本届 ${activeLeague.difficulty}联赛！`);
-        activeLeague.currentMatch = 1;
+
+      if (activeLeague.currentMatch < regMatches) {
+        // Still in regular season
+        activeLeague.currentMatch += 1;
+      } else if (activeLeague.currentMatch === regMatches) {
+        // Regular season completed! Top 4 qualify for playoffs
+        const sorted = [...activeLeague.standings].sort((a, b) => b.score !== a.score ? b.score - a.score : b.wins - a.wins);
+        const playerRank = sorted.findIndex(s => s.isPlayer) + 1;
+        if (playerRank <= 4) {
+          activeLeague.currentMatch = N; // Advance to Semi-Final
+          activeLeague.phase = 'semifinal';
+          const topOpponents = sorted.filter(s => !s.isPlayer);
+          const chosen = topOpponents[0];
+          const tourList = tournamentData as any[];
+          const tIdx = tourList.findIndex(t => t.cnName === chosen.name || t.name === chosen.name);
+          activeLeague.semiFinalOpponentIndex = tIdx >= 0 ? tIdx : 0;
+        } else {
+          // Out of playoffs
+          activeLeague.phase = 'completed';
+          showLeagueCompletionModal = true;
+        }
+      } else if (activeLeague.currentMatch === N) {
+        // Semi-Final completed
+        if (engine.winner === 'player') {
+          activeLeague.currentMatch = N + 1; // Advance to Grand Final
+          activeLeague.phase = 'final';
+          const sorted = [...activeLeague.standings].sort((a, b) => b.score !== a.score ? b.score - a.score : b.wins - a.wins);
+          const topOpponents = sorted.filter(s => !s.isPlayer);
+          const chosen = topOpponents[1] || topOpponents[0];
+          const tourList = tournamentData as any[];
+          const tIdx = tourList.findIndex(t => t.cnName === chosen.name || t.name === chosen.name);
+          activeLeague.finalOpponentIndex = tIdx >= 0 ? tIdx : 1;
+        } else {
+          activeLeague.phase = 'completed';
+          showLeagueCompletionModal = true;
+        }
+      } else {
+        // Grand Final completed
+        activeLeague.phase = 'completed';
+        showLeagueCompletionModal = true;
+        if (engine.winner === 'player') {
+          checkAndUnlockAchievement('league_champ');
+        }
       }
+
       saveActiveLeague();
     }
     currentView = 'league_table';
@@ -4763,5 +6422,43 @@ function attachEventListeners() {
   });
 }
 
+function initFullscreen() {
+  try {
+    const w = typeof window !== 'undefined' ? (window as any) : null;
+    if (w && w.plus) {
+      if (w.plus.navigator) {
+        w.plus.navigator.setFullscreen(true);
+        if (typeof w.plus.navigator.hideSystemNavigation === 'function') {
+          w.plus.navigator.hideSystemNavigation();
+        }
+      }
+      // Unlock orientation so Android sensor automatically rotates between landscape and portrait
+      if (w.plus.screen && typeof w.plus.screen.unlockOrientation === 'function') {
+        w.plus.screen.unlockOrientation();
+      }
+    }
+  } catch {}
+}
+
+if (typeof window !== 'undefined') {
+  if ((window as any).plus) {
+    initFullscreen();
+  } else {
+    document.addEventListener('plusready', initFullscreen, false);
+  }
+  document.addEventListener('DOMContentLoaded', initFullscreen);
+
+  let resizeDebounceTimer: any = null;
+  const onOrientationOrResize = () => {
+    clearTimeout(resizeDebounceTimer);
+    resizeDebounceTimer = setTimeout(() => {
+      render();
+    }, 120);
+  };
+  window.addEventListener('resize', onOrientationOrResize);
+  window.addEventListener('orientationchange', onOrientationOrResize);
+}
+
 render();
+
 
