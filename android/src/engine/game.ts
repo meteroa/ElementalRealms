@@ -59,6 +59,7 @@ export class SpectromancerEngine {
   public leagueRule?: string;
   public campaignLevel?: CampaignLevel;
   public difficulty: string = '普通';
+  private aiRecentCardIds: string[] = [];
 
   constructor(
     playerClass: HeroClass = 'sorcery',
@@ -672,7 +673,7 @@ export class SpectromancerEngine {
     }
 
     if (card.requiresTarget) {
-      if (card.id.includes('rescue') || card.id.includes('glory') || card.id.includes('natures_ritual') || card.id.includes('healing_spray') || card.id.includes('haste') || card.id.includes('explosion') || card.id.includes('blood_ritual') || card.id.includes('sacrifice')) {
+      if (this.isFriendlyTargetSpell(card)) {
         return board.some((slot) => slot !== null);
       }
       const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
@@ -2341,6 +2342,95 @@ export class SpectromancerEngine {
     }
   }
 
+  public isFriendlyTargetSpell(card: CardDef): boolean {
+    return (
+      card.id.includes('rescue') ||
+      card.id.includes('glory') ||
+      card.id.includes('natures_ritual') ||
+      card.id.includes('healing_spray') ||
+      card.id.includes('haste') ||
+      card.id.includes('explosion') ||
+      card.id.includes('blood_ritual') ||
+      card.id.includes('sacrifice')
+    );
+  }
+
+  private estimateSpellPower(spell: CardDef): {
+    isOffensive: boolean;
+    isFriendly: boolean;
+    isAoe: boolean;
+    isInstantKill: boolean;
+    estDamage: number;
+    estHeal: number;
+  } {
+    const id = spell.id;
+    const effect = spell.spellEffect || '';
+    const isFriendly = this.isFriendlyTargetSpell(spell);
+
+    if (isFriendly) {
+      return {
+        isOffensive: false,
+        isFriendly: true,
+        isAoe: false,
+        isInstantKill: false,
+        estDamage: 0,
+        estHeal: id.includes('heal') || effect.includes('heal') ? 8 : 4,
+      };
+    }
+
+    if (effect.includes('disintegrate') || id.includes('disintegrate')) {
+      return {
+        isOffensive: true,
+        isFriendly: false,
+        isAoe: false,
+        isInstantKill: true,
+        estDamage: 999,
+        estHeal: 0,
+      };
+    }
+
+    let isAoe = false;
+    let estDamage = 6;
+
+    if (
+      effect.includes('all_enemy') ||
+      effect.includes('acidic_rain') ||
+      effect.includes('armageddon') ||
+      effect.includes('chain')
+    ) {
+      isAoe = true;
+    }
+
+    if (effect.includes('inferno') || id.includes('inferno')) {
+      estDamage = 18;
+    } else if (effect.includes('stone_rain') || id.includes('stone_rain')) {
+      estDamage = 25;
+    } else if (effect.includes('acidic_rain') || id.includes('acidic_rain')) {
+      estDamage = 15;
+    } else if (effect.includes('fireball') || id.includes('fireball')) {
+      estDamage = 10;
+    } else if (effect.includes('lightning') || id.includes('lightning')) {
+      estDamage = 9;
+    } else if (effect.includes('damage_all_enemy_creatures_9')) {
+      estDamage = 9;
+    } else if (effect.includes('thunder') || effect.includes('drain')) {
+      estDamage = 6;
+    } else if (spell.cost >= 6) {
+      estDamage = 14;
+    } else if (spell.cost >= 4) {
+      estDamage = 8;
+    }
+
+    return {
+      isOffensive: true,
+      isFriendly: false,
+      isAoe,
+      isInstantKill: false,
+      estDamage,
+      estHeal: 0,
+    };
+  }
+
   private async triggerAiTurn(): Promise<void> {
     if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return;
 
@@ -2351,7 +2441,12 @@ export class SpectromancerEngine {
     }
 
     // Easy difficulty occasional hesitation
-    if (this.difficulty === '容易' && Math.random() < 0.3 && this.enemyBoard.some((c) => c !== null)) {
+    if (
+      this.difficulty === '容易' &&
+      Math.random() < 0.25 &&
+      this.enemyBoard.some((c) => c !== null) &&
+      this.enemy.hp > 15
+    ) {
       await this.passTurn('enemy');
       return;
     }
@@ -2361,51 +2456,208 @@ export class SpectromancerEngine {
       if (slot === null) emptySlots.push(idx);
     });
 
-    let bestSlot = emptySlots[0];
-    let maxOpponentThreat = -1;
-    emptySlots.forEach((slot) => {
-      const opp = this.playerBoard[slot];
-      if (opp && opp.currentAttack > maxOpponentThreat) {
-        maxOpponentThreat = opp.currentAttack;
-        bestSlot = slot;
-      }
-    });
+    const playerActiveCount = this.playerBoard.filter((c) => c !== null).length;
 
-    // In Hard/Master difficulty, sort playable creatures by stats
-    const creatures = playableCards
-      .filter((c) => c.type === 'creature')
-      .sort((a, b) => {
-        if (this.difficulty === '大法师' || this.difficulty === '困难') {
-          return ((b.attack || 0) + (b.life || 0)) - ((a.attack || 0) + (a.life || 0));
+    interface CandidateAction {
+      card: CardDef;
+      targetSlot?: number;
+      score: number;
+    }
+
+    const candidates: CandidateAction[] = [];
+
+    for (const card of playableCards) {
+      // 1. Anti-repetition penalty (decay over last few played cards)
+      let antiRepetitionPenalty = 0;
+      const recentLen = this.aiRecentCardIds.length;
+      if (recentLen > 0 && this.aiRecentCardIds[recentLen - 1] === card.id) {
+        antiRepetitionPenalty = 14;
+      } else if (recentLen > 1 && this.aiRecentCardIds[recentLen - 2] === card.id) {
+        antiRepetitionPenalty = 7;
+      }
+
+      // 2. Element mana reserve incentive: spend high mana surplus, conserve exhausted mana
+      const currentElemMana = this.enemy.mana[card.element] || 0;
+      let elemResourceBonus = 0;
+      if (currentElemMana >= 7) elemResourceBonus += 4;
+      else if (currentElemMana <= card.cost + 1) elemResourceBonus -= 2;
+
+      if (card.type === 'creature') {
+        const baseAttack =
+          card.attack === -1 && card.ability === 'attack_equal_element_power'
+            ? currentElemMana
+            : (card.attack || 0);
+        const baseLife = card.life || 1;
+
+        let traitBonus = 0;
+        if (card.swift) traitBonus += 8;
+        if (card.flying) traitBonus += 5;
+        if (card.spellImmune) traitBonus += 4;
+        if (card.regen) traitBonus += card.regen * 3;
+        if (card.poison) traitBonus += card.poison * 3;
+        if (card.ability && card.ability.includes('growth')) {
+          traitBonus += this.turnCount <= 6 ? 12 : 5;
         }
-        return 0;
+        if (card.onSummon === 'damage_all_enemies_5' || card.onSummon === 'fire_elemental_summon') {
+          traitBonus += playerActiveCount * 4 + 6;
+        } else if (card.onSummon === 'spawn_spiders') {
+          traitBonus += 8;
+        }
+
+        for (const slot of emptySlots) {
+          let slotScore = baseAttack * 2.2 + baseLife * 0.9 + traitBonus + elemResourceBonus - antiRepetitionPenalty;
+          const opp = this.playerBoard[slot];
+
+          if (opp) {
+            // Lane confrontation with player creature
+            const oppAtk = opp.currentAttack;
+            const oppHp = opp.currentLife;
+
+            // Block threat bonus
+            slotScore += oppAtk * 3.2;
+
+            // Immediate or combat kill
+            if (card.swift && baseAttack >= oppHp) {
+              slotScore += 24 + oppAtk * 2.5;
+            } else if (baseAttack >= oppHp) {
+              slotScore += 14 + oppAtk * 1.5;
+            }
+
+            // Survivability
+            if (oppAtk >= baseLife) {
+              if (card.isWall) {
+                slotScore -= 3;
+              } else if (baseAttack < oppHp) {
+                // Suicide feed
+                slotScore -= 18;
+              } else {
+                // Mutual kill
+                slotScore += card.cost <= 3 ? 3 : -4;
+              }
+            } else {
+              // Surviving defender
+              slotScore += 10;
+            }
+          } else {
+            // Unblocked lane -> direct face damage
+            slotScore += baseAttack * 3.2;
+            if (this.player.hp < 25) {
+              slotScore += 10 + (25 - this.player.hp);
+            }
+            if (card.isWall && baseAttack === 0) {
+              // 0-attack wall in empty lane is useless
+              slotScore -= 25;
+            }
+          }
+
+          candidates.push({ card, targetSlot: slot, score: slotScore });
+        }
+      } else if (card.type === 'spell') {
+        const spellInfo = this.estimateSpellPower(card);
+
+        if (spellInfo.isFriendly) {
+          // Friendly targeted spell
+          for (let s = 0; s < this.enemyBoard.length; s++) {
+            const ally = this.enemyBoard[s];
+            if (ally) {
+              let spellScore = 12 + ally.currentAttack * 2 + elemResourceBonus - antiRepetitionPenalty;
+              if (ally.maxLife > ally.currentLife) {
+                spellScore += Math.min(ally.maxLife - ally.currentLife, spellInfo.estHeal) * 2;
+              }
+              candidates.push({ card, targetSlot: s, score: spellScore });
+            }
+          }
+        } else if (card.requiresTarget) {
+          // Offensive targeted spell
+          for (let s = 0; s < this.playerBoard.length; s++) {
+            const opp = this.playerBoard[s];
+            if (opp && !opp.spellImmune) {
+              let spellScore = 8 + elemResourceBonus - antiRepetitionPenalty;
+
+              if (spellInfo.isInstantKill || spellInfo.estDamage >= opp.currentLife) {
+                // Lethal kill on opposing unit
+                spellScore += 22 + opp.currentAttack * 3.5;
+              } else {
+                spellScore += Math.min(spellInfo.estDamage, opp.currentLife) * 1.5 + opp.currentAttack * 1.2;
+              }
+
+              if (opp.isWall) {
+                spellScore -= 12;
+              }
+
+              candidates.push({ card, targetSlot: s, score: spellScore });
+            }
+          }
+        } else {
+          // Untargeted / AOE spell
+          let aoeScore = 10 + elemResourceBonus - antiRepetitionPenalty;
+          if (spellInfo.isAoe) {
+            if (playerActiveCount >= 3) aoeScore += 28 + playerActiveCount * 4;
+            else if (playerActiveCount === 2) aoeScore += 16;
+            else if (playerActiveCount === 1) aoeScore += 4;
+            else aoeScore -= 30; // Don't waste AOE on empty board
+          } else if (card.id.includes('meditation')) {
+            aoeScore += this.turnCount <= 5 ? 14 : 6;
+          }
+
+          candidates.push({ card, targetSlot: undefined, score: aoeScore });
+        }
+      }
+    }
+
+    if (candidates.length === 0) {
+      await this.passTurn('enemy');
+      return;
+    }
+
+    // Difficulty tuning
+    let chosenAction: CandidateAction;
+
+    if (this.difficulty === '容易') {
+      // Easy: add high noise, pick from top 3
+      candidates.forEach((c) => {
+        c.score += (Math.random() - 0.5) * 20;
       });
+      candidates.sort((a, b) => b.score - a.score);
+      const topPool = candidates.slice(0, Math.min(3, candidates.length));
+      chosenAction = topPool[Math.floor(Math.random() * topPool.length)];
+    } else if (this.difficulty === '普通') {
+      // Normal: moderate noise, pick from top 2
+      candidates.forEach((c) => {
+        c.score += (Math.random() - 0.5) * 6;
+      });
+      candidates.sort((a, b) => b.score - a.score);
+      const topPool = candidates.slice(0, Math.min(2, candidates.length));
+      chosenAction = topPool[Math.floor(Math.random() * topPool.length)];
+    } else if (this.difficulty === '困难') {
+      // Hard: slight noise, smart saving mana check
+      candidates.forEach((c) => {
+        c.score += (Math.random() - 0.5) * 2;
+      });
+      candidates.sort((a, b) => b.score - a.score);
 
-    const hasEnemyTarget = this.playerBoard.some((c) => c !== null);
-    const spell = playableCards.find((c) => c.type === 'spell' && (hasEnemyTarget || !c.requiresTarget));
-    const creature = creatures[0];
-
-    const preferSpellThreshold = (this.difficulty === '大法师' || this.difficulty === '困难') ? 0.3 : 0.45;
-
-    if (spell && Math.random() > preferSpellThreshold) {
-      let targetSlot = undefined;
-      if (spell.requiresTarget) {
-        const validTargets: { idx: number; atk: number }[] = [];
-        this.playerBoard.forEach((c, idx) => {
-          if (c && !c.spellImmune) validTargets.push({ idx, atk: c.currentAttack });
-        });
-        if (validTargets.length > 0) {
-          validTargets.sort((a, b) => b.atk - a.atk);
-          targetSlot = validTargets[0].idx;
-        }
+      // Check if saving mana for an expensive bomb next turn is better than a weak play
+      const hasUnplayableBomb = this.enemy.hand.some(
+        (c) => c.cost >= 6 && (c.attack || 0) >= 5 && (this.enemy.mana[c.element] || 0) === c.cost - 1
+      );
+      if (hasUnplayableBomb && candidates[0].score < 14 && playerActiveCount <= 2 && this.enemy.hp > 25) {
+        await this.passTurn('enemy');
+        return;
       }
-      await this.playCard('enemy', spell, targetSlot);
-    } else if (creature && bestSlot !== undefined) {
-      await this.playCard('enemy', creature, bestSlot);
-    } else if (playableCards.length > 0) {
-      const card = playableCards[0];
-      const slot = card.type === 'creature' ? bestSlot : undefined;
-      await this.playCard('enemy', card, slot);
+
+      chosenAction = candidates[0];
+    } else {
+      // Master (大法师): purely optimal tactical choice
+      candidates.sort((a, b) => b.score - a.score);
+      chosenAction = candidates[0];
+    }
+
+    if (chosenAction) {
+      this.aiRecentCardIds.push(chosenAction.card.id);
+      if (this.aiRecentCardIds.length > 5) {
+        this.aiRecentCardIds.shift();
+      }
+      await this.playCard('enemy', chosenAction.card, chosenAction.targetSlot);
     } else {
       await this.passTurn('enemy');
     }

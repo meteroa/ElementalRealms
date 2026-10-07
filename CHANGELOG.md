@@ -5,7 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-10-05
+## [Unreleased] - 2026-10-07
+
+### Added
+- **HBuilderX 应用专属高清图标资产（Android App High-Resolution Icon Suite）**：
+  - 设计并生成符合魔导对决风格的魔力符文金边应用图标，包含 72x72 (`icon-72.png`)、96x96 (`icon-96.png`)、144x144 (`icon-144.png`)、192x192 (`icon-192.png`) 及 512x512 五种标准分辨率规格；
+  - 完整部署至 `android/public/icons/` 与 `android/dist/icons/`，彻底解决 HBuilderX 打包 APK 丢失应用图标的问题。
+
+### Changed
+- **智能多维 AI 决策引擎全面重构（Intelligent Multi-Dimensional AI Battle Decision Engine）**：
+  - **彻底解决 AI 无限循环出 1~3 张低费牌问题**：建立卡牌出牌记忆衰减机制（`aiRecentCardIds`），对连续打出同名卡牌施加动态递减权重惩罚，并引入多系能量充盈激励机制，促使 AI 充分调动火、水、风、土及特殊系的高阶随从与组合法术；
+  - **对位单挑与场面价值评分（Lane Confrontation & Board Utility Scoring）**：深度评估随从入场对位交换（先攻速攻斩杀、对位击杀、防守肉盾、避免无意义送死）、空路打脸压迫、随从异能价值（先攻、飞行、魔免、再生、剧毒、法力成长、入场 AOE 等）；
+  - **法术精准斩杀与补刀判定**：区分直伤法术斩杀敌方高威胁随从、AOE 全场法术在敌方随从数量充足时的爆发收益，避免对 0 攻墙体或空场浪费高费法术；
+  - **难度梯度真实差异化（Authentic Difficulty Scaling）**：
+    - `容易`：保留 25% 适度犹豫发呆机制与较大决策噪音，随机从前列候选行动中挑选；
+    - `普通`：攻防平衡，适度噪音，合理进行对位格挡与随从交换，牌种多样；
+    - `困难`：精准计算伤害对换与法术解场，支持在蓄力下回合高费核心王牌时战术性保留能量；
+    - `大法师`：零随机全量最优解，严密计算斩杀线与高阶异能协同，呈现原版顶级巫师对决水准。
+
+### Fixed
+- **全模式 AI 对战难度参数透传修复（Difficulty Parameter Pass-Through Across All Battle Modes）**：
+  - 修复战役模式（Campaign）、英雄联赛（League）以及自组卡组（Custom Deck）在启动对决时遗漏 `difficulty` 参数，导致底层引擎全部回退为默认“普通”难度的缺陷；
+  - 确保各游戏模式下所选的“容易”、“普通”、“困难”、“大法师”难度均能准确传递至战斗引擎。
+- **AI 友方目标法术作用目标修正（AI Friendly Spell Targeting Direction Fix）**：
+  - 修复 AI 施放友军强化/治疗类目标法术时错误检索玩家方棋盘的朝向倒置问题，修正为优先检索并强化己方高攻或负伤随从。
+
+## [1.0.0] - 2026-10-05
 
 ### Changed
 - **流派选择视觉与图标全面升级为官方正统卡牌艺术（Authentic Spectromancer Class Artwork & Icons）**：

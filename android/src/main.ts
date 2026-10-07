@@ -5986,8 +5986,10 @@ function attachEventListeners() {
         sound.play('click');
         currentBattleSource = 'campaign';
         selectedCampaignLevelId = lvlId;
-        sound.playBgm(getCombatBgmForCurrentBattle());
-        engine = new SpectromancerEngine('sorcery', lvl);
+        const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
+        engine = new SpectromancerEngine('sorcery', lvl, {
+          difficulty: campaignDiff,
+        });
         setupEngineCallbacks();
         selectedCard = null;
         inspectedCard = null;
@@ -6487,6 +6489,7 @@ function attachEventListeners() {
       special: 0,
     };
 
+    const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
     engine = new SpectromancerEngine(pClass, currentLvl, {
       playerName: pName,
       playerFace: pFace,
@@ -6494,6 +6497,7 @@ function attachEventListeners() {
       enemyHp: currentLvl.enemyHp,
       enemyName: currentLvl.oppName,
       enemyFace: currentLvl.face,
+      difficulty: campaignDiff,
       initialPlayerCreatures,
       initialEnemyCreatures,
       extraPlayerMana,
@@ -6731,6 +6735,7 @@ function attachEventListeners() {
       enemyName: curOpponent.cnName,
       enemyFace: curOpponent.face,
       enemyClass: curOpponent.className,
+      difficulty: activeLeague.difficulty || '普通',
       leagueRule: curOpponent.rule,
     });
     setupEngineCallbacks();
@@ -6892,10 +6897,11 @@ function attachEventListeners() {
     sound.playBgm(getCombatBgmForCurrentBattle());
     const d = customDecks[selectedDeckIdx] || customDecks[0];
     const oppName = customDeckOpponentList[selectedCustomOpponentIdx] || '大法师';
-    currentBattleSource = 'custom_deck';
+    const chosenCustomDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx] || '普通';
     engine = new SpectromancerEngine(d.className, undefined, {
       enemyName: oppName,
       enemyFace: `./faces/Face${(selectedCustomOpponentIdx % 20) + 10}.jpg`,
+      difficulty: chosenCustomDiff,
       customDeck: d.cards,
     });
     setupEngineCallbacks();
