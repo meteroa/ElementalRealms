@@ -936,7 +936,7 @@ function setupLanNetworkCallbacks() {
     if (msg.type === 'ACTION_PLAY_CARD') {
       if (engine.isLanGame && engine.isHost) {
         const { cardId, targetSlot } = msg.payload;
-        const card = engine.enemy.hand.find((c) => c.id === cardId);
+        const card = engine.getEffectiveHand('enemy').find((c) => c.id === cardId);
         if (card && engine.canPlayCard('enemy', card)) {
           await engine.playCard('enemy', card, targetSlot);
         }
@@ -4021,7 +4021,8 @@ function renderCombatScreen(): string {
   const p = engine.player;
   const e = engine.enemy;
 
-  const elementsOrder: ElementType[] = ['fire', 'water', 'air', 'earth', p.specialElement];
+  const currentSpecialElement: ElementType = showOpponentHand ? e.specialElement : p.specialElement;
+  const elementsOrder: ElementType[] = ['fire', 'water', 'air', 'earth', currentSpecialElement];
   const elemNames: Record<ElementType, string> = {
     fire: '火系',
     water: '水系',
@@ -4041,7 +4042,9 @@ function renderCombatScreen(): string {
   const pSpecialName = pClassObj ? pClassObj.nameCn : '特殊';
   const eSpecialName = eClassObj ? eClassObj.nameCn : '特殊';
 
-  const previewCard = inspectedCard || selectedCard || (showOpponentHand ? e.hand[0] : p.hand[0]);
+  const effectiveEnemyHand = engine.getEffectiveHand('enemy');
+  const effectivePlayerHand = engine.getEffectiveHand('player');
+  const previewCard = inspectedCard || selectedCard || (showOpponentHand ? effectiveEnemyHand[0] : effectivePlayerHand[0]);
 
   return `
     <div class="combat-view-container">
@@ -4156,8 +4159,10 @@ function renderCombatScreen(): string {
                   <img src="${toRel(previewCard.imgBigUrl || previewCard.imgUrl)}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
                   <div class="parchment-card-meta">
                     <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费)</div>
-                    <div class="parchment-card-sub">
-                      ${previewCard.className ? (HERO_CLASSES.find(c => c.id === previewCard.className)?.nameCn || '特殊') : (elemNames[previewCard.element] || '特殊')} · ${previewCard.type === 'creature' ? '生物' : '法术'} · ${previewCard.name}
+                    <div class="parchment-card-sub" style="${previewCard.isActivatedAbility ? 'color: #8b3a00; font-weight: bold;' : ''}">
+                      ${previewCard.isActivatedAbility
+                        ? (previewCard.desc.includes('\n') ? previewCard.desc.split('\n')[0] : `【${previewCard.nameCn}】的主动技能，费用 ${previewCard.cost}`)
+                        : `${previewCard.className ? (HERO_CLASSES.find(c => c.id === previewCard.className)?.nameCn || '特殊') : (elemNames[previewCard.element] || '特殊')} · ${previewCard.type === 'creature' ? '生物' : '法术'} · ${previewCard.name}`}
                     </div>
                     ${previewCard.type === 'creature' ? `
                       <div class="parchment-card-stats-row">
@@ -4168,7 +4173,9 @@ function renderCombatScreen(): string {
                   </div>
                 </div>
                 <div class="parchment-card-desc">
-                  ${previewCard.desc}
+                  ${previewCard.isActivatedAbility && previewCard.desc.includes('\n')
+                    ? previewCard.desc.split('\n').slice(1).join('\n')
+                    : previewCard.desc}
                 </div>
               ` : `
                 <div class="parchment-empty-tip">
@@ -4209,7 +4216,13 @@ function renderCombatScreen(): string {
             <!-- Enemy 6 Slots Row -->
             <div class="combat-slots-lane enemy-lane">
               ${engine.enemyBoard.map((c, idx) => {
-                const isTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget && !isFriendlyTargetSpell(selectedCard) && c !== null && !c.spellImmune;
+                const isTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget &&
+                  selectedCard.targetType !== 'empty_friendly_slot' &&
+                  (
+                    (!isFriendlyTargetSpell(selectedCard) && selectedCard.targetType !== 'none') ||
+                    selectedCard.targetType === 'any_creature' ||
+                    selectedCard.targetType === 'enemy_creature'
+                  ) && c !== null && !c.spellImmune;
                 return `
                   <div class="combat-board-slot top-slot ${isTarget ? 'active-target' : ''}" data-side="enemy" data-slot-index="${idx}">
                     <div class="slot-filigree top"></div>
@@ -4231,8 +4244,12 @@ function renderCombatScreen(): string {
             <div class="combat-slots-lane player-lane">
               ${engine.playerBoard.map((c, idx) => {
                 const isCreatureTarget = selectedCard?.type === 'creature' && c === null;
-                const isSpellTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget && isFriendlyTargetSpell(selectedCard) && c !== null;
-                const isTarget = isCreatureTarget || isSpellTarget;
+                const isFalconMoveTarget = selectedCard?.targetType === 'empty_friendly_slot' && c === null;
+                const isFriendlySpellTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget &&
+                  (isFriendlyTargetSpell(selectedCard) || selectedCard.targetType === 'any_creature') &&
+                  selectedCard.targetType !== 'empty_friendly_slot' &&
+                  c !== null && !c.spellImmune;
+                const isTarget = isCreatureTarget || isFalconMoveTarget || isFriendlySpellTarget;
                 return `
                   <div class="combat-board-slot bottom-slot ${isTarget ? 'active-target' : ''}" data-side="player" data-slot-index="${idx}">
                     <div class="slot-filigree top"></div>
@@ -4257,10 +4274,23 @@ function renderCombatScreen(): string {
           <!-- 5-Column 20-Card Grid (Framed with Elemental Borders) -->
           <div class="combat-hand-grid">
             ${elementsOrder.map((elem, idx) => {
-              const targetHand = showOpponentHand ? e.hand : p.hand;
+              const targetHand = showOpponentHand ? engine.getEffectiveHand('enemy') : engine.getEffectiveHand('player');
               const targetSpecialElem = showOpponentHand ? e.specialElement : p.specialElement;
+              const targetSpecialClass = showOpponentHand ? e.className : p.className;
               const currentSpecialName = showOpponentHand ? eSpecialName : pSpecialName;
-              const cardsOfElem = targetHand.filter((c) => c.element === elem || (elem === targetSpecialElem && c.element === 'special'));
+
+              let cardsOfElem = idx === 4
+                ? targetHand.filter((c) =>
+                    c.element === targetSpecialElem ||
+                    c.element === 'special' ||
+                    (targetSpecialClass && c.className === targetSpecialClass)
+                  )
+                : targetHand.filter((c) => c.element === elem);
+
+              if (idx === 4 && cardsOfElem.length === 0) {
+                cardsOfElem = targetHand.slice(16, 20);
+              }
+
               const colLabel = idx === 4 ? currentSpecialName : elemNames[elem];
               const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
               const icon = elemIcons[elem] || '🔮';
@@ -4283,7 +4313,9 @@ function renderCombatScreen(): string {
                     ${cardsOfElem.map((card) => {
                       const cardImg = card.imgBigUrl || card.imgUrl;
                       if (showOpponentHand) {
-                        const isRevealed = engine.enemyRevealedCardIds.has(card.id);
+                        const isRevealed = (currentBattleSource === 'campaign' && completedCampaignLevels.includes(6))
+                          ? true
+                          : (engine.enemyRevealedCardIds.has(card.id) || (card.isActivatedAbility && engine.enemyRevealedCardIds.has(card.id.replace('ability_', ''))));
                         const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
 
                         if (isRevealed) {
@@ -6196,6 +6228,8 @@ function attachEventListeners() {
   document.getElementById('btn-toggle-show-cards')?.addEventListener('click', () => {
     sound.play('click');
     showOpponentHand = !showOpponentHand;
+    inspectedCard = null;
+    selectedCard = null;
     render();
   });
 
@@ -6246,9 +6280,12 @@ function attachEventListeners() {
     el.addEventListener('click', async () => {
       sound.play('click');
       if (isOpponent) {
-        const oppCard = engine.enemy.hand.find((c) => c.id === cardId);
+        const oppCard = engine.getEffectiveHand('enemy').find((c) => c.id === cardId);
         if (oppCard) {
-          if (engine.enemyRevealedCardIds.has(oppCard.id)) {
+          const isRevealed = (currentBattleSource === 'campaign' && completedCampaignLevels.includes(6))
+            ? true
+            : (engine.enemyRevealedCardIds.has(oppCard.id) || (oppCard.isActivatedAbility && engine.enemyRevealedCardIds.has(oppCard.id.replace('ability_', ''))));
+          if (isRevealed) {
             inspectedCard = oppCard;
           } else {
             inspectedCard = {
@@ -6262,7 +6299,7 @@ function attachEventListeners() {
         return;
       }
 
-      const card = engine.player.hand.find((c) => c.id === cardId);
+      const card = engine.getEffectiveHand('player').find((c) => c.id === cardId);
       if (!card) return;
 
       inspectedCard = card;
@@ -6323,7 +6360,7 @@ function attachEventListeners() {
       }
 
       if (side === 'player') {
-        if (selectedCard.type === 'creature' && engine.playerBoard[slotIdx] === null) {
+        if ((selectedCard.type === 'creature' || selectedCard.targetType === 'empty_friendly_slot') && engine.playerBoard[slotIdx] === null) {
           if (engine.isLanGame && engine.isGuest) {
             isActionPending = true;
             const cardToPlay = selectedCard;
@@ -6344,8 +6381,8 @@ function attachEventListeners() {
             selectedCard = null;
             isActionPending = false;
           }
-        } else if (selectedCard.type === 'spell' && selectedCard.requiresTarget && isFriendlyTargetSpell(selectedCard)) {
-          if (engine.playerBoard[slotIdx]) {
+        } else if (selectedCard.type === 'spell' && selectedCard.requiresTarget && (isFriendlyTargetSpell(selectedCard) || selectedCard.targetType === 'any_creature') && selectedCard.targetType !== 'empty_friendly_slot') {
+          if (engine.playerBoard[slotIdx] && !engine.playerBoard[slotIdx]!.spellImmune) {
             if (engine.isLanGame && engine.isGuest) {
               isActionPending = true;
               const cardToPlay = selectedCard;
@@ -6368,7 +6405,7 @@ function attachEventListeners() {
             }
           }
         }
-      } else if (side === 'enemy' && selectedCard.type === 'spell' && selectedCard.requiresTarget && !isFriendlyTargetSpell(selectedCard)) {
+      } else if (side === 'enemy' && selectedCard.type === 'spell' && selectedCard.requiresTarget && (!isFriendlyTargetSpell(selectedCard) || selectedCard.targetType === 'any_creature' || selectedCard.targetType === 'enemy_creature') && selectedCard.targetType !== 'empty_friendly_slot') {
         if (engine.enemyBoard[slotIdx] && !engine.enemyBoard[slotIdx]!.spellImmune) {
           if (engine.isLanGame && engine.isGuest) {
             isActionPending = true;

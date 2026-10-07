@@ -19,6 +19,109 @@ export interface ReplayStep {
   enemyBoard: (BoardCreature | null)[];
 }
 
+export interface BeastAbilityMeta {
+  name: string;
+  nameCn: string;
+  cost: number;
+  image: string;
+  imgUrl: string;
+  imgBigUrl: string;
+  desc: string;
+  requiresTarget: boolean;
+  targetType: 'empty_friendly_slot' | 'enemy_creature' | 'any_creature' | 'none';
+}
+
+export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
+  beast_magic_hamster: {
+    name: 'Natural Healing',
+    nameCn: '自然回复',
+    cost: 3,
+    image: 'NaturalHealing',
+    imgUrl: './cards/NaturalHealing.jpg',
+    imgBigUrl: './cards/NaturalHealingBig.jpg',
+    desc: '【魔法仓鼠】的主动技能，费用 3\n【魔法仓鼠】使己方所有生物回复18点生命。',
+    requiresTarget: false,
+    targetType: 'none',
+  },
+  beast_scorpion: {
+    name: 'Poison',
+    nameCn: '毒液喷射',
+    cost: 2,
+    image: 'Poison',
+    imgUrl: './cards/Poison.jpg',
+    imgBigUrl: './cards/PoisonBig.jpg',
+    desc: '【毒蝎】的主动技能，费用 2\n【毒蝎】对目标敌方生物造成14点伤害。',
+    requiresTarget: true,
+    targetType: 'enemy_creature',
+  },
+  beast_wolverine: {
+    name: 'Enrage',
+    nameCn: '暴怒',
+    cost: 2,
+    image: 'Enrage',
+    imgUrl: './cards/Enrage.jpg',
+    imgBigUrl: './cards/EnrageBig.jpg',
+    desc: '【狼獾】的主动技能，费用 2\n【狼獾】完全回复至满生命，攻击力永久+2。',
+    requiresTarget: false,
+    targetType: 'none',
+  },
+  beast_energy_beast: {
+    name: 'Pump Energy',
+    nameCn: '充能',
+    cost: 1,
+    image: 'PumpEnergy',
+    imgUrl: './cards/PumpEnergy.jpg',
+    imgBigUrl: './cards/PumpEnergyBig.jpg',
+    desc: '【魔能兽】的主动技能，费用 1\n使拥有者的火系、水系、气系和土系能量各+1。',
+    requiresTarget: false,
+    targetType: 'none',
+  },
+  beast_death_falcon: {
+    name: 'Move Falcon',
+    nameCn: '隼之突袭',
+    cost: 1,
+    image: 'MoveFalcon',
+    imgUrl: './cards/MoveFalcon.jpg',
+    imgBigUrl: './cards/MoveFalconBig.jpg',
+    desc: '【死亡之隼】的主动技能，费用 1\n【死亡之隼】移动到目标空格处，并且对对方所有生物造成4点伤害。',
+    requiresTarget: true,
+    targetType: 'empty_friendly_slot',
+  },
+  beast_white_elephant: {
+    name: 'Trumpet',
+    nameCn: '战吼',
+    cost: 0,
+    image: 'Trumpet',
+    imgUrl: './cards/Trumpet.jpg',
+    imgBigUrl: './cards/TrumpetBig.jpg',
+    desc: '【白象】的主动技能，费用 0\n使拥有者的野兽系能量+1。',
+    requiresTarget: false,
+    targetType: 'none',
+  },
+  beast_basilisk: {
+    name: 'Gaze',
+    nameCn: '凝视',
+    cost: 0,
+    image: 'Gaze',
+    imgUrl: './cards/Gaze.jpg',
+    imgBigUrl: './cards/GazeBig.jpg',
+    desc: '【巨蜥】的主动技能，费用 0\n对目标生物造成6点伤害。',
+    requiresTarget: true,
+    targetType: 'any_creature',
+  },
+  beast_ancient_dragon: {
+    name: 'Breathe Fire',
+    nameCn: '火焰吐息',
+    cost: 3,
+    image: 'BreatheFire',
+    imgUrl: './cards/BreatheFire.jpg',
+    imgBigUrl: './cards/BreatheFireBig.jpg',
+    desc: '【远古巨龙】的主动技能，费用 3\n【远古巨龙】对对方本体和对方所有生物各造成10点伤害。',
+    requiresTarget: false,
+    targetType: 'none',
+  },
+};
+
 export class SpectromancerEngine {
   public player: PlayerState;
   public enemy: PlayerState;
@@ -646,10 +749,50 @@ export class SpectromancerEngine {
     this.notify();
   }
 
+  public getEffectiveCard(who: 'player' | 'enemy', baseCard: CardDef): CardDef {
+    const ability = BEAST_ACTIVATED_ABILITIES[baseCard.id];
+    if (!ability) return baseCard;
+
+    const myBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const creatureOnBoard = myBoard.find((c) => c !== null && c.card.id === baseCard.id);
+    if (!creatureOnBoard) return baseCard;
+
+    return {
+      id: `ability_${baseCard.id}`,
+      element: baseCard.element,
+      className: baseCard.className,
+      name: ability.name,
+      nameCn: ability.nameCn,
+      type: 'spell',
+      cost: ability.cost,
+      image: ability.image,
+      imgUrl: ability.imgUrl,
+      imgBigUrl: ability.imgBigUrl,
+      desc: ability.desc,
+      requiresTarget: ability.requiresTarget,
+      targetType: ability.targetType,
+      isActivatedAbility: true,
+      sourceCreatureUid: creatureOnBoard.uid,
+      spellEffect: `beast_ability_${baseCard.id}`,
+    };
+  }
+
+  public getEffectiveHand(who: 'player' | 'enemy'): CardDef[] {
+    const actor = who === 'player' ? this.player : this.enemy;
+    return actor.hand.map((c) => this.getEffectiveCard(who, c));
+  }
+
   public canPlayCard(who: 'player' | 'enemy', card: CardDef): boolean {
     if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return false;
     const actor = who === 'player' ? this.player : this.enemy;
     const board = who === 'player' ? this.playerBoard : this.enemyBoard;
+
+    if (!card.isActivatedAbility && BEAST_ACTIVATED_ABILITIES[card.id]) {
+      const effective = this.getEffectiveCard(who, card);
+      if (effective.isActivatedAbility) {
+        return this.canPlayCard(who, effective);
+      }
+    }
 
     let cost = card.cost;
     // Check Damping Tower / Goblin Shaman penalty
@@ -668,6 +811,26 @@ export class SpectromancerEngine {
 
     if (actor.mana[card.element] < cost) return false;
 
+    if (card.isActivatedAbility) {
+      const baseCardId = card.id.replace('ability_', '');
+      const hasCreature = board.some((c) => c !== null && c.card.id === baseCardId);
+      if (!hasCreature) return false;
+
+      if (card.targetType === 'empty_friendly_slot') {
+        return board.some((slot) => slot === null);
+      }
+      if (card.targetType === 'enemy_creature') {
+        const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+        return opposingBoard.some((slot) => slot !== null && !slot.spellImmune);
+      }
+      if (card.targetType === 'any_creature') {
+        const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+        return board.some((slot) => slot !== null && !slot.spellImmune) ||
+               opposingBoard.some((slot) => slot !== null && !slot.spellImmune);
+      }
+      return true;
+    }
+
     if (card.type === 'creature') {
       return board.some((slot) => slot === null);
     }
@@ -684,6 +847,13 @@ export class SpectromancerEngine {
   }
 
   public async playCard(who: 'player' | 'enemy', card: CardDef, targetSlot?: number): Promise<boolean> {
+    if (!card.isActivatedAbility && BEAST_ACTIVATED_ABILITIES[card.id]) {
+      const effective = this.getEffectiveCard(who, card);
+      if (effective.isActivatedAbility) {
+        card = effective;
+      }
+    }
+
     if (!this.canPlayCard(who, card)) return false;
 
     const actor = who === 'player' ? this.player : this.enemy;
@@ -705,11 +875,56 @@ export class SpectromancerEngine {
 
     if (who === 'enemy') {
       this.enemyRevealedCardIds.add(card.id);
+      if (card.isActivatedAbility) {
+        this.enemyRevealedCardIds.add(card.id.replace('ability_', ''));
+      }
       if (this.onCardAnnouncement) {
         await this.onCardAnnouncement(who, card);
       }
     } else {
       this.playerRevealedCardIds.add(card.id);
+      if (card.isActivatedAbility) {
+        this.playerRevealedCardIds.add(card.id.replace('ability_', ''));
+      }
+    }
+
+    if (card.isActivatedAbility) {
+      const baseCardId = card.id.replace('ability_', '');
+      await this.executeBeastActivatedAbility(who, baseCardId, card, targetSlot);
+
+      this.replaySteps.push({
+        turn: this.turnCount,
+        side: who,
+        action: 'spell',
+        cardName: card.nameCn,
+        cardId: card.id,
+        cardImg: card.imgBigUrl || card.imgUrl,
+        targetSlot,
+        desc: `使用主动技能【${card.nameCn}】`,
+        playerHp: this.player.hp,
+        enemyHp: this.enemy.hp,
+        playerMana: { ...this.player.mana },
+        enemyMana: { ...this.enemy.mana },
+        playerBoard: this.cloneBoard(this.playerBoard),
+        enemyBoard: this.cloneBoard(this.enemyBoard),
+      });
+
+      this.cleanupDead();
+      this.checkWinner();
+
+      if (this.extraActionRemaining[who] > 0) {
+        this.extraActionRemaining[who]--;
+        this.log(`【时序加速】${actor.name} 获得额外出牌机会！`, 'heal');
+        this.notify();
+        return true;
+      }
+
+      if (!this.gameOver) {
+        await this.executeCombat(who);
+      } else {
+        this.notify();
+      }
+      return true;
     }
 
     if (card.type === 'creature') {
@@ -824,6 +1039,119 @@ export class SpectromancerEngine {
     }
 
     return true;
+  }
+
+  private async executeBeastActivatedAbility(
+    who: 'player' | 'enemy',
+    baseCardId: string,
+    _abilityCard: CardDef,
+    targetSlot?: number
+  ): Promise<void> {
+    const actor = who === 'player' ? this.player : this.enemy;
+    const opponent = who === 'player' ? this.enemy : this.player;
+    const myBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+    const opposingSide = who === 'player' ? 'enemy' : 'player';
+
+    switch (baseCardId) {
+      case 'beast_death_falcon': {
+        if (targetSlot === undefined || myBoard[targetSlot] !== null) return;
+        const falconIdx = myBoard.findIndex((c) => c !== null && c.card.id === 'beast_death_falcon');
+        if (falconIdx === -1) return;
+
+        const falcon = myBoard[falconIdx]!;
+        falcon.slotIndex = targetSlot;
+        myBoard[falconIdx] = null;
+        myBoard[targetSlot] = falcon;
+
+        sound.play('move_falcon');
+        this.log(`【死亡之隼】迅捷掠空，穿梭至第 ${targetSlot + 1} 槽位并卷起凌厉风暴！`, 'attack');
+
+        oppBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= 4;
+            this.triggerDamage(opposingSide, idx, 4);
+          }
+        });
+        this.log(`【隼之突袭】疾风割裂，对敌方全线生物造成 4 点伤害！`, 'damage');
+        break;
+      }
+      case 'beast_magic_hamster': {
+        sound.play('natural_healing');
+        myBoard.forEach((c, idx) => {
+          if (c) {
+            const healAmount = Math.min(18, c.maxLife - c.currentLife);
+            c.currentLife = Math.min(c.maxLife, c.currentLife + 18);
+            this.triggerHeal(who, idx, healAmount > 0 ? healAmount : 18);
+          }
+        });
+        this.log(`【魔法仓鼠】发动【自然回复】，为己方所有生物回复 18 点生命！`, 'heal');
+        break;
+      }
+      case 'beast_scorpion': {
+        if (targetSlot !== undefined && oppBoard[targetSlot] && !oppBoard[targetSlot]!.spellImmune) {
+          oppBoard[targetSlot]!.currentLife -= 14;
+          sound.play('poison');
+          this.triggerDamage(opposingSide, targetSlot, 14);
+          this.log(`【毒蝎】喷射致命剧毒，对【${oppBoard[targetSlot]!.card.nameCn}】造成 14 点剧毒伤害！`, 'damage');
+        }
+        break;
+      }
+      case 'beast_wolverine': {
+        const wolverine = myBoard.find((c) => c !== null && c.card.id === 'beast_wolverine');
+        if (wolverine) {
+          wolverine.currentLife = wolverine.maxLife;
+          wolverine.baseAttack += 2;
+          wolverine.currentAttack += 2;
+          wolverine.buffedAttack = true;
+          sound.play('heal');
+          this.triggerHeal(who, wolverine.slotIndex, wolverine.maxLife);
+          this.log(`【狼獾】陷入暴怒！生命值彻底回满，且攻击力永久提升至 ${wolverine.currentAttack}！`, 'heal');
+        }
+        break;
+      }
+      case 'beast_energy_beast': {
+        actor.mana.fire = (actor.mana.fire || 0) + 1;
+        actor.mana.water = (actor.mana.water || 0) + 1;
+        actor.mana.air = (actor.mana.air || 0) + 1;
+        actor.mana.earth = (actor.mana.earth || 0) + 1;
+        sound.play('mana');
+        this.log(`【魔能兽】共鸣魔网，使拥有者的火、水、气、土能量各 +1！`, 'heal');
+        break;
+      }
+      case 'beast_white_elephant': {
+        actor.mana.special = (actor.mana.special || 0) + 1;
+        sound.play('cast');
+        this.log(`【白象】昂首长鸣，鼓舞野兽意志，野兽系能量 +1！`, 'heal');
+        break;
+      }
+      case 'beast_basilisk': {
+        if (targetSlot !== undefined) {
+          const targetSide = oppBoard[targetSlot] ? opposingSide : (myBoard[targetSlot] ? who : null);
+          const targetCreature = oppBoard[targetSlot] || myBoard[targetSlot];
+          if (targetSide && targetCreature && !targetCreature.spellImmune) {
+            targetCreature.currentLife -= 6;
+            sound.play('lightning');
+            this.triggerDamage(targetSide, targetSlot, 6);
+            this.log(`【巨蜥】石化凝视，对【${targetCreature.card.nameCn}】造成 6 点石化重创！`, 'damage');
+          }
+        }
+        break;
+      }
+      case 'beast_ancient_dragon': {
+        sound.play('flamewave');
+        opponent.hp -= 10;
+        this.triggerDamage(opposingSide, 'hero', 10);
+        oppBoard.forEach((c, idx) => {
+          if (c && !c.spellImmune) {
+            c.currentLife -= 10;
+            this.triggerDamage(opposingSide, idx, 10);
+          }
+        });
+        this.log(`【远古巨龙】喷吐烈焰龙息，对敌方英雄及全线生物造成 10 点毁灭伤害！`, 'damage');
+        break;
+      }
+    }
   }
 
   private async resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number): Promise<void> {
@@ -1187,6 +1515,15 @@ export class SpectromancerEngine {
         });
         sound.play('heal');
         this.log(`【${card.nameCn}】萌愈之光为邻格友军各恢复 10 点生命！`, 'heal');
+        break;
+      }
+      case 'ancient_dragon_boost_all_mana': {
+        const elems: ElementType[] = ['fire', 'water', 'air', 'earth', actor.specialElement];
+        elems.forEach((elem) => {
+          actor.mana[elem] = (actor.mana[elem] || 0) + 1;
+        });
+        sound.play('mana');
+        this.log(`【${card.nameCn}】降临战场，古龙神威令拥有者各系能量各 +1！`, 'heal');
         break;
       }
       case 'falcon_strike_4': {
@@ -1926,59 +2263,7 @@ export class SpectromancerEngine {
       // 2. Deliver damage
       const isCleave = attacker.card.ability === 'cleave_all_enemies';
 
-      if (attacker.flying || isCleave) {
-        // Direct hero hit or cleave
-        let heroDmg = attacker.currentAttack;
-
-        // Ice Guard hero reduction
-        let hasIceGuard = false;
-        defenderBoard.forEach((c) => {
-          if (c && c.card.ability === 'hero_shield_half') hasIceGuard = true;
-        });
-        if (hasIceGuard) {
-          heroDmg = Math.ceil(heroDmg * 0.5);
-        }
-
-        // White Elephant redirect
-        let elephantSlot: number = -1;
-        defenderBoard.forEach((c, idx) => {
-          if (c && c.card.ability === 'elephant_shield_hero') elephantSlot = idx;
-        });
-
-        if (elephantSlot !== -1 && defenderBoard[elephantSlot]) {
-          const elephant = defenderBoard[elephantSlot]!;
-          elephant.currentLife -= heroDmg;
-          this.triggerDamage(defenderSide, elephantSlot, heroDmg);
-          this.log(`【${elephant.card.nameCn}】崇高舍身，代替 ${defenderHero.name} 承受了 ${heroDmg} 点伤害！`, 'heal');
-        } else {
-          defenderHero.hp -= heroDmg;
-          this.triggerDamage(defenderSide, 'hero', heroDmg);
-          this.log(`【${attacker.card.nameCn}】越过战线，直接对 ${defenderHero.name} 造成 ${heroDmg} 点伤害！`, 'attack');
-
-          if (attacker.card.ability === 'lich_power_drain') {
-            const attackerHeroObj = attackerSide === 'player' ? this.player : this.enemy;
-            attackerHeroObj.mana.death = (attackerHeroObj.mana.death || 0) + 2;
-            this.log(`【巫妖王】吸取死灵精粹，死灵能量 +2！`, 'heal');
-          }
-
-          if (attacker.card.ability === 'goblin_burn_card') {
-            const elems: ElementType[] = ['fire', 'water', 'air', 'earth', defenderHero.specialElement];
-            const chosen = elems[Math.floor(Math.random() * elems.length)];
-            defenderHero.mana[chosen] = Math.max(0, defenderHero.mana[chosen] - 2);
-            this.log(`【${attacker.card.nameCn}】突袭破坏，削减 ${defenderHero.name} 的 2 点 ${chosen.toUpperCase()} 能量！`, 'damage');
-          }
-        }
-
-        if (isCleave) {
-          defenderBoard.forEach((opp, oIdx) => {
-            if (opp) {
-              opp.currentLife -= attacker.currentAttack;
-              this.triggerDamage(defenderSide, oIdx, attacker.currentAttack);
-            }
-          });
-          this.log(`【${attacker.card.nameCn}】横扫全场，对敌方全线生物造成 ${attacker.currentAttack} 点横扫伤害！`, 'attack');
-        }
-      } else if (defender) {
+      if (defender) {
         let dmg = attacker.currentAttack;
 
         // Damage mitigation
@@ -2069,6 +2354,16 @@ export class SpectromancerEngine {
             this.log(`【${attacker.card.nameCn}】突袭破坏，削减 ${defenderHero.name} 的 2 点 ${chosen.toUpperCase()} 能量！`, 'damage');
           }
         }
+      }
+
+      if (isCleave) {
+        defenderBoard.forEach((opp, oIdx) => {
+          if (opp && oIdx !== slot) {
+            opp.currentLife -= attacker.currentAttack;
+            this.triggerDamage(defenderSide, oIdx, attacker.currentAttack);
+          }
+        });
+        this.log(`【${attacker.card.nameCn}】横扫全场，对敌方全线生物造成 ${attacker.currentAttack} 点横扫伤害！`, 'attack');
       }
 
       // 3. Card impact visual
@@ -2434,7 +2729,7 @@ export class SpectromancerEngine {
   private async triggerAiTurn(): Promise<void> {
     if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return;
 
-    const playableCards = this.enemy.hand.filter((c) => this.canPlayCard('enemy', c));
+    const playableCards = this.getEffectiveHand('enemy').filter((c) => this.canPlayCard('enemy', c));
     if (playableCards.length === 0) {
       await this.passTurn('enemy');
       return;
@@ -2553,6 +2848,49 @@ export class SpectromancerEngine {
           candidates.push({ card, targetSlot: slot, score: slotScore });
         }
       } else if (card.type === 'spell') {
+        if (card.isActivatedAbility) {
+          if (card.targetType === 'empty_friendly_slot') {
+            for (const slot of emptySlots) {
+              let score = 16 + playerActiveCount * 6 + elemResourceBonus - antiRepetitionPenalty;
+              const opp = this.playerBoard[slot];
+              if (!opp) score += 6;
+              candidates.push({ card, targetSlot: slot, score });
+            }
+          } else if (card.targetType === 'enemy_creature' || card.targetType === 'any_creature') {
+            for (let s = 0; s < this.playerBoard.length; s++) {
+              const opp = this.playerBoard[s];
+              if (opp && !opp.spellImmune) {
+                const estDmg = card.id.includes('scorpion') ? 14 : 6;
+                let score = 10 + elemResourceBonus - antiRepetitionPenalty;
+                if (estDmg >= opp.currentLife) {
+                  score += 20 + opp.currentAttack * 3;
+                } else {
+                  score += estDmg * 1.5;
+                }
+                candidates.push({ card, targetSlot: s, score });
+              }
+            }
+          } else {
+            let score = 15 + elemResourceBonus - antiRepetitionPenalty;
+            if (card.id.includes('ancient_dragon')) {
+              score += playerActiveCount * 12 + 25;
+            } else if (card.id.includes('hamster')) {
+              let totalLost = 0;
+              this.enemyBoard.forEach((c) => { if (c) totalLost += (c.maxLife - c.currentLife); });
+              score += Math.min(30, totalLost * 1.8);
+            } else if (card.id.includes('wolverine')) {
+              const w = this.enemyBoard.find((c) => c && c.card.id === 'beast_wolverine');
+              if (w) score += (w.maxLife - w.currentLife) + 8;
+            } else if (card.id.includes('energy_beast')) {
+              score += 10;
+            } else if (card.id.includes('white_elephant')) {
+              score += 8;
+            }
+            candidates.push({ card, targetSlot: undefined, score });
+          }
+          continue;
+        }
+
         const spellInfo = this.estimateSpellPower(card);
 
         if (spellInfo.isFriendly) {

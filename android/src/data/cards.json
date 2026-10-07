@@ -1745,8 +1745,7 @@
     "image": "Wolverine",
     "imgUrl": "/cards/Wolverine.jpg",
     "imgBigUrl": "/cards/WolverineBig.jpg",
-    "desc": "主动技能 【狼獾】回复至满生命，攻击永久+2。",
-    "ability": "wolverine_berserk_regen"
+    "desc": "主动技能 【狼獾】回复至满生命，攻击永久+2。"
   },
   {
     "id": "beast_energy_beast",
@@ -1761,8 +1760,7 @@
     "image": "EnergyBeast",
     "imgUrl": "/cards/EnergyBeast.jpg",
     "imgBigUrl": "/cards/EnergyBeastBig.jpg",
-    "desc": "主动技能 【魔能兽】可使拥有者的火系、水系、气系和土系能量各+1。",
-    "ability": "energy_beast_pulse"
+    "desc": "主动技能 【魔能兽】可使拥有者的火系、水系、气系和土系能量各+1。"
   },
   {
     "id": "beast_death_falcon",
@@ -1774,12 +1772,10 @@
     "cost": 5,
     "attack": 7,
     "life": 45,
-    "flying": true,
     "image": "DeathFalcon",
     "imgUrl": "/cards/DeathFalcon.jpg",
     "imgBigUrl": "/cards/DeathFalconBig.jpg",
-    "desc": "主动技能 【死亡之隼】移动到目标空格处，并且对对方所有生物造成4点伤害。",
-    "onSummon": "falcon_strike_4"
+    "desc": "主动技能 【死亡之隼】移动到目标空格处，并且对对方所有生物造成4点伤害。"
   },
   {
     "id": "beast_white_elephant",
@@ -1823,12 +1819,11 @@
     "cost": 8,
     "attack": 8,
     "life": 45,
-    "flying": true,
     "image": "AncientDragon",
     "imgUrl": "/cards/AncientDragon.jpg",
     "imgBigUrl": "/cards/AncientDragonBig.jpg",
     "desc": "【远古巨龙】被召唤时，它使拥有者的各系能量+1。 主动技能 【远古巨龙】可以对对方本体和对方的所有生物造成10点伤害。",
-    "onSummon": "dragon_breath_10"
+    "onSummon": "ancient_dragon_boost_all_mana"
   },
   {
     "id": "goblin_rescue_operation",

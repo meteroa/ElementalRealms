@@ -25,6 +25,9 @@ export interface CardDef {
   onSummon?: string;
   spellEffect?: string;
   requiresTarget?: boolean;
+  isActivatedAbility?: boolean;
+  sourceCreatureUid?: string;
+  targetType?: 'empty_friendly_slot' | 'enemy_creature' | 'any_creature' | 'none';
 }
 
 export interface BoardCreature {
