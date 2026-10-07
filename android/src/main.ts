@@ -1462,16 +1462,16 @@ function triggerBattleCompletion() {
   }
 
   // Check spell casts and summons from replay steps
-  const spellCount = engine.replaySteps.filter(s => s.side === 'player' && s.desc.includes('施放')).length;
-  if (spellCount >= 4) {
+  const lightningBoltCount = engine.replaySteps.filter(s => s.side === 'player' && s.cardId === 'air_lightning_bolt').length;
+  if (lightningBoltCount >= 5) {
     checkAndUnlockAchievement('storm_lord');
   }
-  const bigCreature = engine.replaySteps.some(s => s.side === 'player' && s.desc.includes('耗能: ') && parseInt(s.desc.split('耗能: ')[1]) >= 8);
-  if (bigCreature) {
+  const dragonCount = engine.replaySteps.filter(s => s.side === 'player' && s.cardId === 'fire_dragon').length;
+  if (dragonCount >= 3) {
     checkAndUnlockAchievement('dragon_master');
   }
-  const earthOrStone = engine.replaySteps.some(s => s.side === 'player' && (s.cardName?.includes('石') || s.desc.includes('土')));
-  if (earthOrStone) {
+  const stoneRainCount = engine.replaySteps.filter(s => s.side === 'player' && s.cardId === 'earth_stone_rain').length;
+  if (stoneRainCount >= 4) {
     checkAndUnlockAchievement('rock_is_strong');
   }
 }
@@ -4232,6 +4232,7 @@ function renderCombatScreen(): string {
                         <div class="card-cost-gem">${c.card.cost}</div>
                         <div class="card-stat-atk ${c.buffedAttack || c.currentAttack > c.baseAttack ? 'buffed' : (c.currentAttack < c.baseAttack ? 'debuffed' : '')}" title="攻击力: ${c.currentAttack} (基础: ${c.baseAttack})">${c.currentAttack}</div>
                         <div class="card-stat-hp" title="生命值: ${c.currentLife}">${c.currentLife}</div>
+                        ${c.skipNextAttack ? '<div class="vfx-stunned-stars" title="跳过攻击/眩晕"></div>' : ''}
                       </div>
                     ` : '<div class="empty-slot-label">' + (idx + 1) + '</div>'}
                     <div class="slot-filigree bottom"></div>
@@ -4243,7 +4244,9 @@ function renderCombatScreen(): string {
             <!-- Player 6 Slots Row -->
             <div class="combat-slots-lane player-lane">
               ${engine.playerBoard.map((c, idx) => {
-                const isCreatureTarget = selectedCard?.type === 'creature' && c === null;
+                const isCreatureTarget = selectedCard?.type === 'creature' && (
+                  selectedCard.id === 'death_emissary_of_dorlak' ? c !== null : c === null
+                );
                 const isFalconMoveTarget = selectedCard?.targetType === 'empty_friendly_slot' && c === null;
                 const isFriendlySpellTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget &&
                   (isFriendlyTargetSpell(selectedCard) || selectedCard.targetType === 'any_creature') &&
@@ -4259,6 +4262,7 @@ function renderCombatScreen(): string {
                         <div class="card-cost-gem">${c.card.cost}</div>
                         <div class="card-stat-atk ${c.buffedAttack || c.currentAttack > c.baseAttack ? 'buffed' : (c.currentAttack < c.baseAttack ? 'debuffed' : '')}" title="攻击力: ${c.currentAttack} (基础: ${c.baseAttack})">${c.currentAttack}</div>
                         <div class="card-stat-hp" title="生命值: ${c.currentLife}">${c.currentLife}</div>
+                        ${c.skipNextAttack ? '<div class="vfx-stunned-stars" title="跳过攻击/眩晕"></div>' : ''}
                       </div>
                     ` : '<div class="empty-slot-label">' + (idx + 1) + '</div>'}
                     <div class="slot-filigree bottom"></div>
@@ -6360,7 +6364,10 @@ function attachEventListeners() {
       }
 
       if (side === 'player') {
-        if ((selectedCard.type === 'creature' || selectedCard.targetType === 'empty_friendly_slot') && engine.playerBoard[slotIdx] === null) {
+        const isValidCreatureSlot = selectedCard.id === 'death_emissary_of_dorlak'
+          ? engine.playerBoard[slotIdx] !== null
+          : engine.playerBoard[slotIdx] === null;
+        if ((selectedCard.type === 'creature' && isValidCreatureSlot) || (selectedCard.targetType === 'empty_friendly_slot' && engine.playerBoard[slotIdx] === null)) {
           if (engine.isLanGame && engine.isGuest) {
             isActionPending = true;
             const cardToPlay = selectedCard;

@@ -767,8 +767,7 @@
     "image": "EmissaryofDorlak",
     "imgUrl": "/cards/EmissaryofDorlak.jpg",
     "imgBigUrl": "/cards/EmissaryofDorlakBig.jpg",
-    "desc": "【铎拉克使者】必须在拥有者一个场上生物上召唤。此生物被摧毁。",
-    "onSummon": "emissary_sacrifice"
+    "desc": "【铎拉克使者】必须在拥有者一个场上生物上召唤。此生物被摧毁。"
   },
   {
     "id": "death_blood_ritual",
@@ -2026,7 +2025,8 @@
     "imgUrl": "/cards/TimeWeaver.jpg",
     "imgBigUrl": "/cards/TimeWeaverBig.jpg",
     "desc": "【时间编织者】被召唤时，拥有者可以立即获得额外一个只能施放魔法的出牌阶段。【时间编织者】使得拥有者所有魔法卡牌的费用-1。",
-    "ability": "spell_cost_minus_1"
+    "ability": "spell_cost_minus_1",
+    "onSummon": "timeweaver_extra_spell"
   },
   {
     "id": "time_priestess_of_moments",
@@ -2058,7 +2058,7 @@
     "imgUrl": "/cards/ChronoEngine.jpg",
     "imgBigUrl": "/cards/ChronoEngineBig.jpg",
     "desc": "在拥有者的回合开始时，【时空引擎】使拥有者获得额外的一个出牌的阶段。每当拥有者选择跳轮时，【时空引擎】使拥有者的时间系能量+1。",
-    "ability": "time_growth_2"
+    "ability": "chrono_engine"
   },
   {
     "id": "time_time_dragon",

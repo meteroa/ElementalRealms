@@ -206,9 +206,11 @@ class SoundManager {
       }
     };
 
-    ['click', 'touchstart', 'pointerdown', 'keydown'].forEach((evt) => {
-      window.addEventListener(evt, unlock, { passive: true });
-    });
+    if (typeof window !== 'undefined') {
+      ['click', 'touchstart', 'pointerdown', 'keydown'].forEach((evt) => {
+        window.addEventListener(evt, unlock, { passive: true });
+      });
+    }
 
     if (typeof document !== 'undefined') {
       document.addEventListener('visibilitychange', () => {

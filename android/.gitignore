@@ -11,7 +11,6 @@ node_modules
 dist
 dist-ssr
 *.local
-spectromancer_web-master
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +21,5 @@ spectromancer_web-master
 *.njsproj
 *.sln
 *.sw?
+scratch/
+pc/

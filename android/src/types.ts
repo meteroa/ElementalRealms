@@ -46,6 +46,10 @@ export interface BoardCreature {
   poison: number;
   regen: number;
   canAttack: boolean;
+  skipNextAttack?: boolean;
+  directHeroAttackTurn?: boolean;
+  tempAttackBuff?: number;
+  isDestroyed?: boolean;
   animState?: 'idle' | 'attacking' | 'damaged' | 'dead';
 }
 
