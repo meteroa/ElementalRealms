@@ -301,12 +301,12 @@ function createInitialDemoReplay(): BattleReplay {
       },
       {
         turn: 1, side: 'player', action: 'creature', desc: '玩家 在 [1号位] 召唤了【火灵学徒】(3/12)',
-        cardName: '火灵学徒', cardId: 'fire_apprentice', cardImg: './cards/fire_apprentice.jpg', targetSlot: 0,
+        cardName: '火灵学徒', cardId: 'fire_apprentice', cardImg: './cards/FireElemental.webp', targetSlot: 0,
         playerHp: 60, enemyHp: 60,
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/FireElemental.webp', imgBigUrl: './cards/FireElementalBig.webp', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
@@ -317,38 +317,38 @@ function createInitialDemoReplay(): BattleReplay {
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/FireElemental.webp', imgBigUrl: './cards/FireElementalBig.webp', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
       },
       {
         turn: 1, side: 'enemy', action: 'creature', desc: '深渊死灵师 在 [1号位] 召唤了【骷髅守卫】(2/10) 进行战线拦截',
-        cardName: '骷髅守卫', cardId: 'death_skeleton', cardImg: './cards/Skeleton.jpg', targetSlot: 0,
+        cardName: '骷髅守卫', cardId: 'death_skeleton', cardImg: './cards/MasterLich.webp', targetSlot: 0,
         playerHp: 60, enemyHp: 57,
         playerMana: { fire: 2, water: 5, air: 5, earth: 5, special: 2, death: 2, holy: 2, mechanics: 2, control: 2, chaos: 2, illusion: 2 },
         enemyMana: { fire: 4, water: 4, air: 4, earth: 4, special: 0, death: 0, holy: 0, mechanics: 0, control: 0, chaos: 0, illusion: 0 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/FireElemental.webp', imgBigUrl: './cards/FireElementalBig.webp', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [
-          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 10, image: 'Skeleton', imgUrl: './cards/Skeleton.jpg', imgBigUrl: './cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 10, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 10, image: 'Skeleton', imgUrl: './cards/MasterLich.webp', imgBigUrl: './cards/MasterLichBig.webp', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 10, maxLife: 10, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
       },
       {
         turn: 2, side: 'player', action: 'spell', desc: '玩家 施放了法术【闪电箭】，直击敌方【骷髅守卫】造成 8 点雷霆暴击！',
-        cardName: '闪电箭', cardId: 'air_lightning', cardImg: './cards/lightning.jpg', targetSlot: 0,
+        cardName: '闪电箭', cardId: 'air_lightning', cardImg: './cards/LightningBolt.webp', targetSlot: 0,
         playerHp: 60, enemyHp: 57,
         playerMana: { fire: 3, water: 6, air: 2, earth: 6, special: 3, death: 3, holy: 3, mechanics: 3, control: 3, chaos: 3, illusion: 3 },
         enemyMana: { fire: 5, water: 5, air: 5, earth: 5, special: 1, death: 1, holy: 1, mechanics: 1, control: 1, chaos: 1, illusion: 1 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/FireElemental.webp', imgBigUrl: './cards/FireElementalBig.webp', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [
-          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 2, image: 'Skeleton', imgUrl: './cards/Skeleton.jpg', imgBigUrl: './cards/SkeletonBig.jpg', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 2, maxLife: 10, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c2', card: { id: 'death_skeleton', name: 'Skeleton', nameCn: '骷髅守卫', type: 'creature', cost: 2, attack: 2, life: 2, image: 'Skeleton', imgUrl: './cards/MasterLich.webp', imgBigUrl: './cards/MasterLichBig.webp', desc: '亡灵骷髅守卫', element: 'death' }, owner: 'enemy', slotIndex: 0, baseAttack: 2, currentAttack: 2, currentLife: 2, maxLife: 10, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
       },
@@ -358,7 +358,7 @@ function createInitialDemoReplay(): BattleReplay {
         playerMana: { fire: 3, water: 6, air: 2, earth: 6, special: 3, death: 3, holy: 3, mechanics: 3, control: 3, chaos: 3, illusion: 3 },
         enemyMana: { fire: 5, water: 5, air: 5, earth: 5, special: 1, death: 1, holy: 1, mechanics: 1, control: 1, chaos: 1, illusion: 1 },
         playerBoard: [
-          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/fire_apprentice.jpg', imgBigUrl: './cards/fire_apprentice_big.jpg', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, poison: 0, regen: 0, canAttack: true },
+          { uid: 'demo_c1', card: { id: 'fire_apprentice', name: 'Fire Apprentice', nameCn: '火灵学徒', type: 'creature', cost: 3, attack: 3, life: 12, image: 'FireApprentice', imgUrl: './cards/FireElemental.webp', imgBigUrl: './cards/FireElementalBig.webp', desc: '火系初级学徒', element: 'fire' }, owner: 'player', slotIndex: 0, baseAttack: 3, currentAttack: 3, currentLife: 12, maxLife: 12, isWall: false, flying: false, spellImmune: false, regen: 0, canAttack: true },
           null, null, null, null, null
         ],
         enemyBoard: [null, null, null, null, null, null],
@@ -616,6 +616,22 @@ function formatCardAtk(atk?: number): string {
   return atk === -1 ? '*' : String(atk);
 }
 
+// Blood discipline cards pay life on top of their printed energy cost ("cost N blood and 2N
+// life"), so the extra price is surfaced on the card face, the parchment preview and the pool.
+function lifeCostBadge(card?: CardDef | null): string {
+  if (!card || !card.lifeCost) return '';
+  return `<div class="card-lifecost-badge" title="除能量外还需支付 ${card.lifeCost} 点生命">-${card.lifeCost}♥</div>`;
+}
+
+// Mirrors SpectromancerEngine.isValidSpellTarget for the slot highlighting in the combat view.
+function isRestrictedTargetAllowed(card: CardDef | undefined | null, target: { card: CardDef; spellImmune: boolean } | null): boolean {
+  if (!card || !target || target.spellImmune) return false;
+  if (card.id === 'demon_power_chains') {
+    return ['fire', 'water', 'air', 'earth'].includes(target.card.element);
+  }
+  return true;
+}
+
 function isFriendlyTargetSpell(card?: CardDef | null): boolean {
   if (!card || !card.requiresTarget) return false;
   return (
@@ -765,18 +781,23 @@ let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' 
 let showRulesModal = false;
 
 const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; artImg: string; desc: string }[] = [
-  { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.jpg', desc: '随机选择一个强大的法师流派' },
-  { id: 'sorcery', nameCn: '巫术', icon: '🔮', artImg: './cards/Disintegrate.jpg', desc: '经典巫术大师，拥有控制与伤害法术，掌握冥想与心智震撼' },
-  { id: 'necromancer', nameCn: '死灵', icon: '💀', artImg: './cards/MasterLich.jpg', desc: '召唤哀嚎女妖、吸血鬼与巫妖领主，吸取敌人生命转化为己用' },
-  { id: 'cleric', nameCn: '战争牧师', icon: '✨', artImg: './cards/ArchAngel.jpg', desc: '召唤圣骑士、十字军与大天使，擅长神圣护盾与群体圣疗' },
-  { id: 'mechanician', nameCn: '机械师', icon: '⚙️', artImg: './cards/SteamTank.jpg', desc: '部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
-  { id: 'dominator', nameCn: '支配者', icon: '👁️', artImg: './cards/MindStealer.jpg', desc: '操控萨满与阻尼塔削减敌方能量，召唤远古女巫与窃心魔' },
-  { id: 'chaosmaster', nameCn: '混沌大师', icon: '🌀', artImg: './cards/InsanianLord.jpg', desc: '操控混沌维和者、狂战士、混沌投石机与死棘，极具爆发力' },
-  { id: 'illusionist', nameCn: '幻术师', icon: '🎭', artImg: './cards/PhantomWarrior.jpg', desc: '操纵镜面反射之墙、幻像勇士与幽幻刺客，虚实转换制敌' },
-  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', artImg: './cards/GreaterDemon.jpg', desc: '役使劣魔、恶果魔与大恶魔，施放自爆与地狱烈焰' },
-  { id: 'beastmaster', nameCn: '驯兽师', icon: '🐺', artImg: './cards/AncientDragon.jpg', desc: '统御魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全系野性灵能' },
-  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', artImg: './cards/ChronoHunter.jpg', desc: '操纵时空猎人、时间闪击者、时间停止与时间之龙，掌控额外行动回合' },
-  { id: 'goblin', nameCn: '地精幻术', icon: '👺', artImg: './cards/GoblinHero.jpg', desc: '统御哥布林英雄、爆破者、鼠疫入侵与袭掠军，战术机动与牌库破坏' },
+  { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.webp', desc: '随机选择一个强大的法师流派' },
+  { id: 'sorcery', nameCn: '巫术', icon: '🔮', artImg: './cards/Disintegrate.webp', desc: '经典巫术大师，拥有控制与伤害法术，掌握冥想与心智震撼' },
+  { id: 'necromancer', nameCn: '死灵', icon: '💀', artImg: './cards/MasterLich.webp', desc: '召唤哀嚎女妖、吸血鬼与巫妖领主，吸取敌人生命转化为己用' },
+  { id: 'cleric', nameCn: '战争牧师', icon: '✨', artImg: './cards/ArchAngel.webp', desc: '召唤圣骑士、十字军与大天使，擅长神圣护盾与群体圣疗' },
+  { id: 'mechanician', nameCn: '机械师', icon: '⚙️', artImg: './cards/SteamTank.webp', desc: '部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
+  { id: 'dominator', nameCn: '支配者', icon: '👁️', artImg: './cards/MindStealer.webp', desc: '操控萨满与阻尼塔削减敌方能量，召唤远古女巫与窃心魔' },
+  { id: 'chaosmaster', nameCn: '混沌大师', icon: '🌀', artImg: './cards/InsanianLord.webp', desc: '操控混沌维和者、狂战士、混沌投石机与死棘，极具爆发力' },
+  { id: 'illusionist', nameCn: '幻术师', icon: '🎭', artImg: './cards/PhantomWarrior.webp', desc: '操纵镜面反射之墙、幻像勇士与幽幻刺客，虚实转换制敌' },
+  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', artImg: './cards/GreaterDemon.webp', desc: '役使劣魔、恶果魔与大恶魔，施放自爆与地狱烈焰' },
+  { id: 'beastmaster', nameCn: '驯兽师', icon: '🐺', artImg: './cards/AncientDragon.webp', desc: '统御魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全系野性灵能' },
+  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', artImg: './cards/ChronoHunter.webp', desc: '操纵时空猎人、时间闪击者、时间停止与时间之龙，掌控额外行动回合' },
+  { id: 'goblin', nameCn: '地精幻术', icon: '👺', artImg: './cards/GoblinHero.webp', desc: '统御哥布林英雄、爆破者、鼠疫入侵与袭掠军，战术机动与牌库破坏' },
+  { id: 'forest', nameCn: '森林', icon: '🌳', artImg: './cards/MagicRabbit.webp', desc: '疯狂隐士的森林流派：每回合放置一只不断壮大的魔法兔子，并以兔子之力驱动森林猛兽与古木仪式' },
+  { id: 'golem', nameCn: '魔匠', icon: '🗿', artImg: './cards/Golem.webp', desc: '魔匠师开局即拥有一只不受魔法与技能伤害的【魔像】，阵亡后立刻满血归位，并以军备升级与操纵师永久强化它' },
+  { id: 'cult', nameCn: '邪教', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '膜拜系的狂热信徒与死士以自伤换取力量，狂怒纪念碑让全军每回合多打一次，掠夺者则替全军承受伤害并封锁魔法' },
+  { id: 'blood', nameCn: '鲜血', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '血族卡牌以「N 点鲜血系能量 + 2N 点生命」双重付费，食尸鬼靠敌方尸体成长，审判者与惩戒者把伤痛化为暴力' },
+  { id: 'spectromancer', nameCn: '虹光法师', icon: '🌈', artImg: './cards/Celestia.webp', desc: '《力量集结》的中立造物大师：火山、地雷、行军石、三座祭坛、魔法学院与至尊元素等 45 张独特造物组成专属卡池' },
 ];
 
 // ==========================================
@@ -806,7 +827,7 @@ function getMyLanProfile(): NetworkUserProfile {
   if (chosenClass.id === 'random') {
     const validClasses: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin'
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
     ];
     actualClass = validClasses[Math.floor(Math.random() * validClasses.length)];
   } else {
@@ -1993,7 +2014,13 @@ async function playSpellVFX(
   const layer = spellFxLayer || document.getElementById('spell-fx-layer') || document.body;
   const oppSide = who === 'player' ? 'enemy' : 'player';
   const isFriendly = isFriendlyTargetSpell(card);
-  const targetSide = isFriendly ? who : oppSide;
+  let targetSide: 'player' | 'enemy' = isFriendly ? who : oppSide;
+  // Cards that may target either side (Rescue Operation, beast abilities) have to resolve which
+  // half of the board actually holds the chosen slot.
+  if (card.targetType === 'any_creature' && targetSlot !== undefined) {
+    const casterBoard = who === 'player' ? engine.playerBoard : engine.enemyBoard;
+    if (!casterBoard[targetSlot]) targetSide = oppSide;
+  }
 
   if (!destEl && targetSlot !== undefined) {
     destEl = document.querySelector(`.combat-board-slot[data-side="${targetSide}"][data-slot-index="${targetSlot}"]`);
@@ -2026,7 +2053,26 @@ async function playSpellVFX(
   // ========================================================
   // 1. LIGHTNING / AIR SPELLS (Call to Thunder, Lightning Bolt, Chain Lightning)
   // ========================================================
-  if (spellId.includes('lightning') || spellId.includes('thunder') || card.element === 'air') {
+  // Tornado (PC Sounds.ctl: tornado -> tornado.ogg). The PC has no dedicated sprite for it,
+  // so it gets the generic swirling overlay instead of the lightning bolt one.
+  if (spellId === 'air_tornado') {
+    sound.play('tornado');
+    const cyclone = document.createElement('div');
+    cyclone.className = 'spell-vfx-arcane';
+    cyclone.style.background = 'radial-gradient(circle at center, rgba(226, 232, 240, 0.85) 0%, rgba(148, 163, 184, 0.5) 40%, rgba(51, 65, 85, 0.25) 70%, transparent 85%)';
+    layer.appendChild(cyclone);
+
+    if (destEl) {
+      destEl.classList.add('card-impact-hit');
+      setTimeout(() => destEl?.classList.remove('card-impact-hit'), 600);
+    }
+
+    await new Promise((r) => setTimeout(r, 850));
+    cyclone.remove();
+    return;
+  }
+
+  if (spellId === 'air_chain_lightning' || spellId === 'air_call_to_thunder' || spellId === 'air_lightning_bolt') {
     if (spellId === 'air_chain_lightning') {
       sound.play('chainlightning');
 
@@ -2147,6 +2193,39 @@ async function playSpellVFX(
     });
 
     await new Promise((r) => setTimeout(r, 800));
+    wave.remove();
+    return;
+  }
+
+  if (spellId === 'fire_armageddon') {
+    sound.play('armageddon');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 800);
+
+    const wave = document.createElement('div');
+    wave.className = 'spell-vfx-flamewave';
+    wave.style.background = 'radial-gradient(circle at center, rgba(220, 38, 38, 0.85) 0%, rgba(249, 115, 22, 0.55) 45%, rgba(120, 53, 15, 0.3) 70%, transparent 88%)';
+    layer.appendChild(wave);
+
+    const everySlot = Array.from(document.querySelectorAll('.combat-board-slot')) as HTMLElement[];
+    everySlot.forEach((s) => {
+      const pillar = document.createElement('div');
+      pillar.className = 'vfx-slot-flame-pillar';
+      s.appendChild(pillar);
+      s.classList.add('card-impact-hit');
+      setTimeout(() => {
+        pillar.remove();
+        s.classList.remove('card-impact-hit');
+      }, 800);
+    });
+
+    const oppHero = getHeroPos(oppSide);
+    if (oppHero.el) {
+      oppHero.el.classList.add('card-impact-hit');
+      setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 800);
+    }
+
+    await new Promise((r) => setTimeout(r, 950));
     wave.remove();
     return;
   }
@@ -2319,7 +2398,30 @@ async function playSpellVFX(
     return;
   }
 
-  if (spellId === 'earth_natures_ritual' || spellId.includes('nature') || card.element === 'earth') {
+  // Nature's Fury (PC Sounds.ctl: Natures_Fury -> naturalfury.ogg, vol=200)
+  if (spellId === 'earth_natures_fury') {
+    sound.play('naturalfury');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 600);
+
+    const oppHero = getHeroPos(oppSide);
+    const forest = document.createElement('div');
+    forest.className = 'vfx-ritforest-tree';
+    forest.style.left = `${oppHero.x}px`;
+    forest.style.top = `${oppHero.y}px`;
+    layer.appendChild(forest);
+
+    if (oppHero.el) {
+      oppHero.el.classList.add('card-impact-hit');
+      setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 600);
+    }
+
+    await new Promise((r) => setTimeout(r, 950));
+    forest.remove();
+    return;
+  }
+
+  if (spellId === 'earth_natures_ritual') {
     sound.play('naturerit');
     const tree = document.createElement('div');
     tree.className = 'vfx-ritforest-tree';
@@ -2336,6 +2438,231 @@ async function playSpellVFX(
 
     await new Promise((r) => setTimeout(r, 900));
     tree.remove();
+    return;
+  }
+
+  // Ritual of the Forest (PC Sounds.ctl: Ritual_Of_The_Forest -> ritual_of_the_forest.ogg,
+  // vol=50). The PC drives it with its own ritForest sprite, so the world tree grows out of the
+  // caster's hero and out of every friendly slot while the whole line is warded.
+  if (spellId === 'forest_ritual_of_the_forest') {
+    sound.play('ritualoftheforest');
+
+    const hero = getHeroPos(who);
+    const heroTree = document.createElement('div');
+    heroTree.className = 'vfx-ritforest-tree';
+    heroTree.style.left = `${hero.x}px`;
+    heroTree.style.top = `${hero.y}px`;
+    layer.appendChild(heroTree);
+    if (hero.el) {
+      hero.el.classList.add('card-impact-hit');
+      setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 800);
+    }
+
+    const mySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${who}"]`)) as HTMLElement[];
+    mySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const r = s.getBoundingClientRect();
+        const tree = document.createElement('div');
+        tree.className = 'vfx-ritforest-tree';
+        tree.style.left = `${r.left + r.width / 2}px`;
+        tree.style.top = `${r.top + r.height / 2}px`;
+        layer.appendChild(tree);
+        const shield = document.createElement('div');
+        shield.className = 'vfx-shield-bubble';
+        s.appendChild(shield);
+        setTimeout(() => {
+          tree.remove();
+          shield.remove();
+        }, 900);
+      }, i * 70);
+    });
+
+    await new Promise((r) => setTimeout(r, 1050));
+    heroTree.remove();
+    return;
+  }
+
+  // Golem's Frenzy / Golem's Justice (PC Sounds.ctl: Golems_Frenzy -> GolemsFrenzy.ogg,
+  // Golems_Justice -> GolemsJustice.ogg). The champion Golem drives both spells with its stone
+  // fist (Golem.tga), pulverising the opposing line — Justice then mends its own neighbours.
+  if (spellId === 'golem_golems_frenzy' || spellId === 'golem_golems_justice') {
+    const isJustice = spellId === 'golem_golems_justice';
+    sound.play(isJustice ? 'golemsjustice' : 'golemsfrenzy');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 550);
+
+    const casterBoard = who === 'player' ? engine.playerBoard : engine.enemyBoard;
+    const golemSlot = casterBoard.findIndex((c) => c !== null && c.card.id === 'golem_golem');
+    if (golemSlot !== -1) {
+      const golemEl = document.querySelector(
+        `.combat-board-slot[data-side="${who}"][data-slot-index="${golemSlot}"]`
+      ) as HTMLElement | null;
+      if (golemEl) {
+        const gr = golemEl.getBoundingClientRect();
+        const fist = document.createElement('div');
+        fist.className = 'vfx-golem-smash';
+        fist.style.left = `${gr.left + gr.width / 2}px`;
+        fist.style.top = `${gr.top + gr.height / 2}px`;
+        layer.appendChild(fist);
+        golemEl.classList.add('card-impact-hit');
+        setTimeout(() => {
+          fist.remove();
+          golemEl.classList.remove('card-impact-hit');
+        }, 620);
+      }
+    }
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const sr = s.getBoundingClientRect();
+        const burst = document.createElement('div');
+        burst.className = 'vfx-wrath-burst';
+        burst.style.left = `${sr.left + sr.width / 2}px`;
+        burst.style.top = `${sr.top + sr.height / 2}px`;
+        burst.style.filter = 'drop-shadow(0 0 18px #d6d3d1) brightness(1.5)';
+        layer.appendChild(burst);
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          burst.remove();
+          s.classList.remove('card-impact-hit');
+        }, 700);
+      }, 120 + i * 60);
+    });
+
+    if (isJustice && golemSlot !== -1) {
+      [golemSlot - 1, golemSlot + 1].forEach((nIdx, i) => {
+        const el = document.querySelector(
+          `.combat-board-slot[data-side="${who}"][data-slot-index="${nIdx}"]`
+        ) as HTMLElement | null;
+        if (!el) return;
+        setTimeout(() => {
+          const shield = document.createElement('div');
+          shield.className = 'vfx-shield-bubble';
+          el.appendChild(shield);
+          setTimeout(() => shield.remove(), 1000);
+        }, 320 + i * 90);
+      });
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+    return;
+  }
+
+  // Army Upgrade (PC Sounds.ctl: Army_Upgrade -> ArmyUpgrade.ogg) — the whole line is refitted
+  // while the champion Golem is permanently reinforced.
+  if (spellId === 'golem_army_upgrade') {
+    sound.play('armyupgrade');
+
+    const mySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${who}"]`)) as HTMLElement[];
+    mySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const shield = document.createElement('div');
+        shield.className = 'vfx-shield-bubble';
+        shield.style.filter = 'drop-shadow(0 0 18px #fbbf24) drop-shadow(0 0 35px #f59e0b) brightness(1.4)';
+        s.appendChild(shield);
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          shield.remove();
+          s.classList.remove('card-impact-hit');
+        }, 900);
+      }, i * 60);
+    });
+
+    const casterBoard = who === 'player' ? engine.playerBoard : engine.enemyBoard;
+    const golemSlot = casterBoard.findIndex((c) => c !== null && c.card.id === 'golem_golem');
+    if (golemSlot !== -1) {
+      const golemEl = document.querySelector(
+        `.combat-board-slot[data-side="${who}"][data-slot-index="${golemSlot}"]`
+      ) as HTMLElement | null;
+      if (golemEl) {
+        setTimeout(() => {
+          const gr = golemEl.getBoundingClientRect();
+          const slam = document.createElement('div');
+          slam.className = 'vfx-golem-smash';
+          slam.style.left = `${gr.left + gr.width / 2}px`;
+          slam.style.top = `${gr.top + gr.height / 2}px`;
+          layer.appendChild(slam);
+          setTimeout(() => slam.remove(), 620);
+        }, 240);
+      }
+    }
+
+    await new Promise((r) => setTimeout(r, 950));
+    return;
+  }
+
+  // Call to Ancient Spirits (PC Sounds.ctl: Call_To_Ancient_Spirits -> AncientSpirits.ogg,
+  // vol=60). Wrathful spirits sweep the whole board: the heavy pass hits the opposing line, the
+  // lighter echo then washes over the caster's own creatures.
+  if (spellId === 'cult_call_to_ancient_spirits') {
+    sound.play('ancientspirits');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 500);
+
+    const sweep = (side: 'player' | 'enemy', delay: number, bright: string) => {
+      const slots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${side}"]`)) as HTMLElement[];
+      slots.forEach((s, i) => {
+        setTimeout(() => {
+          const r = s.getBoundingClientRect();
+          const spirit = document.createElement('div');
+          spirit.className = 'vfx-spirits-apparition';
+          spirit.style.left = `${r.left + r.width / 2}px`;
+          spirit.style.top = `${r.top + r.height / 2}px`;
+          spirit.style.filter = bright;
+          layer.appendChild(spirit);
+          s.classList.add('card-impact-hit');
+          setTimeout(() => {
+            spirit.remove();
+            s.classList.remove('card-impact-hit');
+          }, 800);
+        }, delay + i * 75);
+      });
+    };
+
+    sweep(oppSide, 0, 'drop-shadow(0 0 22px #a78bfa) brightness(1.5)');
+    sweep(who, 340, 'drop-shadow(0 0 18px #7c3aed) brightness(0.85) opacity(0.85)');
+
+    await new Promise((r) => setTimeout(r, 1100));
+    return;
+  }
+
+  // Blood Boil (PC Sounds.ctl: Blood_Boil -> BloodBoil.ogg) — the caster's own blood erupts over
+  // the opposing line.
+  if (spellId === 'blood_blood_boil') {
+    sound.play('bloodboil');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 450);
+
+    const wave = document.createElement('div');
+    wave.className = 'spell-vfx-flamewave';
+    wave.style.background = 'radial-gradient(circle at center, rgba(220, 38, 38, 0.7) 0%, rgba(127, 29, 29, 0.5) 45%, rgba(69, 10, 10, 0.3) 70%, transparent 88%)';
+    layer.appendChild(wave);
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const sr = s.getBoundingClientRect();
+        const orb = document.createElement('div');
+        orb.className = 'vfx-essence-drain-orb';
+        orb.style.background = 'radial-gradient(circle, #fff 8%, #dc2626 48%, #7f1d1d 85%, transparent 100%)';
+        orb.style.left = `${sr.left + sr.width / 2}px`;
+        orb.style.top = `${sr.top + sr.height / 2}px`;
+        orb.style.setProperty('--start-x', `${sr.left + sr.width / 2}px`);
+        orb.style.setProperty('--start-y', `${sr.top + sr.height / 2}px`);
+        orb.style.setProperty('--end-x', `${sr.left + sr.width / 2}px`);
+        orb.style.setProperty('--end-y', `${sr.top + sr.height / 2}px`);
+        layer.appendChild(orb);
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          orb.remove();
+          s.classList.remove('card-impact-hit');
+        }, 700);
+      }, i * 60);
+    });
+
+    await new Promise((r) => setTimeout(r, 850));
+    wave.remove();
     return;
   }
 
@@ -2377,7 +2704,11 @@ async function playSpellVFX(
   }
 
   if (spellId.includes('divine') || spellId.includes('wrath') || card.element === 'holy') {
-    sound.play(spellId.includes('divine_justice') ? 'divjustice' : 'wrathofgod');
+    const holySound = spellId.includes('divine_justice') ? 'divjustice'
+      : spellId.includes('divine_meddling') ? 'divinemeddling'
+      : spellId.includes('rage_of_god') ? 'rageofgod'
+      : 'wrathofgod';
+    sound.play(holySound);
     app.classList.add('screen-shake');
     setTimeout(() => app.classList.remove('screen-shake'), 450);
 
@@ -2521,6 +2852,32 @@ async function playSpellVFX(
     return;
   }
 
+  // Rage of Souls (PC Sounds.ctl: Rage_Of_Souls -> Rage_Of_Souls.ogg) — the spell Drain Souls
+  // turns into; it strikes every opposing creature rather than the opposing hero.
+  if (spellId === 'death_rage_of_souls') {
+    sound.play('rage_of_souls');
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const r = s.getBoundingClientRect();
+        const apparition = document.createElement('div');
+        apparition.className = 'vfx-spirits-apparition';
+        apparition.style.left = `${r.left + r.width / 2}px`;
+        apparition.style.top = `${r.top + r.height / 2}px`;
+        layer.appendChild(apparition);
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          apparition.remove();
+          s.classList.remove('card-impact-hit');
+        }, 800);
+      }, i * 90);
+    });
+
+    await new Promise((r) => setTimeout(r, 1000));
+    return;
+  }
+
   if (spellId.includes('cursed') || spellId.includes('drain') || card.element === 'death') {
     sound.play(spellId.includes('cursed') ? 'cursedfog' : 'drainsouls');
     const apparition = document.createElement('div');
@@ -2553,7 +2910,7 @@ async function playSpellVFX(
     return;
   }
 
-  if (spellId.includes('time')) {
+  if (spellId === 'time_time_stop') {
     sound.play('time_stop');
     const hourglass = document.createElement('div');
     hourglass.className = 'vfx-timestop-hourglass';
@@ -2587,6 +2944,65 @@ async function playSpellVFX(
 
     await new Promise((r) => setTimeout(r, 850));
     spiral.remove();
+    return;
+  }
+
+  // Hypnosis (PC Sounds.ctl: Hypnosis -> hypnosys.ogg) — the two strongest enemy creatures
+  // turn on their own hero.
+  if (spellId === 'illus_hypnosis') {
+    sound.play('hypnosys');
+
+    const charmed = (Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"] .board-card`)) as HTMLElement[])
+      .slice(0, 2);
+    charmed.forEach((el, i) => {
+      setTimeout(() => {
+        const spiral = document.createElement('div');
+        spiral.className = 'vfx-madness-spiral';
+        const r = el.getBoundingClientRect();
+        spiral.style.left = `${r.left + r.width / 2}px`;
+        spiral.style.top = `${r.top + r.height / 2}px`;
+        layer.appendChild(spiral);
+        el.classList.add('card-impact-hit');
+        setTimeout(() => spiral.remove(), 850);
+      }, i * 180);
+    });
+
+    const oppHero = getHeroPos(oppSide);
+    setTimeout(() => {
+      if (!oppHero.el) return;
+      oppHero.el.classList.add('card-impact-hit');
+      setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 600);
+    }, 260);
+
+    await new Promise((r) => setTimeout(r, 1000));
+    return;
+  }
+
+  // Poisonous Cloud (PC Sounds.ctl: Poisonous_Cloud -> poisoncloud.ogg)
+  if (spellId === 'ctrl_poisonous_cloud') {
+    sound.play('poisoncloud');
+
+    const cloud = document.createElement('div');
+    cloud.className = 'spell-vfx-acidic';
+    layer.appendChild(cloud);
+
+    for (let i = 0; i < 14; i++) {
+      const drop = document.createElement('div');
+      drop.className = 'vfx-acid-drop';
+      drop.style.left = `${window.innerWidth * (0.04 + Math.random() * 0.92)}px`;
+      drop.style.animationDelay = `${Math.random() * 0.35}s`;
+      layer.appendChild(drop);
+      setTimeout(() => drop.remove(), 750);
+    }
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s) => {
+      s.classList.add('card-impact-hit');
+      setTimeout(() => s.classList.remove('card-impact-hit'), 600);
+    });
+
+    await new Promise((r) => setTimeout(r, 950));
+    cloud.remove();
     return;
   }
 
@@ -2656,8 +3072,92 @@ async function playSpellVFX(
   }
 
   // ========================================================
+  // 10b. SORCERY EXTRAS (Sacrifice, Sonic Boom)
+  // ========================================================
+  if (spellId === 'special_sacrifice') {
+    sound.play('sacrifice');
+
+    if (destEl) {
+      const slash = document.createElement('div');
+      slash.className = 'vfx-slash-impact';
+      destEl.appendChild(slash);
+      destEl.classList.add('card-impact-hit');
+      setTimeout(() => {
+        slash.remove();
+        destEl?.classList.remove('card-impact-hit');
+      }, 600);
+    }
+
+    const hero = getHeroPos(who);
+    if (hero.el) {
+      const ward = document.createElement('div');
+      ward.className = 'vfx-essence-drain-orb';
+      ward.style.left = `${hero.x}px`;
+      ward.style.top = `${hero.y}px`;
+      layer.appendChild(ward);
+      setTimeout(() => ward.remove(), 750);
+    }
+
+    await new Promise((r) => setTimeout(r, 850));
+    return;
+  }
+
+  if (spellId === 'special_sonic_boom') {
+    sound.play('sonic_boom');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 650);
+
+    const shock = document.createElement('div');
+    shock.className = 'spell-vfx-arcane';
+    shock.style.background = 'radial-gradient(circle at center, rgba(224, 242, 254, 0.9) 0%, rgba(125, 211, 252, 0.55) 40%, rgba(14, 165, 233, 0.3) 65%, transparent 85%)';
+    layer.appendChild(shock);
+
+    const oppHero = getHeroPos(oppSide);
+    if (oppHero.el) {
+      oppHero.el.classList.add('card-impact-hit');
+      setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 650);
+    }
+    const enemySlots = document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`);
+    enemySlots.forEach((s) => {
+      const r = (s as HTMLElement).getBoundingClientRect();
+      const ring = document.createElement('div');
+      ring.className = 'vfx-wrath-burst';
+      ring.style.left = `${r.left + r.width / 2}px`;
+      ring.style.top = `${r.top + r.height / 2}px`;
+      ring.style.filter = 'drop-shadow(0 0 25px #7dd3fc) brightness(2.2)';
+      layer.appendChild(ring);
+      s.classList.add('card-impact-hit');
+      setTimeout(() => {
+        ring.remove();
+        s.classList.remove('card-impact-hit');
+      }, 750);
+    });
+
+    await new Promise((r) => setTimeout(r, 950));
+    shock.remove();
+    return;
+  }
+
+  // ========================================================
   // 11. MECHANICS, CHAOS & DEMON POWER CHAINS
   // ========================================================
+  // Overtime (PC Sounds.ctl: Overtime -> overtime.ogg, vol=40) — foundry energy surge at the caster
+  if (spellId === 'mech_overtime') {
+    sound.play('overtime');
+
+    const hero = getHeroPos(who);
+    const surge = document.createElement('div');
+    surge.className = 'vfx-meditation-ripple';
+    surge.style.left = `${hero.x}px`;
+    surge.style.top = `${hero.y}px`;
+    surge.style.filter = 'hue-rotate(160deg) brightness(1.4)';
+    layer.appendChild(surge);
+
+    await new Promise((r) => setTimeout(r, 900));
+    surge.remove();
+    return;
+  }
+
   if (spellId === 'mech_cannonade') {
     sound.play('cannonade');
     app.classList.add('screen-shake');
@@ -2729,8 +3229,9 @@ async function playSpellVFX(
     return;
   }
 
-  // Default fallback for any remaining spells
-  sound.play(card.id);
+  // Default fallback for any remaining spells. PC mirrors this: it fires Sound\Play\<CardName>
+  // and silently does nothing when Sounds.ctl has no entry for that card.
+  if (sound.has(card.id)) sound.play(card.id);
   app.classList.add('screen-shake');
   setTimeout(() => app.classList.remove('screen-shake'), 350);
 
@@ -2777,6 +3278,28 @@ function setupEngineCallbacks() {
 
   engine.onCardEnterSlot = async (info) => {
     await animateCardToSlot(info.who, info.card, info.targetSlot);
+  };
+
+  // Creatures the engine places on its own (Mad Hermit's passive Magic Rabbit, the returning
+  // Golem champion) never pass through the click path, so their arrival sprite is replayed here.
+  engine.onCreatureAppear = (side, slotIndex, card) => {
+    if (card.id !== 'forest_magic_rabbit' && card.id !== 'golem_golem') return;
+    const slotEl = document.querySelector(
+      `.combat-board-slot[data-side="${side}"][data-slot-index="${slotIndex}"]`
+    ) as HTMLElement | null;
+    if (!slotEl) return;
+    const layer = spellFxLayer || document.getElementById('spell-fx-layer') || document.body;
+    const r = slotEl.getBoundingClientRect();
+    const fx = document.createElement('div');
+    fx.className = card.id === 'golem_golem' ? 'vfx-golem-smash' : 'vfx-rabbits';
+    fx.style.left = `${r.left + r.width / 2}px`;
+    fx.style.top = `${r.top + r.height / 2}px`;
+    layer.appendChild(fx);
+    slotEl.classList.add('card-impact-hit');
+    setTimeout(() => {
+      fx.remove();
+      slotEl.classList.remove('card-impact-hit');
+    }, 950);
   };
 
   engine.onStateChange = () => render();
@@ -3452,6 +3975,11 @@ function renderCodexPageContent(tab: string): string {
         { id: 'beastmaster', label: '🐺 驯兽师' },
         { id: 'chronomancer', label: '⏳ 时空术士' },
         { id: 'goblin', label: '👺 地精' },
+        { id: 'forest', label: '🌳 森林' },
+        { id: 'golem', label: '🗿 魔匠' },
+        { id: 'cult', label: '🕯️ 邪教' },
+        { id: 'blood', label: '🩸 鲜血' },
+        { id: 'spectromancer', label: '🌈 虹光法师' },
       ];
 
       const filteredCards = allCardsList.filter(c => {
@@ -3496,8 +4024,9 @@ function renderCodexPageContent(tab: string): string {
             return `
               <div class="codex-card-item">
                 <div class="codex-card-thumb-wrap">
-                  <img src="${toRel(c.imgUrl)}" class="codex-card-thumb" alt="${c.nameCn}" loading="lazy" />
+                  <img src="${toRel(c.imgUrl)}" class="codex-card-thumb ${c.type === 'spell' ? 'spell-art' : ''}" alt="${c.nameCn}" loading="lazy" />
                   <div class="codex-card-badge-cost" title="能量消耗: ${c.cost}">${c.cost}</div>
+                  ${lifeCostBadge(c)}
                   ${c.type === 'creature' ? `
                     <div class="codex-card-badges-row">
                       <span class="codex-card-badge-atk" title="攻击力: ${formatCardAtk(c.attack)}">⚔️ ${formatCardAtk(c.attack)}</span>
@@ -4222,7 +4751,7 @@ function renderCombatScreen(): string {
                     (!isFriendlyTargetSpell(selectedCard) && selectedCard.targetType !== 'none') ||
                     selectedCard.targetType === 'any_creature' ||
                     selectedCard.targetType === 'enemy_creature'
-                  ) && c !== null && !c.spellImmune;
+                  ) && isRestrictedTargetAllowed(selectedCard, c);
                 return `
                   <div class="combat-board-slot top-slot ${isTarget ? 'active-target' : ''}" data-side="enemy" data-slot-index="${idx}">
                     <div class="slot-filigree top"></div>
@@ -4245,7 +4774,9 @@ function renderCombatScreen(): string {
             <div class="combat-slots-lane player-lane">
               ${engine.playerBoard.map((c, idx) => {
                 const isCreatureTarget = selectedCard?.type === 'creature' && (
-                  selectedCard.id === 'death_emissary_of_dorlak' ? c !== null : c === null
+                  selectedCard.onSummon === 'forest_wolf_devour'
+                    ? c?.card.id === 'forest_magic_rabbit'
+                    : (selectedCard.id === 'death_emissary_of_dorlak' ? c !== null : c === null)
                 );
                 const isFalconMoveTarget = selectedCard?.targetType === 'empty_friendly_slot' && c === null;
                 const isFriendlySpellTarget = selectedCard?.type === 'spell' && selectedCard.requiresTarget &&
@@ -4315,7 +4846,12 @@ function renderCombatScreen(): string {
                   </div>
                   <div class="hand-column-cards">
                     ${cardsOfElem.map((card) => {
-                      const cardImg = card.imgBigUrl || card.imgUrl;
+                      // Hand cells are wide strips (~2.7–4.2 : 1), so spell/ability cards use the
+                      // wide banner art (whole circular motif + art-filled surround) while creature
+                      // paintings keep the large art.
+                      const cardImg = card.type === 'spell'
+                        ? (card.imgUrl || card.imgBigUrl)
+                        : (card.imgBigUrl || card.imgUrl);
                       if (showOpponentHand) {
                         const isRevealed = (currentBattleSource === 'campaign' && completedCampaignLevels.includes(6))
                           ? true
@@ -4327,6 +4863,7 @@ function renderCombatScreen(): string {
                             <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
                               <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                               <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
+                              ${lifeCostBadge(card)}
                               ${card.type === 'creature' ? `
                                 <div class="card-stats-badges">
                                   <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
@@ -4346,12 +4883,13 @@ function renderCombatScreen(): string {
                           `;
                         }
                       } else {
-                        const canAfford = p.mana[card.element] >= card.cost;
+                        const canAfford = p.mana[card.element] >= card.cost && (!card.lifeCost || p.hp > card.lifeCost);
                         const isSelected = selectedCard?.id === card.id;
                         return `
                           <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
                             <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                             <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
+                            ${lifeCostBadge(card)}
                             ${card.type === 'creature' ? `
                               <div class="card-stats-badges">
                                 <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
@@ -4634,7 +5172,7 @@ function renderCampaignTreasuresModal(): string {
     {
       id: 'gryphon',
       name: '伴生驯化狮鹫 (Tamed Gryphon)',
-      img: './cards/Griffin.jpg',
+      img: './cards/Griffin.webp',
       req: '通关关卡 1（德米尔）',
       unlocked: beaten.includes(1),
       desc: '在每一场战役开始时，伴生狮鹫（攻击 3 / 生命 18 / 飞行）将直接入驻玩家第 3 号槽位，开局即可形成强大空中火力压制！',
@@ -4666,7 +5204,7 @@ function renderCampaignTreasuresModal(): string {
     {
       id: 'blood',
       name: '巨魔之血药剂 (Vial of Troll Blood)',
-      img: './cards/Troll.jpg',
+      img: './cards/Troll.webp',
       req: '通关关卡 5（维兰娜）',
       unlocked: beaten.includes(5),
       desc: '淬炼野蛮巨魔旺盛生命力的魔法药剂，使伴生狮鹫获得每回合自动治愈自愈 +2 生命之强韧被动！',
@@ -4788,6 +5326,31 @@ function renderLeagueOpponentAdviceModal(): string {
       strengths: '人海战术、哥布林狂热冲锋、极速铺场抢血。',
       weaknesses: '后劲极差，手牌消耗极快。',
       tip: '起手优先抓取坚固阻挡随从与低费解场牌，只要撑过前 4 回合即胜券在握。',
+    },
+    forest: {
+      strengths: '每回合免费放置的【魔法兔子】会永久成长，暴怒海狸、复仇浣熊与森林仪式都以兔子攻击力结算收益。',
+      weaknesses: '兔子只有 10 点生命，一旦被清除，所有以 X 结算的卡牌收益骤降。',
+      tip: '优先用单体伤害法术秒杀【魔法兔子】，迫使其以 0 攻的【森林饿狼】或空转的森林仪式浪费资源。',
+    },
+    golem: {
+      strengths: '开局即有一只不受魔法与技能伤害的【魔像】，阵亡后会满血归位（代价仅 10 点生命），军备升级与操纵师可永久堆高它的攻击力。',
+      weaknesses: '魔像每次阵亡都要付出 10 点生命，反复阵亡会迅速掏空本体；其余卡牌多为辅助，本身威胁不高。',
+      tip: '用高攻生物反复击杀【魔像】逼迫其不断支付 10 点生命，并优先清掉【魔像掌控者】以阻止魔像每回合攻击两次。',
+    },
+    cult: {
+      strengths: '狂怒纪念碑让全军每回合多攻击一次，狂热死士攻击力每回合 +2 永续成长，掠夺者既替全军承伤又能挡住对手的取巧打法。',
+      weaknesses: '狂热死士每造成一次伤害就自损等量生命，纪念碑也随全军输出不断流失生命，整体靠自伤换强度极易自爆。',
+      tip: '用低伤害的小生物「喂」给【狂热死士】与【狂怒纪念碑】逼其自损；面对【掠夺者】时改用生物强攻而非魔法，并集火点掉纪念碑。',
+    },
+    blood: {
+      strengths: '所有血族卡牌都是「能量 + 生命」双重付费，因此同费下数值远超常规：食尸鬼靠敌方尸体无限成长，审判者让对格生物承伤翻倍，惩戒者与血之秘术师把伤痛化为攻击力。',
+      weaknesses: '每次施法都要付出生命，本体极易被自己掏空；审判者、血之秘术师等核心都依赖对格或对方本体受创才有收益。',
+      tip: '保持本体高血量、用高攻生物反复压制【审判者】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
+    },
+    spectromancer: {
+      strengths: '45 张中立造物各具奇效：火山/恶臭沼泽/诅咒之地持续消耗全场，行军石与漫步石搅乱阵线，三座祭坛把生物换成能量，魔法学院与巨型橡树每回合免费铺场，至尊元素与超级巨像后期攻击力极高。',
+      weaknesses: '造物多为 0 攻站场牌，自身不产生压力；每局随机到的 4 张造物组合差异极大，稳定性差。',
+      tip: '用高攻生物直接推平其 0 攻造物阵线，并优先点掉【魔法学院】【巨型橡树】【火焰神殿】这类持续铺场源。',
     },
   };
 
@@ -5083,15 +5646,37 @@ function renderCustomDeckHubScreen(): string {
 
 function renderCustomDeckBuilderScreen(): string {
   const classObj = HERO_CLASSES.find(c => c.id === editingDeck.className) || HERO_CLASSES[4];
+  // Mirrors SpectromancerEngine's class→power map so every discipline (Forest included) shows
+  // its own card pool in the 5th column instead of falling back to the illusion pool.
+  const classElementMap: Record<string, ElementType> = {
+    sorcery: 'special',
+    demonologist: 'special',
+    beastmaster: 'special',
+    chronomancer: 'special',
+    goblin: 'special',
+    forest: 'special',
+    golem: 'special',
+    cult: 'special',
+    blood: 'special',
+    spectromancer: 'special',
+    necromancer: 'death',
+    cleric: 'holy',
+    mechanician: 'mechanics',
+    dominator: 'control',
+    chaosmaster: 'chaos',
+    illusionist: 'illusion',
+  };
   const elements: { key: ElementType; label: string }[] = [
     { key: 'fire', label: '火系' },
     { key: 'water', label: '水系' },
     { key: 'air', label: '气系' },
     { key: 'earth', label: '土系' },
-    { key: (editingDeck.className === 'sorcery' ? 'special' : (editingDeck.className === 'necromancer' ? 'death' : (editingDeck.className === 'cleric' ? 'holy' : (editingDeck.className === 'mechanician' ? 'mechanics' : (editingDeck.className === 'dominator' ? 'control' : (editingDeck.className === 'chaosmaster' ? 'chaos' : 'illusion')))))), label: classObj.nameCn }
+    { key: classElementMap[editingDeck.className] || 'special', label: classObj.nameCn }
   ];
 
+  // PC tokens (Bee Soldier…) exist in Gd.spe but can never be put into a deck.
   let pool = allCardsList.filter(c => {
+    if (c.token) return false;
     if (builderPoolFilter === 'special') {
       return c.className === editingDeck.className || c.element === 'special';
     }
@@ -5140,7 +5725,7 @@ function renderCustomDeckBuilderScreen(): string {
                            data-slot-idx="${slotIdx}"
                            style="${isSelected ? 'border-color:#ffd700; box-shadow:0 0 12px #ffd700;' : ''}">
                         ${card ? `
-                          <img src="${toRel(card.imgUrl)}" class="deck-slot-card-img" alt="${card.nameCn}" />
+                          <img src="${toRel(card.imgUrl)}" class="deck-slot-card-img ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
                           <div class="deck-slot-cost">${card.cost}</div>
                           ${card.type === 'creature' ? `
                             <div class="deck-slot-atk">${formatCardAtk(card.attack)}</div>
@@ -5161,7 +5746,7 @@ function renderCustomDeckBuilderScreen(): string {
             ${previewCard ? `
               <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(142,114,58,0.3); padding-bottom:2px;">
                 <span style="font-weight:900; color:#5c2c10; font-size:14px;">${previewCard.nameCn} (${previewCard.name})</span>
-                <span style="font-size:12px; font-weight:800; color:#991b1b;">能量消耗: ${previewCard.cost}</span>
+                <span style="font-size:12px; font-weight:800; color:#991b1b;">能量消耗: ${previewCard.cost}${previewCard.lifeCost ? ` + ${previewCard.lifeCost} 生命` : ''}</span>
               </div>
               <div style="font-size:12px; color:#332415; margin-top:2px; line-height:1.45;">
                 ${previewCard.desc}
@@ -5182,9 +5767,10 @@ function renderCustomDeckBuilderScreen(): string {
             ${pool.map((c) => {
               const isEquipped = editingDeck.cards.some(slotCard => slotCard && slotCard.id === c.id);
               return `
-                <div class="deck-pool-item ${isEquipped ? 'already-equipped' : ''}" data-card-id="${c.id}" title="${c.nameCn} (${c.cost}耗能)${isEquipped ? ' - 已配置在卡组中' : ''}">
-                  <img src="${toRel(c.imgUrl)}" class="deck-slot-card-img" alt="${c.nameCn}" />
+                <div class="deck-pool-item ${isEquipped ? 'already-equipped' : ''}" data-card-id="${c.id}" title="${c.nameCn} (${c.cost}耗能${c.lifeCost ? ` + ${c.lifeCost}生命` : ''})${isEquipped ? ' - 已配置在卡组中' : ''}">
+                  <img src="${toRel(c.imgUrl)}" class="deck-slot-card-img ${c.type === 'spell' ? 'spell-art' : ''}" alt="${c.nameCn}" />
                   <div class="deck-slot-cost">${c.cost}</div>
+                  ${lifeCostBadge(c)}
                   ${c.type === 'creature' ? `
                     <div class="deck-slot-atk">${formatCardAtk(c.attack)}</div>
                     <div class="deck-slot-life">${c.life}</div>
@@ -5950,7 +6536,7 @@ function attachEventListeners() {
 
     const availableClasses: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin'
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
     ];
 
     let pClass: HeroClass = HERO_CLASSES[playerClassIndex].id === 'random'
@@ -6334,6 +6920,25 @@ function attachEventListeners() {
         }
       } else {
         selectedCard = card;
+        // PC prompt "^You can't use this card while Reaver is in play^".
+        if (
+          card.type === 'spell' &&
+          !card.isActivatedAbility &&
+          engine.playerBoard.some((c) => c !== null && c.card.ability === 'reaver_redirect')
+        ) {
+          showToastNotice('⚠️ 当【掠夺者】在场时，您不能施放魔法');
+        }
+        // PC prompt "^You should have more life to use this card^" (Blood double payment).
+        if (card.lifeCost && engine.player.hp <= card.lifeCost) {
+          showToastNotice(`⚠️ 生命不足：施放【${card.nameCn}】需额外支付 ${card.lifeCost} 点生命`);
+        }
+        // PC prompt "^There is no rabbit in play^" — Forest Wolf needs a Magic Rabbit to eat.
+        if (
+          card.onSummon === 'forest_wolf_devour' &&
+          !engine.playerBoard.some((c) => c !== null && c.card.id === 'forest_magic_rabbit')
+        ) {
+          showToastNotice('⚠️ 场上没有【魔法兔子】，【森林饿狼】无法被召唤');
+        }
       }
       render();
     });
@@ -6364,9 +6969,11 @@ function attachEventListeners() {
       }
 
       if (side === 'player') {
-        const isValidCreatureSlot = selectedCard.id === 'death_emissary_of_dorlak'
-          ? engine.playerBoard[slotIdx] !== null
-          : engine.playerBoard[slotIdx] === null;
+        const isValidCreatureSlot = selectedCard.onSummon === 'forest_wolf_devour'
+          ? engine.playerBoard[slotIdx]?.card.id === 'forest_magic_rabbit'
+          : (selectedCard.id === 'death_emissary_of_dorlak'
+            ? engine.playerBoard[slotIdx] !== null
+            : engine.playerBoard[slotIdx] === null);
         if ((selectedCard.type === 'creature' && isValidCreatureSlot) || (selectedCard.targetType === 'empty_friendly_slot' && engine.playerBoard[slotIdx] === null)) {
           if (engine.isLanGame && engine.isGuest) {
             isActionPending = true;

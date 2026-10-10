@@ -491,22 +491,6 @@ body, html {
   100% { transform: scale(1.9); opacity: 0; filter: brightness(1); }
 }
 
-.spell-vfx-lightning {
-  background: rgba(255, 255, 255, 0.95);
-  animation: vfxLightning 0.65s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-}
-
-@keyframes vfxLightning {
-  0% { opacity: 0; }
-  10% { opacity: 1; background: #ffffff; box-shadow: inset 0 0 100px #60a5fa; }
-  25% { opacity: 0.2; }
-  40% { opacity: 0.95; background: #fef08a; box-shadow: inset 0 0 120px #38bdf8; }
-  65% { opacity: 0.3; }
-  80% { opacity: 0.85; background: #ffffff; }
-  100% { opacity: 0; }
-}
-
-
 .spell-vfx-acidic {
   background: radial-gradient(circle at center, rgba(74, 222, 128, 0.85) 0%, rgba(34, 197, 94, 0.5) 45%, rgba(20, 83, 45, 0.2) 70%, transparent 85%);
   animation: vfxAcidic 0.75s ease-out forwards;
@@ -519,6 +503,10 @@ body, html {
 }
 
 .spell-vfx-arcane {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9600;
   background: radial-gradient(circle at center, rgba(192, 132, 252, 0.9) 0%, rgba(147, 51, 234, 0.6) 45%, rgba(88, 28, 135, 0.3) 70%, transparent 85%);
   animation: vfxArcane 0.75s cubic-bezier(0.1, 0.8, 0.2, 1) forwards;
 }
@@ -2640,7 +2628,12 @@ body, html {
   image-rendering: -webkit-optimize-contrast;
 }
 
-/* SPELL CARD DISPLAY: Full-bleed rectangular magical scene adaptation */
+/* SPELL CARD DISPLAY
+   The hand cards are WIDE strips (~2.7–4.2 : 1 depending on the screen; see the layout: the hand
+   strip is 55vh tall and split into 5 columns x 4 rows). The PC spell art is a circle with a
+   transparent surround, so a card face uses `cover`: the art fills the whole strip edge to edge
+   (a horizontal band through the middle of the painting) with no distortion and no empty corners.
+   The enlarged casting presentation keeps the original circular ratio instead (`contain`). */
 .hand-card-cell.type-spell {
   background: radial-gradient(circle at center, rgba(46, 26, 62, 0.95) 0%, rgba(14, 10, 20, 0.98) 100%);
   overflow: hidden;
@@ -2650,8 +2643,6 @@ body, html {
 .hand-card-art.spell-art {
   object-fit: cover;
   object-position: center center;
-  transform: scale(1.42);
-  transform-origin: center center;
   padding: 0;
   background: transparent;
   filter: drop-shadow(0 0 10px rgba(168, 85, 247, 0.6));
@@ -2660,7 +2651,7 @@ body, html {
 
 /* Spell Art in Parchment Inspector: Exactly Matching Creature Art Scale & Border (No Oversized Scale) */
 .parchment-card-art.spell-art {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   background: radial-gradient(circle at center, #2e1a3e 0%, #120a1c 100%);
   border: 1.8px solid #7c5427;
@@ -4111,46 +4102,6 @@ body, html {
   overflow: hidden;
 }
 
-/* 1. Lightning Spells (Lbolt.dds / Lparts.tga) */
-.spell-vfx-bolt {
-  position: fixed;
-  top: 0;
-  width: 64px;
-  height: 100vh;
-  pointer-events: none;
-  z-index: 9600;
-  background-image: url('/ui/vfx/lbolt.png');
-  background-repeat: repeat-y;
-  background-size: 64px auto;
-  filter: drop-shadow(0 0 18px #7bf) drop-shadow(0 0 35px #fff) brightness(1.6);
-  animation: anim-lightning-strike 0.65s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
-  transform-origin: top center;
-}
-
-@keyframes anim-lightning-strike {
-  0% {
-    opacity: 0;
-    transform: scaleX(0.2) scaleY(0);
-  }
-  15% {
-    opacity: 1;
-    transform: scaleX(1.4) scaleY(1);
-    filter: brightness(3.5) drop-shadow(0 0 30px #ffffff);
-  }
-  30% {
-    opacity: 0.85;
-    transform: scaleX(0.9) scaleY(1);
-  }
-  50% {
-    opacity: 1;
-    transform: scaleX(1.2) scaleY(1);
-  }
-  100% {
-    opacity: 0;
-    transform: scaleX(0.1) scaleY(1);
-  }
-}
-
 /* Lightning Impact Burst Frame-by-Frame (Lparts.tga 320x64 -> 5 frames) */
 .vfx-lparts-burst {
   position: fixed;
@@ -4368,6 +4319,52 @@ body, html {
   25% { opacity: 1; }
   85% { opacity: 1; }
   100% { opacity: 0; transform: translate(var(--end-x, 100vw), var(--end-y, 50vh)) scale(1.1); }
+}
+
+/* 7b. Mad Hermit's Passive Magic Rabbit (Rabbits.tga) */
+.vfx-rabbits {
+  position: fixed;
+  width: 58px;
+  height: 58px;
+  pointer-events: none;
+  z-index: 9690;
+  transform: translate(-50%, -50%);
+  background: url('/ui/vfx/rabbits.png') center / contain no-repeat;
+  filter: drop-shadow(0 0 16px #86efac) drop-shadow(0 0 30px #22c55e) brightness(1.25);
+  animation: anim-rabbit-hop 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.2) forwards;
+}
+
+@keyframes anim-rabbit-hop {
+  0% { transform: translate(-50%, -10%) scale(0.15); opacity: 0; filter: brightness(2.2); }
+  35% { transform: translate(-50%, -85%) scale(1.2); opacity: 1; filter: brightness(1.45); }
+  65% { transform: translate(-50%, -45%) scale(1.0); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.06); opacity: 0; filter: brightness(0.8); }
+}
+
+/* 7c. Blood discipline life payment badge ("cost N blood and 2N life") */
+.card-lifecost-badge {
+  position: absolute;
+  left: 2px;
+  bottom: 2px;
+  padding: 0 4px;
+  font-family: 'Cinzel', 'Trebuchet MS', serif, sans-serif;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.35;
+  color: #fff5f5;
+  background: linear-gradient(180deg, #b91c1c 0%, #7f1d1d 100%);
+  border: 1px solid #450a0a;
+  border-radius: 4px;
+  text-shadow: 0 1px 2px #000;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  z-index: 6;
+}
+
+.codex-card-thumb-wrap .card-lifecost-badge,
+.codex-card-item .card-lifecost-badge {
+  left: 4px;
+  bottom: 4px;
 }
 
 /* 8. Time Stop Hourglass & Spacetime Distortion (Timestop.tga) */
@@ -4683,10 +4680,12 @@ body, html {
 .big-spell-frame.elem-holy { border-color: #fbbf24; box-shadow: 0 0 35px rgba(251, 191, 36, 0.8); }
 .big-spell-frame.elem-death { border-color: #6b21a8; box-shadow: 0 0 30px rgba(107, 33, 168, 0.8); }
 
+/* Enlarged casting presentation: show the spell art at its original circular ratio (contain),
+   unlike the flat card faces which stretch it to fill. */
 .big-spell-frame .big-spell-art {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   display: block;
 }
 
@@ -6198,6 +6197,15 @@ body, html {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Card-face views (hand, codex, deck builder, opponent reveal) use `cover`: the art fills the
+   whole card without distortion (the hand cards are wide strips, ~2.7–4.2 : 1). */
+.codex-card-thumb.spell-art,
+.deck-slot-card-img.spell-art {
+  object-fit: cover;
+  object-position: center center;
+  background: radial-gradient(circle at center, rgba(46, 26, 62, 0.95) 0%, rgba(14, 10, 20, 0.98) 100%);
 }
 
 .deck-slot-cost {

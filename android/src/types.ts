@@ -1,5 +1,5 @@
 export type ElementType = 'fire' | 'water' | 'air' | 'earth' | 'special' | 'death' | 'holy' | 'mechanics' | 'control' | 'chaos' | 'illusion';
-export type HeroClass = 'sorcery' | 'necromancer' | 'cleric' | 'mechanician' | 'dominator' | 'chaosmaster' | 'illusionist' | 'demonologist' | 'beastmaster' | 'chronomancer' | 'goblin';
+export type HeroClass = 'sorcery' | 'necromancer' | 'cleric' | 'mechanician' | 'dominator' | 'chaosmaster' | 'illusionist' | 'demonologist' | 'beastmaster' | 'chronomancer' | 'goblin' | 'forest' | 'golem' | 'cult' | 'blood' | 'spectromancer';
 
 export interface CardDef {
   id: string;
@@ -19,7 +19,6 @@ export interface CardDef {
   swift?: boolean;
   flying?: boolean;
   spellImmune?: boolean;
-  poison?: number;
   regen?: number;
   ability?: string;
   onSummon?: string;
@@ -27,6 +26,11 @@ export interface CardDef {
   requiresTarget?: boolean;
   isActivatedAbility?: boolean;
   sourceCreatureUid?: string;
+  // PC tokens such as Bee Soldier exist in Gd.spe without a cost and are never dealt into a deck.
+  token?: boolean;
+  // Blood discipline double payment: the printed cost is paid from the class power pool and this
+  // many extra life points are paid by the owner on top of it.
+  lifeCost?: number;
   targetType?: 'empty_friendly_slot' | 'enemy_creature' | 'any_creature' | 'none';
 }
 
@@ -43,13 +47,16 @@ export interface BoardCreature {
   isWall: boolean;
   flying: boolean;
   spellImmune: boolean;
-  poison: number;
   regen: number;
   canAttack: boolean;
   skipNextAttack?: boolean;
   directHeroAttackTurn?: boolean;
   tempAttackBuff?: number;
+  // PC Chastiser: "+2 until after its next attack" — consumed right after this creature attacks.
+  pendingAttackBonus?: number;
   isDestroyed?: boolean;
+  // Guardian Statue (PC: "receives no damage until it performs its first attack").
+  hasAttacked?: boolean;
   animState?: 'idle' | 'attacking' | 'damaged' | 'dead';
 }
 
@@ -64,6 +71,11 @@ export interface PlayerState {
   mana: Record<ElementType, number>;
   growth: Record<ElementType, number>;
   hand: CardDef[];
+  // Golem Master champion upkeep. The permanent part survives the Golem's death (Army Upgrade /
+  // Golem Instructor), the temporary part lasts until the end of the owner's turn (Golem's Frenzy
+  // / Golem Guide) — both therefore live on the player, not on the creature.
+  golemAttackBonus?: number;
+  golemTempAttackBonus?: number;
 }
 
 export type GamePhase = 'player_turn' | 'combat' | 'enemy_turn' | 'game_over';
@@ -139,6 +151,11 @@ export interface NetworkGameStateSnapshot {
   enemyGrowth: Record<ElementType, number>;
   playerBoard: (BoardCreature | null)[];
   enemyBoard: (BoardCreature | null)[];
+  // Golem Master upkeep lives on the player, so it has to travel with the board for the guest.
+  playerGolemAttackBonus?: number;
+  playerGolemTempAttackBonus?: number;
+  enemyGolemAttackBonus?: number;
+  enemyGolemTempAttackBonus?: number;
   guestHand?: CardDef[];
   hostHand?: CardDef[];
   enemyRevealedCardIds?: string[];
