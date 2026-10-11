@@ -408,8 +408,54 @@ interface BattlefieldScenario {
   initialEnemyCreatures?: Array<{ slot: number; cardId: string }>;
 }
 
+// ==========================================
+// 特殊战场造物 (Special Battlefield Constructs)
+// ==========================================
+// 虹光造物（火山、祭坛、行军石、魔法学院、至尊元素…）不是任何流派的牌：它们不进牌库、
+// 不进发牌池、也不能被选为职业。它们唯一的存在方式是作为「战场场景」的预置元素登场。
+const BATTLEFIELD_RELIC_IDS: ReadonlySet<string> = new Set(
+  (cardsData as CardDef[]).filter((c) => c.battlefield).map((c) => c.id)
+);
+
+function isBattlefieldRelic(cardId: string): boolean {
+  return BATTLEFIELD_RELIC_IDS.has(cardId);
+}
+
+// 场景造物总览：卡牌资料页与帮助页共用。
+function getBattlefieldRelics(): CardDef[] {
+  return (cardsData as CardDef[]).filter((c) => c.battlefield);
+}
+
+// 把场景里的卡牌 id 解析成真正的 CardDef（找不到就跳过，避免场景静默失效）。
+function resolveScenarioCreatures(
+  specs?: Array<{ slot: number; cardId: string }>
+): Array<{ slot: number; card: CardDef }> {
+  const out: Array<{ slot: number; card: CardDef }> = [];
+  if (!specs) return out;
+  const allCards = cardsData as CardDef[];
+  for (const item of specs) {
+    const c = allCards.find((card) => card.id === item.cardId);
+    if (c) out.push({ slot: item.slot, card: c });
+  }
+  return out;
+}
+
+// 该场景实际用到的造物 id（用于场景卡片下方的造物小图标预览）。
+function getScenarioRelicIds(scenario: BattlefieldScenario): string[] {
+  const ids = new Set<string>();
+  [...(scenario.initialPlayerCreatures || []), ...(scenario.initialEnemyCreatures || [])].forEach((spec) => {
+    if (isBattlefieldRelic(spec.cardId)) ids.add(spec.cardId);
+  });
+  return Array.from(ids);
+}
+
 const SINGLE_DUEL_DIFFICULTIES = ['容易', '普通', '困难', '大法师'];
 let singleDuelDifficultyIdx: number = 1; // Default '普通'
+
+// 可被选择的流派（不含「随机」占位与特殊战场造物）。
+function getSelectableClasses(): HeroClass[] {
+  return HERO_CLASSES.filter((c) => c.id !== 'random').map((c) => c.id as HeroClass);
+}
 
 const BATTLEFIELD_SCENARIOS: BattlefieldScenario[] = [
   {
@@ -428,7 +474,7 @@ const BATTLEFIELD_SCENARIOS: BattlefieldScenario[] = [
     theme: 'citadel',
     playerHp: 60,
     enemyHp: 60,
-    rule: '经典圣殿法则：双方 60 点初始生命值，遵循正统决斗法则，能量常规匀速增长。',
+    rule: '经典圣殿法则：双方 60 点初始生命值，标准决斗法则，能量常规匀速增长。',
   },
   {
     id: 'forest',
@@ -552,7 +598,222 @@ const BATTLEFIELD_SCENARIOS: BattlefieldScenario[] = [
     extraPlayerMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
     extraEnemyMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
   },
+
+  // ==========================================
+  // 特殊战场造物场景 (Battlefield Construct Scenarios)
+  // 这些场景把虹光造物阵列为战场本身：火山、沼泽、诅咒之地持续消耗全场，
+  // 和平之树压低全场攻击，行军石搅乱阵线，魔法学院/巨型橡树/火焰神殿免费铺场。
+  // ==========================================
+  {
+    id: 'baffler_arena',
+    name: '🌀 抑魔双倍场',
+    icon: '🌀',
+    theme: 'sky',
+    playerHp: 70,
+    enemyHp: 70,
+    rule: '抑魔法则：双方阵中各预置一座【抑魔处所】——场上所有卡牌的费用翻倍，且抑魔处所不受任何魔法影响。高费决斗，每一步都要精打细算。',
+    initialPlayerCreatures: [{ slot: 5, cardId: 'gop_baffler_roost' }],
+    initialEnemyCreatures: [{ slot: 0, cardId: 'gop_baffler_roost' }],
+  },
+  {
+    id: 'peace_grove',
+    name: '🌳 和平之林',
+    icon: '🌳',
+    theme: 'forest',
+    playerHp: 75,
+    enemyHp: 75,
+    rule: '和平法则：双方阵中各预置一棵【和平之树】，使对手所有生物攻击力 -1，土系初始能量 +2。低伤害拉锯战，谁能先拆掉对方的树谁就掌握主动。',
+    extraPlayerMana: { earth: 2 },
+    extraEnemyMana: { earth: 2 },
+    initialPlayerCreatures: [{ slot: 2, cardId: 'gop_peace_tree' }],
+    initialEnemyCreatures: [{ slot: 3, cardId: 'gop_peace_tree' }],
+  },
+  {
+    id: 'volcano_forge',
+    name: '🌋 火山熔炉',
+    icon: '🌋',
+    theme: 'volcano',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '熔炉法则：双方 3 号位各矗立一座【火山】（99 生命、免疫魔法），每个拥有者回合开始时会烧灼对位生物 5 点。火系初始能量 +3，抢占对位就能白吃伤害。',
+    extraPlayerMana: { fire: 3 },
+    extraEnemyMana: { fire: 3 },
+    initialPlayerCreatures: [{ slot: 2, cardId: 'gop_volcano' }],
+    initialEnemyCreatures: [{ slot: 2, cardId: 'gop_volcano' }],
+  },
+  {
+    id: 'fetid_marsh',
+    name: '🦠 恶臭沼泽',
+    icon: '🦠',
+    theme: 'forest',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '腐蚀法则：双方 2 号位各预置一片【恶臭沼泽】（免疫魔法），每个拥有者回合开始时对场上所有生物造成 2 点伤害。全场每回合持续掉血，速攻与再生生物价值暴涨。',
+    initialPlayerCreatures: [{ slot: 1, cardId: 'gop_fetid_swamp' }],
+    initialEnemyCreatures: [{ slot: 4, cardId: 'gop_fetid_swamp' }],
+  },
+  {
+    id: 'cursed_graveyard',
+    name: '💀 诅咒墓地',
+    icon: '💀',
+    theme: 'citadel',
+    playerHp: 70,
+    enemyHp: 70,
+    rule: '诅咒法则：双方 1 号位各预置一片【诅咒之地】——场上任一生物死亡时，会按其攻击力对全场所有生物引爆一次伤害。链式爆破，送死也能反杀。',
+    initialPlayerCreatures: [{ slot: 0, cardId: 'gop_cursed_ground' }],
+    initialEnemyCreatures: [{ slot: 5, cardId: 'gop_cursed_ground' }],
+  },
+  {
+    id: 'hallowed_sanctuary',
+    name: '⛪ 神佑圣地',
+    icon: '⛪',
+    theme: 'citadel',
+    playerHp: 75,
+    enemyHp: 75,
+    rule: '神佑法则：双方 3 号位各预置一片【神佑之地】——己方生物死亡时，按该生物攻击力为己方本体与全体生物回复生命。以命换血，越战越坚。',
+    initialPlayerCreatures: [{ slot: 2, cardId: 'gop_hallowed_ground' }],
+    initialEnemyCreatures: [{ slot: 3, cardId: 'gop_hallowed_ground' }],
+  },
+  {
+    id: 'academy_of_magic',
+    name: '🏫 魔法学院',
+    icon: '🏫',
+    theme: 'sky',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '学院法则：双方 5 号位各预置一座【魔法学院】（免疫魔法）——每当拥有者施放一次魔法，就会在随机空格免费放下一名 4/12【魔法专家】。法术越密集，场面越失控。',
+    initialPlayerCreatures: [{ slot: 4, cardId: 'gop_academy_of_magic' }],
+    initialEnemyCreatures: [{ slot: 1, cardId: 'gop_academy_of_magic' }],
+  },
+  {
+    id: 'great_oak_grove',
+    name: '🌲 巨型橡树之林',
+    icon: '🌲',
+    theme: 'forest',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '橡树法则：双方 4 号位各预置一棵【巨型橡树】，每个拥有者回合开始时在随机空格免费放下一名【森林仙子】。土系初始能量 +2，比谁能先把树苗养成洪流。',
+    extraPlayerMana: { earth: 2 },
+    extraEnemyMana: { earth: 2 },
+    initialPlayerCreatures: [{ slot: 5, cardId: 'gop_great_oak' }],
+    initialEnemyCreatures: [{ slot: 0, cardId: 'gop_great_oak' }],
+  },
+  {
+    id: 'temple_of_fire',
+    name: '🔥 烈焰神殿',
+    icon: '🔥',
+    theme: 'volcano',
+    playerHp: 60,
+    enemyHp: 60,
+    rule: '神殿法则：双方 3 号位各预置一座【火焰神殿】，每个拥有者回合开始时在随机空格免费放下一名【火焰祭司】（每回合全系能量成长 +1）。火系初始能量 +3，能量滚雪球。',
+    extraPlayerMana: { fire: 3 },
+    extraEnemyMana: { fire: 3 },
+    initialPlayerCreatures: [{ slot: 2, cardId: 'gop_temple_of_fire' }],
+    initialEnemyCreatures: [{ slot: 3, cardId: 'gop_temple_of_fire' }],
+  },
+  {
+    id: 'march_of_stone',
+    name: '🗿 行军石阵',
+    icon: '🗿',
+    theme: 'citadel',
+    playerHp: 70,
+    enemyHp: 70,
+    rule: '石阵法则：双方右侧各预置一块【行军石】（99 生命、免疫魔法），每个拥有者回合结束时会向右推进一格并与占位生物交换位置。阵线永不安定，堵位与换位成为核心博弈。',
+    initialPlayerCreatures: [{ slot: 4, cardId: 'gop_marching_stone' }],
+    initialEnemyCreatures: [{ slot: 1, cardId: 'gop_marching_stone' }],
+  },
+  {
+    id: 'everraining_land',
+    name: '🌧️ 永雨之地',
+    icon: '🌧️',
+    theme: 'sky',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '永雨法则：双方 3 号位各预置一片【永雨之地】——场上所有卡牌费用 +2，任一玩家跳过回合时其本体受 5 点伤害。既拖慢节奏又惩罚空过，逼你每回合都得做事。',
+    initialPlayerCreatures: [{ slot: 2, cardId: 'gop_everraining_land' }],
+    initialEnemyCreatures: [{ slot: 3, cardId: 'gop_everraining_land' }],
+  },
+  {
+    id: 'astral_convergence',
+    name: '🌌 星魂共鸣',
+    icon: '🌌',
+    theme: 'sky',
+    playerHp: 65,
+    enemyHp: 65,
+    rule: '共鸣法则：双方 2 号位各预置一名【星魂妨碍者】——当对手使用一张卡牌时，他会失去与该牌同系的所有剩余能量。能量清零的压迫下，出牌顺序就是生死线。',
+    initialPlayerCreatures: [{ slot: 1, cardId: 'gop_astral_damper' }],
+    initialEnemyCreatures: [{ slot: 4, cardId: 'gop_astral_damper' }],
+  },
+  {
+    id: 'supreme_trial',
+    name: '👑 至尊造物试炼',
+    icon: '👑',
+    theme: 'volcano',
+    playerHp: 90,
+    enemyHp: 90,
+    rule: '试炼法则：双方各 90 点生命、全系初始能量 +3，双方 1 号位各预置一名【禁锢元素】——当拥有者任意一系能量达到 12 时，它会自行释放并转化为【至尊元素】。这是终局造物的舞台。',
+    extraPlayerMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
+    extraEnemyMana: { fire: 3, water: 3, air: 3, earth: 3, special: 3 },
+    initialPlayerCreatures: [{ slot: 0, cardId: 'gop_cloistered_elemental' }],
+    initialEnemyCreatures: [{ slot: 5, cardId: 'gop_cloistered_elemental' }],
+  },
 ];
+
+// 单局对战/联赛/局域网共用的场景装配。'random' 会先摇掉自身再抽取。
+function pickScenarioById(id: string): BattlefieldScenario {
+  const found = BATTLEFIELD_SCENARIOS.find((s) => s.id === id);
+  if (found && found.id !== 'random') return found;
+  const candidates = BATTLEFIELD_SCENARIOS.filter((s) => s.id !== 'random');
+  return candidates[Math.floor(Math.random() * candidates.length)] || BATTLEFIELD_SCENARIOS[0];
+}
+
+// 场景 → 引擎构造参数。单局对战、英雄联赛与局域网共用同一条装配路径，
+// 保证同一场景在三种模式下预置的造物、生命与能量完全一致。
+function buildScenarioEngineOptions(scenario: BattlefieldScenario) {
+  return {
+    playerHp: scenario.playerHp,
+    enemyHp: scenario.enemyHp,
+    leagueRule: scenario.rule,
+    initialPlayerCreatures: resolveScenarioCreatures(scenario.initialPlayerCreatures),
+    initialEnemyCreatures: resolveScenarioCreatures(scenario.initialEnemyCreatures),
+    extraPlayerMana: scenario.extraPlayerMana,
+    extraEnemyMana: scenario.extraEnemyMana,
+  };
+}
+
+// 联赛没有场景选择器：按联赛 id + 当前场次稳定地分配一个战场场景（含特殊造物场景），
+// 同一场次重进不会换场景。
+function getLeagueScenarioForCurrentMatch(): BattlefieldScenario {
+  const matchNo = activeLeague?.currentMatch || 1;
+  const seedStr = `${activeLeague?.id || 'league'}#${matchNo}`;
+  let h = 0;
+  for (let i = 0; i < seedStr.length; i++) h = (h * 31 + seedStr.charCodeAt(i)) >>> 0;
+  const candidates = BATTLEFIELD_SCENARIOS.filter((s) => s.id !== 'random');
+  return candidates[h % candidates.length];
+}
+
+// 局域网：双方各自可选场景，因此只允许「双方对称」的场景，
+// 避免出现「一方阵地上多一座祭坛」这种无法在开局同步的失衡。
+// 判定标准：双方预置造物的 id 与数量完全一致（槽位允许因镜像而不同）。
+function isLanSelectableScenario(scenario: BattlefieldScenario): boolean {
+  if (scenario.id === 'random') return true;
+  const sig = (specs?: Array<{ slot: number; cardId: string }>) =>
+    (specs || []).map((s) => s.cardId).sort().join('|');
+  return sig(scenario.initialPlayerCreatures) === sig(scenario.initialEnemyCreatures);
+}
+
+function getLanSelectableScenarios(): BattlefieldScenario[] {
+  return BATTLEFIELD_SCENARIOS.filter(isLanSelectableScenario);
+}
+
+// 局域网场景下标越界保护（本地存储可能来自旧版本）。
+function getCurrentLanScenario(): BattlefieldScenario {
+  const list = getLanSelectableScenarios();
+  if (!Number.isFinite(lanScenarioIdx) || lanScenarioIdx < 0 || lanScenarioIdx >= list.length) {
+    lanScenarioIdx = 1 % list.length;
+  }
+  return list[lanScenarioIdx];
+}
 let singleDuelScenarioIdx: number = 0;
 let showLeagueAdviceModal: boolean = false;
 let showCampaignTreasuresModal: boolean = false;
@@ -797,8 +1058,10 @@ const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; ar
   { id: 'golem', nameCn: '魔匠', icon: '🗿', artImg: './cards/Golem.webp', desc: '魔匠师开局即拥有一只不受魔法与技能伤害的【魔像】，阵亡后立刻满血归位，并以军备升级与操纵师永久强化它' },
   { id: 'cult', nameCn: '邪教', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '膜拜系的狂热信徒与死士以自伤换取力量，狂怒纪念碑让全军每回合多打一次，掠夺者则替全军承受伤害并封锁魔法' },
   { id: 'blood', nameCn: '鲜血', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '血族卡牌以「N 点鲜血系能量 + 2N 点生命」双重付费，食尸鬼靠敌方尸体成长，审判者与惩戒者把伤痛化为暴力' },
-  { id: 'spectromancer', nameCn: '虹光法师', icon: '🌈', artImg: './cards/Celestia.webp', desc: '《力量集结》的中立造物大师：火山、地雷、行军石、三座祭坛、魔法学院与至尊元素等 45 张独特造物组成专属卡池' },
 ];
+
+// 虹光法师已从可选职业中移除；虹光造物（火山、祭坛、行军石、魔法学院、至尊元素…）不是任何流派的牌：
+// 它们不进牌库、不进发牌池、也不能被选为职业。它们唯一的存在方式是作为「战场场景」的预置元素登场。
 
 // ==========================================
 // LAN MULTIPLAYER DUEL STATE
@@ -814,6 +1077,11 @@ let lanPlayerFaceId: number = (() => {
 let lanPlayerClassIdx: number = (() => {
   try { return parseInt(localStorage.getItem('spectro_lan_class') || '1', 10); } catch { return 1; }
 })();
+// 局域网战场场景下标（仅房主选择，随 GAME_START 同步给 guest）。
+// 注意：这里只做惰性读取，合法性校验在使用时进行（场景列表在文件后部声明）。
+let lanScenarioIdx: number = (() => {
+  try { return parseInt(localStorage.getItem('spectro_lan_scenario') || '1', 10); } catch { return 1; }
+})();
 let lanJoinCode: string = '';
 let lanStatusText: string = '';
 let lanIsConnecting: boolean = false;
@@ -827,7 +1095,7 @@ function getMyLanProfile(): NetworkUserProfile {
   if (chosenClass.id === 'random') {
     const validClasses: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
     ];
     actualClass = validClasses[Math.floor(Math.random() * validClasses.length)];
   } else {
@@ -846,6 +1114,7 @@ function saveLanProfilePreferences() {
     localStorage.setItem('spectro_lan_name', lanPlayerName);
     localStorage.setItem('spectro_lan_face', lanPlayerFaceId.toString());
     localStorage.setItem('spectro_lan_class', lanPlayerClassIdx.toString());
+    localStorage.setItem('spectro_lan_scenario', lanScenarioIdx.toString());
   } catch {}
 }
 
@@ -907,7 +1176,10 @@ function setupLanNetworkCallbacks() {
 
   lanNetwork.onMessageReceived = async (msg: NetworkMessage) => {
     if (msg.type === 'GAME_START') {
-      const { hostProfile, guestProfile, snapshot } = msg.payload;
+      const { hostProfile, guestProfile, snapshot, scenarioId } = msg.payload;
+      // 与房主在同一战场场景（含特殊造物预置）下开场；
+      // 场面 HP/手牌/牌组随后由快照对齐。
+      const lanScenario = pickScenarioById(scenarioId || 'sanctuary');
       launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
         engine = new SpectromancerEngine(guestProfile.className, undefined, {
           playerName: guestProfile.name,
@@ -915,6 +1187,7 @@ function setupLanNetworkCallbacks() {
           enemyName: hostProfile.name,
           enemyFace: hostProfile.face,
           enemyClass: hostProfile.className,
+          ...buildScenarioEngineOptions(lanScenario),
         });
         engine.isLanGame = true;
         engine.isHost = false;
@@ -992,6 +1265,10 @@ function startLanBattleAsHost() {
     return;
   }
 
+  // 房主选定的战场场景（含特殊造物场景）随 GAME_START 一并下发，
+  // 双方引擎在同一场景规则与预置造物下开场。
+  const scenario = getCurrentLanScenario();
+
   launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
     engine = new SpectromancerEngine(hostProfile.className, undefined, {
       playerName: hostProfile.name,
@@ -999,6 +1276,7 @@ function startLanBattleAsHost() {
       enemyName: guestProfile.name,
       enemyFace: guestProfile.face,
       enemyClass: guestProfile.className,
+      ...buildScenarioEngineOptions(scenario),
     });
     engine.isLanGame = true;
     engine.isHost = true;
@@ -1020,6 +1298,7 @@ function startLanBattleAsHost() {
         hostProfile,
         guestProfile,
         snapshot: initialSnapshot,
+        scenarioId: scenario.id,
       },
     });
 
@@ -3450,7 +3729,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">单局对战</div>
-              <div class="mode-card-desc">自定义 11 大流派与 78 款头像，人机快速博弈</div>
+              <div class="mode-card-desc">自定义 15 大流派与 78 款头像，人机快速博弈</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -3489,7 +3768,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">自组卡组</div>
-              <div class="mode-card-desc">查阅 136 张官方正版卡牌与特技秘典</div>
+              <div class="mode-card-desc">查阅 233 张卡牌与特技秘典</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -3526,6 +3805,11 @@ function renderLanLobbyModal(): string {
   const isConnected = lanNetwork.isConnected();
   const peerProfile = lanNetwork.getPeerProfile();
   const currentClass = HERO_CLASSES[lanPlayerClassIdx] || HERO_CLASSES[1];
+  const lanScenario = getCurrentLanScenario();
+  const lanScenarioList = getLanSelectableScenarios();
+  const relicPreview = getScenarioRelicIds(lanScenario).slice(0, 6)
+    .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+    .filter((c): c is CardDef => !!c);
 
   return `
     <div class="modal-overlay" id="lan-lobby-modal-overlay">
@@ -3562,8 +3846,30 @@ function renderLanLobbyModal(): string {
               </div>
             </div>
             <div style="font-size:11px; color:#94a3b8;">
-              当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 11 大流派及随机可选）
+              当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 ${HERO_CLASSES.length - 1} 大流派及随机可选）
             </div>
+            ${isHost ? `
+            <div class="lan-class-stepper" style="margin-top:6px;">
+              <button class="lan-class-step-btn" id="btn-lan-scene-prev" title="上一个战场场景">◀</button>
+              <button class="lan-class-display-btn" id="btn-lan-scene-display" title="点击查看战场场景规则">
+                <span style="font-size:16px;">${lanScenario.icon}</span>
+                <span class="lan-class-name">${lanScenario.name}</span>
+                <span class="lan-class-badge-pill">战场</span>
+              </button>
+              <button class="lan-class-step-btn" id="btn-lan-scene-next" title="下一个战场场景">▶</button>
+            </div>
+            <div style="font-size:11px; color:#94a3b8; margin-top:4px;">
+              战场场景: <strong style="color:#7dd3fc;">${lanScenario.name}</strong>（共 ${lanScenarioList.length} 款，随房间同步给对手）
+              ${relicPreview.length ? `<div style="margin-top:3px; display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                <span style="color:#fbbf24;">预置造物:</span>
+                ${relicPreview.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}" style="width:26px; height:36px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.06);" />`).join('')}
+              </div>` : ''}
+            </div>
+            ` : `
+            <div style="font-size:11px; color:#94a3b8; margin-top:4px;">
+              战场场景由房主选择，开局时自动同步
+            </div>
+            `}
           </div>
         </div>
 
@@ -3780,6 +4086,17 @@ function renderSingleDuelSetup(): string {
           <div class="single-duel-rule-desc">
             ⚡ <strong>场景法则：</strong>${curScenario.rule}
           </div>
+          ${(() => {
+            const relicIds = getScenarioRelicIds(curScenario);
+            if (!relicIds.length) return '';
+            const relics = relicIds
+              .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+              .filter((c): c is CardDef => !!c);
+            return `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 10px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:8px;">
+              <span style="font-size:11px; color:#fbbf24; font-weight:800;">🌈 预置造物（双方阵线）:</span>
+              ${relics.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}｜${c.desc}" style="width:30px; height:42px; object-fit:contain; border-radius:5px; background:rgba(255,255,255,0.07); cursor:help;" />`).join('')}
+            </div>`;
+          })()}
         </div>
 
         <div class="duel-combatants-row">
@@ -3877,7 +4194,7 @@ function renderCodexPageContent(tab: string): string {
           <div class="codex-section-body">
             Spectromancer 采用严密的 20 张卡牌体系：<br>
             • <strong>四大基础元素：</strong> 火系 4 张、水系 4 张、气系 4 张、土系 4 张。<br>
-            • <strong>专属流派法术：</strong> 当前法师专精系 4 张。<br>
+            • <strong>专属流派法术：</strong> 当前职业专精系 4 张（战场造物不进入任何卡组，仅由战场场景预置）。<br>
             所有卡牌分为低阶（1-4费）、中阶（2-9费）、高阶（5-11费）与传奇（10-12费）梯度，确保不同阶段均有策略应对。
           </div>
         </div>
@@ -3885,7 +4202,7 @@ function renderCodexPageContent(tab: string): string {
         <div class="codex-section-card">
           <div class="codex-section-title">⚖️ 核心卡牌平衡法则</div>
           <div class="codex-section-body">
-            为保证决斗策略的绝对平衡，构筑遵循官方设计准则：<br>
+            为保证决斗策略的绝对平衡，构筑遵循以下平衡准则：<br>
             1. <strong>基础成长卡牌唯一性：</strong> 【火焰祭司】、【人鱼长老】、【精灵隐士】这三张基础元素成长率+1的核心牌，全套卡组<strong>有且只能包含 1 张</strong>。<br>
             2. <strong>治疗卡牌区间：</strong> 基础元素治疗牌控制在 <strong>2 到 4 张</strong> 之间。<br>
             3. <strong>全场群伤限制：</strong> 强力群体清场牌（如【火焰波浪】、【连锁闪电】）全套卡组<strong>仅限 1 张</strong>。<br>
@@ -3904,7 +4221,7 @@ function renderCodexPageContent(tab: string): string {
     case 'classes':
       return `
         <div class="codex-section-card">
-          <div class="codex-section-title">✨ 原版六大经典法术专精 (Base Game)</div>
+          <div class="codex-section-title">✨ 六大经典法术专精 (Base Game)</div>
           <div class="codex-section-body">
             • <strong>🔮 巫术大师 (Sorcery)：</strong> 掌握纯粹奥术风暴、智力震撼与冥想，擅长直接法术伤害与强力单体控场。<br>
             • <strong>💀 死灵术士 (Necromancer)：</strong> 役使深渊亡骸、哀嚎女妖与吸血鬼领主，擅长牺牲献祭、亡者复苏与生命汲取。<br>
@@ -3928,16 +4245,30 @@ function renderCodexPageContent(tab: string): string {
           <div class="codex-section-title">⚡ 力量集结资料片专精 (Gathering of Power)</div>
           <div class="codex-section-body">
             • <strong>⏳ 时空术士 (Chronomancer)：</strong> 役使时空猎人、时间闪击者与时间之龙，甚至能施放【时间停止】获得额外连续行动回合！<br>
-            • <strong>👺 地精幻术 (Goblin)：</strong> 率领哥布林英雄、爆破小队、鼠疫入侵与扰乱奇兵，具备灵活突袭与牌库削减奇效。
+            • <strong>👺 地精幻术 (Goblin)：</strong> 率领哥布林英雄、爆破小队、鼠疫入侵与扰乱奇兵，具备灵活突袭与牌库削减奇效。<br>
+            • <strong>🌳 森林召唤 (Forest)：</strong> 开局免费放置的【魔法兔子】会永久成长，暴怒海狸、复仇浣熊与森林仪式都以其攻击力结算收益。<br>
+            • <strong>🗿 魔匠 (Golem)：</strong> 开局即有一只不受魔法与技能伤害的【魔像】，阵亡后会满血归位，军备升级与操纵师可永久堆高它的攻击力。<br>
+            • <strong>🕯️ 狂热邪教 (Cult)：</strong> 狂怒纪念碑让全军每回合多攻击一次，狂热死士攻击力每回合 +2 永续成长，掠夺者既替全军承伤又能挡住对手的取巧打法。<br>
+            • <strong>🩸 鲜血血族 (Blood)：</strong> 所有血族卡牌都是「能量 + 生命」双重付费，同费下数值远超常规：食尸鬼靠敌方尸体无限成长，审判者让对格生物承伤翻倍。
           </div>
         </div>
 
         <div class="codex-section-card">
-          <div class="codex-section-title">📜 全流派与卡池数量官方考证</div>
+          <div class="codex-section-title">🌈 特殊战场造物 (Battlefield Constructs)</div>
           <div class="codex-section-body">
-            • <strong>实装流派总数：</strong> 正统官方最终版本共 <strong>11 大法术专精</strong>。在选人界面中，提供这 11 大流派以及 1 项“🎲 随机”选项，共 12 个可选项。<br>
-            • <strong>卡牌总数构成：</strong> 基础四大元素（火、水、气、土）各 12 张（共 48 张）+ 11 个专精流派各 8 张专属卡（共 88 张）= <strong>全游戏共 136 张卡牌</strong>。<br>
-            • <strong>流派数量澄清：</strong> 早期部分文档中流传的“16大流派”，系原版早期草案中的未实装废案占位符（如狂热教徒、吸血鬼领主等），实际并未有对应卡牌与机制。
+            <strong>虹光造物不是第 16 个流派。</strong>它们没有专属牌库、不发牌、不可选为人物，也不进入任何自组卡组——它们是<strong>战场场景的组成部分</strong>：在单局对战、英雄联赛、局域网与战役中，由战场规则直接预置在阵线上。<br>
+            • <strong>造物总数：</strong> 共 <strong>52 张</strong>（44 张可直接预置的造物 + 8 张由其他造物召唤的衍生物）。<br>
+            • <strong>代表造物：</strong> 【火山】烧灼对位生物、【恶臭沼泽】持续腐蚀全场、【诅咒之地】死亡引爆、【和平之树】压制对手攻击、【行军石】每回合推进换位、三座祭坛把生物转化为能量、【魔法学院】【巨型橡树】【火焰神殿】每回合免费铺场、【至尊元素】在能量满溢时降临。<br>
+            • <strong>如何体验：</strong> 在单局对战与局域网对战的「战场场景」中选择对应法则（如「🌋 火山熔炉」「🌳 和平之林」），英雄联赛会按场次自动轮换场景，战役关卡亦会在战规中预置造物。
+          </div>
+        </div>
+
+        <div class="codex-section-card">
+          <div class="codex-section-title">📜 流派与卡牌现状总览</div>
+          <div class="codex-section-body">
+            • <strong>可选流派：</strong> 共 <strong>15 大法术专精</strong>，选人界面另提供 1 项「🎲 随机」选项。<br>
+            • <strong>卡牌总数：</strong> 基础四大元素 火系 12 张 / 水系 12 张 / 气系 13 张 / 土系 12 张（共 49 张）+ 15 大专精流派专属卡（共 125 张）+ 特殊战场造物（共 52 张）= <strong>全游戏共 233 张卡牌</strong>。<br>
+            • <strong>重要说明：</strong> 战场造物只作为场景元素登场，永远不会出现在任何牌组中；卡组构筑与发牌池均已将其排除。
           </div>
         </div>
       `;
@@ -3947,11 +4278,11 @@ function renderCodexPageContent(tab: string): string {
         <div class="codex-section-card">
           <div class="codex-section-title">🎮 丰厚多样的对战玩法</div>
           <div class="codex-section-body">
-            1. <strong>单局对战 (Single Duel)：</strong> 自由配置 11 大法师专精与随机流派、精美英雄头像与 AI 难度，畅享快节奏的纯粹法力交锋。<br>
-            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 7 大篇章领地据点；击败领主开启后续多重分支路线，体验各领地专属战规。<br>
-            3. <strong>英雄联赛 (League of Heroes)：</strong> 支持创建多名法师角色档案，参与 8 轮天梯排位决战，冲击全服巅峰积分榜首！<br>
+            1. <strong>单局对战 (Single Duel)：</strong> 自由配置 15 大流派与随机流派、精美英雄头像与 AI 难度，并在开局前挑选「战场场景」——特殊造物（火山、祭坛、行军石、魔法学院…）会作为战场规则预置在阵线上。<br>
+            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 7 大篇章领地据点；击败领主开启后续多重分支路线，体验各领地专属战规，部分关卡战规会预置特殊造物。<br>
+            3. <strong>英雄联赛 (League of Heroes)：</strong> 支持创建多名法师角色档案，参与 8 轮天梯排位决战；每场联赛都会按赛程分配一个战场场景（含特殊造物场景），冲击巅峰积分榜首！<br>
             4. <strong>自组卡牌工坊 (Custom Deck)：</strong> 精细构筑专属 20 张王牌套牌，体验极致的套路搭配与战术博弈。<br>
-            5. <strong>局域网对战 (LAN Duel)：</strong> 同一无线局域网或手机热点下，输入 4 位房间码即可实现低延迟跨设备双人实时联机对决！<br>
+            5. <strong>局域网对战 (LAN Duel)：</strong> 同一无线局域网或手机热点下，输入 4 位房间码即可实现低延迟跨设备双人实时联机对决！房主选择的战场场景会同步给双方。<br>
             6. <strong>对战录像回放 (Replay Cinema)：</strong> 全战场真实重现每一场高光交锋，支持分步单步推演与多倍速观摩！
           </div>
         </div>
@@ -3979,7 +4310,7 @@ function renderCodexPageContent(tab: string): string {
         { id: 'golem', label: '🗿 魔匠' },
         { id: 'cult', label: '🕯️ 邪教' },
         { id: 'blood', label: '🩸 鲜血' },
-        { id: 'spectromancer', label: '🌈 虹光法师' },
+        { id: 'spectromancer', label: '🌈 战场造物' },
       ];
 
       const filteredCards = allCardsList.filter(c => {
@@ -3999,6 +4330,9 @@ function renderCodexPageContent(tab: string): string {
       };
 
       return `
+        <div style="font-size:12px; color:#94a3b8; margin-bottom:8px;">
+          共 ${allCardsList.length} 张卡牌：四大元素 49 张 · 15 大流派专属 125 张 · 🌈 特殊战场造物 ${getBattlefieldRelics().length} 张（仅由战场场景预置，不进入任何牌组）
+        </div>
         <div class="codex-cards-filter-bar">
           ${filterGroups.map(fg => {
             const count = allCardsList.filter(c => {
@@ -4017,9 +4351,11 @@ function renderCodexPageContent(tab: string): string {
 
         <div class="codex-cards-grid">
           ${filteredCards.map(c => {
-            const elemBadgeName = c.className
-              ? (HERO_CLASSES.find(cls => cls.id === c.className)?.nameCn || '专属')
-              : (elementLabels[c.element] || '基础');
+            const elemBadgeName = c.battlefield
+              ? '战场造物'
+              : c.className
+                ? (HERO_CLASSES.find(cls => cls.id === c.className)?.nameCn || '专属')
+                : (elementLabels[c.element] || '基础');
             const typeBadgeName = c.isWall ? '城墙' : (c.type === 'creature' ? '生物' : '法术');
             return `
               <div class="codex-card-item">
@@ -4127,7 +4463,7 @@ function renderGameHelpModal(): string {
         <div class="codex-tabs-bar" style="flex-shrink:0;">
           <button class="codex-tab-btn ${activeHelpTab === 'play' ? 'active' : ''}" id="tab-codex-play">📖 如何游戏</button>
           <button class="codex-tab-btn ${activeHelpTab === 'deck' ? 'active' : ''}" id="tab-codex-deck">🃏 卡组构筑</button>
-          <button class="codex-tab-btn ${activeHelpTab === 'classes' ? 'active' : ''}" id="tab-codex-classes">🧙 11大流派</button>
+          <button class="codex-tab-btn ${activeHelpTab === 'classes' ? 'active' : ''}" id="tab-codex-classes">🧙 流派与特殊造物</button>
           <button class="codex-tab-btn ${activeHelpTab === 'modes' ? 'active' : ''}" id="tab-codex-modes">🗺️ 游戏模式</button>
           <button class="codex-tab-btn ${activeHelpTab === 'cards' ? 'active' : ''}" id="tab-codex-cards">🃏 卡牌资料</button>
         </div>
@@ -5347,11 +5683,6 @@ function renderLeagueOpponentAdviceModal(): string {
       weaknesses: '每次施法都要付出生命，本体极易被自己掏空；审判者、血之秘术师等核心都依赖对格或对方本体受创才有收益。',
       tip: '保持本体高血量、用高攻生物反复压制【审判者】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
     },
-    spectromancer: {
-      strengths: '45 张中立造物各具奇效：火山/恶臭沼泽/诅咒之地持续消耗全场，行军石与漫步石搅乱阵线，三座祭坛把生物换成能量，魔法学院与巨型橡树每回合免费铺场，至尊元素与超级巨像后期攻击力极高。',
-      weaknesses: '造物多为 0 攻站场牌，自身不产生压力；每局随机到的 4 张造物组合差异极大，稳定性差。',
-      tip: '用高攻生物直接推平其 0 攻造物阵线，并优先点掉【魔法学院】【巨型橡树】【火焰神殿】这类持续铺场源。',
-    },
   };
 
   const advice = classAdviceMap[curOpponent.className] || {
@@ -5675,8 +6006,10 @@ function renderCustomDeckBuilderScreen(): string {
   ];
 
   // PC tokens (Bee Soldier…) exist in Gd.spe but can never be put into a deck.
+  // 特殊战场造物同理：只能由战场场景预置，不得进入自组卡组。
   let pool = allCardsList.filter(c => {
     if (c.token) return false;
+    if (c.battlefield) return false;
     if (builderPoolFilter === 'special') {
       return c.className === editingDeck.className || c.element === 'special';
     }
@@ -6015,6 +6348,28 @@ function attachEventListeners() {
     sound.play('click');
     showClassGridPickerFor = 'lan';
     render();
+  });
+
+  // 局域网战场场景选择器（仅房主可选，随开局同步给 guest）
+  document.getElementById('btn-lan-scene-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    const list = getLanSelectableScenarios();
+    lanScenarioIdx = (lanScenarioIdx - 1 + list.length) % list.length;
+    saveLanProfilePreferences();
+    render();
+  });
+
+  document.getElementById('btn-lan-scene-next')?.addEventListener('click', () => {
+    sound.play('click');
+    const list = getLanSelectableScenarios();
+    lanScenarioIdx = (lanScenarioIdx + 1) % list.length;
+    saveLanProfilePreferences();
+    render();
+  });
+
+  document.getElementById('btn-lan-scene-display')?.addEventListener('click', () => {
+    sound.play('click');
+    showToastNotice(`⚔️ ${getCurrentLanScenario().rule}`);
   });
 
   document.getElementById('btn-lan-tab-host')?.addEventListener('click', () => {
@@ -6525,19 +6880,12 @@ function attachEventListeners() {
     const chosenDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
 
     // Determine Scenario
-    let scenario = BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx];
-    if (scenario.id === 'random') {
-      const candidates = BATTLEFIELD_SCENARIOS.filter(s => s.id !== 'random');
-      scenario = candidates[Math.floor(Math.random() * candidates.length)];
-    }
+    const scenario = pickScenarioById(BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx].id);
 
     currentBattlefieldTheme = scenario.theme;
     sound.playBgm(getCombatBgmForCurrentBattle());
 
-    const availableClasses: HeroClass[] = [
-      'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
-    ];
+    const availableClasses = getSelectableClasses();
 
     let pClass: HeroClass = HERO_CLASSES[playerClassIndex].id === 'random'
       ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
@@ -6547,37 +6895,14 @@ function attachEventListeners() {
       ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
       : (HERO_CLASSES[aiClassIndex].id as HeroClass);
 
-    const allCards = cardsData as CardDef[];
-    const initPlayerCreatures: Array<{ slot: number; card: CardDef }> = [];
-    if (scenario.initialPlayerCreatures) {
-      for (const item of scenario.initialPlayerCreatures) {
-        const c = allCards.find(card => card.id === item.cardId);
-        if (c) initPlayerCreatures.push({ slot: item.slot, card: c });
-      }
-    }
-
-    const initEnemyCreatures: Array<{ slot: number; card: CardDef }> = [];
-    if (scenario.initialEnemyCreatures) {
-      for (const item of scenario.initialEnemyCreatures) {
-        const c = allCards.find(card => card.id === item.cardId);
-        if (c) initEnemyCreatures.push({ slot: item.slot, card: c });
-      }
-    }
-
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: '玩家',
       playerFace: `./faces/Face${playerFaceIndex + 1}.jpg`,
       enemyName: '大法师',
       enemyFace: `./faces/Face${aiFaceIndex + 1}.jpg`,
       enemyClass: eClass,
-      playerHp: scenario.playerHp,
-      enemyHp: scenario.enemyHp,
       difficulty: chosenDiff,
-      leagueRule: scenario.rule,
-      initialPlayerCreatures: initPlayerCreatures,
-      initialEnemyCreatures: initEnemyCreatures,
-      extraPlayerMana: scenario.extraPlayerMana,
-      extraEnemyMana: scenario.extraEnemyMana,
+      ...buildScenarioEngineOptions(scenario),
     });
 
     setupEngineCallbacks();
@@ -7379,6 +7704,9 @@ function attachEventListeners() {
     currentBattleSource = 'league';
     sound.playBgm(getCombatBgmForCurrentBattle());
     const curOpponent = getNextOpponentForLeague();
+    // 英雄联赛同样引入战场场景（含特殊造物场景）：
+    // 场景规则随引擎生效，对手专属规则作为附加 flavor 文案追加。
+    const leagueScenario = getLeagueScenarioForCurrentMatch();
     const pClass = activeLeague.standings.find((s) => s.isPlayer)?.className || 'cleric';
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: activeLeague.playerName,
@@ -7387,11 +7715,12 @@ function attachEventListeners() {
       enemyFace: curOpponent.face,
       enemyClass: curOpponent.className,
       difficulty: activeLeague.difficulty || '普通',
-      leagueRule: curOpponent.rule,
+      ...buildScenarioEngineOptions(leagueScenario),
     });
     setupEngineCallbacks();
     currentView = 'battle';
     render();
+    showToastNotice(`🏆 联赛开战！【${curOpponent.cnName}】· 战场【${leagueScenario.name}】`);
   });
 
   document.getElementById('btn-league-advice')?.addEventListener('click', () => {

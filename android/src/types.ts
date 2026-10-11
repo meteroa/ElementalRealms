@@ -28,6 +28,9 @@ export interface CardDef {
   sourceCreatureUid?: string;
   // PC tokens such as Bee Soldier exist in Gd.spe without a cost and are never dealt into a deck.
   token?: boolean;
+  // 特殊战场造物：火山、行军石、三座祭坛、魔法学院、至尊元素等。它们不是任何流派的牌，
+  // 因此永远不发牌、不进自组卡组、也不作为可选职业；只能在战场场景中作为预置场景元素登场。
+  battlefield?: boolean;
   // Blood discipline double payment: the printed cost is paid from the class power pool and this
   // many extra life points are paid by the owner on top of it.
   lifeCost?: number;
@@ -133,6 +136,15 @@ export type NetworkMessageType =
 export interface NetworkMessage {
   type: NetworkMessageType;
   payload?: any;
+}
+
+// GAME_START 负载：房主把战场场景（含特殊造物场景）一并带给 guest，
+// 保证双方引擎在同一场景规则下开场。
+export interface LanGameStartPayload {
+  hostProfile: NetworkUserProfile;
+  guestProfile: NetworkUserProfile;
+  snapshot: NetworkGameStateSnapshot;
+  scenarioId?: string;
 }
 
 export interface NetworkGameStateSnapshot {

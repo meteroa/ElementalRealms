@@ -236,7 +236,7 @@ export class SpectromancerEngine {
 
     const enemyClassPool: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
     ];
     const enemyClass: HeroClass = customConfig?.enemyClass || (campaign ? enemyClassPool[campaign.id % enemyClassPool.length] : 'necromancer');
     const enemyHp = customConfig?.enemyHp || (campaign ? campaign.enemyHp : 60);
@@ -359,7 +359,9 @@ export class SpectromancerEngine {
     classType: HeroClass,
     maxHp: number
   ): PlayerState {
-    const elemMap: Record<HeroClass, ElementType> = {
+    // 职业 → 专属能量元素映射。虹光造物（spectromancer）不是可选职业，
+    // 因此不在此列；其卡牌只作为战场场景元素预置登场。
+    const elemMap: Partial<Record<HeroClass, ElementType>> = {
       sorcery: 'special',
       necromancer: 'death',
       cleric: 'holy',
@@ -375,8 +377,8 @@ export class SpectromancerEngine {
       golem: 'special',
       cult: 'special',
       blood: 'special',
-      spectromancer: 'special',
     };
+
     const specialElem: ElementType = elemMap[classType] || 'special';
 
     const allCards = cardsData as CardDef[];
@@ -388,16 +390,18 @@ export class SpectromancerEngine {
     };
 
     // Tokens (Bee Soldier…) exist in Gd.spe but are never dealt into a deck.
+    // 特殊战场造物（火山、祭坛、行军石、至尊元素…）同理：它们只作为战场场景元素预置登场，
+    // 任何流派的发牌池与牌库都不得包含它们。
     const specialCardsPool = allCards.filter(
-      (c) => !c.token && (c.className === classType || (c.element === specialElem && !c.className))
+      (c) => !c.token && !c.battlefield && (c.className === classType || (c.element === specialElem && !c.className))
     );
 
     const hand = [
-      ...getRandomCards(allCards.filter((c) => c.element === 'fire' && !c.token)),
-      ...getRandomCards(allCards.filter((c) => c.element === 'water' && !c.token)),
-      ...getRandomCards(allCards.filter((c) => c.element === 'air' && !c.token)),
-      ...getRandomCards(allCards.filter((c) => c.element === 'earth' && !c.token)),
-      ...getRandomCards(specialCardsPool.length >= 4 ? specialCardsPool : allCards.filter((c) => c.element === 'special' && !c.token)),
+      ...getRandomCards(allCards.filter((c) => c.element === 'fire' && !c.token && !c.battlefield)),
+      ...getRandomCards(allCards.filter((c) => c.element === 'water' && !c.token && !c.battlefield)),
+      ...getRandomCards(allCards.filter((c) => c.element === 'air' && !c.token && !c.battlefield)),
+      ...getRandomCards(allCards.filter((c) => c.element === 'earth' && !c.token && !c.battlefield)),
+      ...getRandomCards(specialCardsPool.length >= 4 ? specialCardsPool : allCards.filter((c) => c.element === 'special' && !c.token && !c.battlefield)),
     ];
 
     return {
@@ -566,7 +570,7 @@ export class SpectromancerEngine {
       // a random discipline's cards.
       if (creature.card.ability === 'library_of_magi') {
         const pool = (cardsData as CardDef[]).filter(
-          (c) => !!c.className && c.className !== actor.className && !c.token && !c.isActivatedAbility
+          (c) => !!c.className && c.className !== actor.className && !c.token && !c.battlefield && !c.isActivatedAbility
         );
         let replaced = 0;
         actor.hand = actor.hand.map((hc) => {
@@ -4940,7 +4944,7 @@ export class SpectromancerEngine {
     this.currentCampaign = campaign || null;
     const enemyClassPool: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood', 'spectromancer'
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
     ];
     const enemyClass: HeroClass = customConfig?.enemyClass || (campaign ? enemyClassPool[campaign.id % enemyClassPool.length] : 'necromancer');
     const enemyHp = customConfig?.enemyHp || (campaign ? campaign.enemyHp : 60);
