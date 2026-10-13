@@ -393,10 +393,15 @@ class SoundManager {
     return promise;
   }
 
+  private menuTracks: string[] = ['menu1', 'menu2'];
+  private currentMenuTrackIdx: number = 0;
+  private combatTracks: string[] = ['combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6'];
+
   // Preload essential high-frequency SFX and core BGM into memory via Web Audio
   private preloadCoreSounds() {
     const frequent = [
-      'menu1.ogg', 'combat1.ogg', 'combat2.ogg', 'combat3.ogg',
+      'menu1.ogg', 'menu2.ogg', 'campaign_map.ogg',
+      'combat1.ogg', 'combat2.ogg', 'combat3.ogg', 'combat4.ogg', 'combat5.ogg', 'combat6.ogg',
       'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'btn3.ogg', 'summon1.ogg', 'summondrop.ogg',
       'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg', 'ritual_of_glory.ogg', 'doombolt.ogg'
     ];
@@ -492,10 +497,37 @@ class SoundManager {
     }
   }
 
-  public async playBgm(track: string = 'menu1', force: boolean = false) {
-    let cleanTrack = (track || 'menu1').toLowerCase().trim();
+  public toggleMenuTrack() {
+    this.currentMenuTrackIdx = (this.currentMenuTrackIdx + 1) % this.menuTracks.length;
+    this.playBgm(this.menuTracks[this.currentMenuTrackIdx], true);
+  }
+
+  public getRandomCombatTrack(): string {
+    const candidates = this.combatTracks.filter(t => t !== this.currentTrack);
+    const pool = candidates.length > 0 ? candidates : this.combatTracks;
+    const chosen = pool[Math.floor(Math.random() * pool.length)];
+    return chosen;
+  }
+
+  public async playBgm(track: string = 'menu', force: boolean = false) {
+    let cleanTrack = (track || 'menu').toLowerCase().trim();
+    if (cleanTrack === 'battle' || cleanTrack === 'combat' || cleanTrack === 'random_combat') {
+      cleanTrack = this.getRandomCombatTrack();
+    }
     if (cleanTrack === 'battle1') cleanTrack = 'combat1';
-    if (!['menu1', 'combat1', 'combat2', 'combat3'].includes(cleanTrack)) {
+    if (cleanTrack === 'campaign') cleanTrack = 'campaign_map';
+
+    // 智能在两首主界面史诗交响曲之间切换轮播
+    if (cleanTrack === 'menu') {
+      if (!force && (this.currentTrack === 'menu1' || this.currentTrack === 'menu2') && (this.isWebAudioBgmPlaying || (this.bgmAudio && !this.bgmAudio.paused) || this.plusBgmPlayer)) {
+        return;
+      }
+      this.currentMenuTrackIdx = (this.currentMenuTrackIdx + 1) % this.menuTracks.length;
+      cleanTrack = this.menuTracks[this.currentMenuTrackIdx];
+    }
+
+    const validTracks = ['menu1', 'menu2', 'campaign_map', 'combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6'];
+    if (!validTracks.includes(cleanTrack)) {
       cleanTrack = 'combat1';
     }
 

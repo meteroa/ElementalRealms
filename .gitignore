@@ -7,4 +7,5 @@ tools/sensenova/config.json
 .env
 .env.*
 scratch/
-
+pc
+tools

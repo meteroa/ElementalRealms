@@ -1610,10 +1610,7 @@ function startWatchingReplay(replay: BattleReplay) {
   showReplayModal = false;
   currentView = 'replay_viewer';
 
-  const rMode = replay.mode || 'duel';
-  if (rMode === 'league') sound.playBgm('combat2');
-  else if (rMode === 'custom_deck') sound.playBgm('combat3');
-  else sound.playBgm('combat1');
+  sound.playBgm(getCombatBgmForCurrentBattle());
 
   engine.player.name = replay.playerName;
   engine.player.face = replay.playerFace;
@@ -6277,35 +6274,25 @@ function renderGameOverModal(): string {
   `;
 }
 
-function getCombatBgmForCurrentBattle(): 'combat1' | 'combat2' | 'combat3' {
-  if (currentBattleSource === 'lan') {
-    return 'combat3';
+let activeBattleBgm: string = '';
+
+function getCombatBgmForCurrentBattle(): string {
+  if (activeBattleBgm) {
+    return activeBattleBgm;
   }
-  if (currentBattleSource === 'league') {
-    return 'combat2';
-  }
-  if (currentBattleSource === 'custom_deck') {
-    return 'combat3';
-  }
-  if (currentBattleSource === 'campaign' || engine.currentCampaign) {
-    const lvlId = selectedCampaignLevelId || engine.currentCampaign?.id || 1;
-    if (lvlId <= 20) return 'combat1';
-    if (lvlId <= 45) return 'combat2';
-    return 'combat3';
-  }
-  return 'combat1';
+  activeBattleBgm = sound.getRandomCombatTrack();
+  return activeBattleBgm;
 }
 
 function syncModeBgm() {
-  if (currentView === 'battle') {
+  if (currentView === 'battle' || currentView === 'replay_viewer') {
     sound.playBgm(getCombatBgmForCurrentBattle());
-  } else if (currentView === 'replay_viewer') {
-    const rMode = activeViewingReplay?.mode || 'duel';
-    if (rMode === 'league') sound.playBgm('combat2');
-    else if (rMode === 'custom_deck') sound.playBgm('combat3');
-    else sound.playBgm('combat1');
+  } else if (currentView === 'campaign') {
+    activeBattleBgm = '';
+    sound.playBgm('campaign_map');
   } else {
-    sound.playBgm('menu1');
+    activeBattleBgm = '';
+    sound.playBgm('menu');
   }
 }
 
@@ -6581,6 +6568,7 @@ function attachEventListeners() {
       showCampaignSetupModal = true;
     } else {
       currentView = 'campaign';
+      sound.playBgm('campaign_map');
     }
     render();
   });
@@ -7112,7 +7100,7 @@ function attachEventListeners() {
     if (loadSavedBattle()) {
       showToastNotice('⚔️ 已成功载入战斗存档！继续对决。');
       currentView = 'battle';
-      sound.playBgm('combat1');
+      sound.playBgm(getCombatBgmForCurrentBattle());
       render();
     } else {
       showToastNotice('ℹ️ 暂无未完成的对战存档');
@@ -7872,6 +7860,7 @@ function attachEventListeners() {
     createNewCampaignProfile(name, campaignPlayerFaceId, campaignPlayerClassIdx, campaignPlayerDifficultyIdx);
     showCampaignSetupModal = false;
     currentView = 'campaign';
+    sound.playBgm('campaign_map');
     render();
   });
 
@@ -7886,6 +7875,7 @@ function attachEventListeners() {
         syncActiveCampaign();
         showCampaignHubModal = false;
         currentView = 'campaign';
+        sound.playBgm('campaign_map');
         render();
       }
     });
@@ -7926,6 +7916,7 @@ function attachEventListeners() {
   document.getElementById('btn-campaign-main-menu')?.addEventListener('click', () => {
     sound.play('click');
     currentView = 'menu';
+    sound.playBgm('menu');
     render();
   });
 
@@ -8383,7 +8374,7 @@ function attachEventListeners() {
   // Battle Result Navigation Buttons
   document.getElementById('btn-campaign-result-return')?.addEventListener('click', () => {
     sound.play('click');
-    sound.playBgm('menu1');
+    sound.playBgm('campaign_map');
     if (engine.winner === 'player') {
       if (!completedCampaignLevels.includes(selectedCampaignLevelId)) {
         completedCampaignLevels.push(selectedCampaignLevelId);
@@ -8482,6 +8473,7 @@ function attachEventListeners() {
   // Game over buttons
   document.getElementById('btn-restart')?.addEventListener('click', () => {
     sound.play('click');
+    activeBattleBgm = '';
     engine.reset(engine.player.className as HeroClass, engine.currentCampaign || undefined);
     setupEngineCallbacks();
     selectedCard = null;

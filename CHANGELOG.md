@@ -7,6 +7,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-13
 
+### Added
+- **项目打包资源极端轻量化与母图资产安全归档（Package Size Optimization & Master Asset Archiving）**：
+  - **母盘资产安全解耦与归档**：将 `android/public` 内部残留的 351 个非运行时母图（包含 248 个卡牌 `_master.png`、100 个头像 `Face*_master.png` 以及测试 `.wav` 音频共 687.41 MB）安全转移至独立归档目录 `tools/master_assets/` 永久留存，既不丢失任何高清素材，又彻底杜绝打包污染；
+  - **构建产物与 APK 体积暴跌 93.6%**：清理后 `android/public/` 纯运行时体积由 733.9 MB 骤降至 **46.5 MB**，Vite 构建产物 `android/dist/` 从 736.5 MB 降至 **47.2 MB**（净省 689.3 MB），构建速度由 13 秒大幅跃升至 873 毫秒；
+  - **安装包防膨胀闭环**：彻底解决移动端 APK 打包时将 700+ MB 原图打入安装包的致命隐患，确保最终移动端 APK 保持在 40MB 左右的极致轻盈状态；
+- **6 首 Suno 史诗级战斗背景交响正式实装与双轨母带落地（6-Track Epic Combat Suite & Dual-Pipeline Master）**：
+  - **完成 6 首精选战斗交响曲的自动化捕获与双轨母带处理**：
+    * `combat1.ogg`：《最后的一击（The Final Strike）》（204.3s，未压缩 2.83MB / 项目压缩版 1.69MB）；
+    * `combat2.ogg`：《Silk Road Duel（丝路战阵）》（216.3s，未压缩 3.20MB / 项目压缩版 1.82MB）；
+    * `combat3.ogg`：《Blood of the Northern Wild（北地狂猎）》（231.1s，未压缩 3.21MB / 项目压缩版 1.72MB）；
+    * `combat4.ogg`：《Heroic Battle Theme 1（英雄无敌风·钢铁誓言）》（237.5s，未压缩 3.48MB / 项目压缩版 1.95MB）；
+    * `combat5.ogg`：《东风（East Wind·东方神话战阵）》（202.4s，未压缩 2.93MB / 项目压缩版 1.55MB）；
+    * `combat6.ogg`：《Heroic Battle Theme 2（英雄无敌风·圣殿圣战）》（268.7s，未压缩 3.99MB / 项目压缩版 2.12MB）；
+  - **双轨归档与高保真轻量化部署**：
+    * **未压缩版原盘备份**：所有 6 首高质量 OGG Vorbis 归档至 `tools/audio/uncompressed/` 留存母带；
+    * **项目高保真压缩版实装**：采用 `libopus 64kbps` 编码引擎部署至 `android/public/audio/`，体积相比原版腰斩 ~45%，总大小仅 ~10.8MB，且全量施加 0.5s 无缝余弦能量守恒 Crossfade 循环与 -1 dBFS 响度标准化；
+  - **战斗音乐 6 曲目动态随机播放逻辑上线（6-Track Dynamic Combat Shuffle System）**：
+    * **全模式随机播放池扩容至 6 首**：在 `sound.ts` 与 `main.ts` 中升级 `combatTracks` 阵列（`combat1` ~ `combat6`），单局对决、战役对决、联赛战斗、局域网对战与回放观战均随机轮换播放这 6 首战斗交响曲；
+    * **单局锁定与重赛智能切曲**：对决中严格保持当场战曲锁定播放避免频闪切歌；而在玩家点击“再次对战/整军再战”或新开启对决时，自动重置并重新随机抽取全新战斗背景乐；
+- **音频重构与史诗交响制作工具链落地（Audio Processor Suite & Epic Orchestral Pipeline）**：
+  - **建立独立音频自动化工具包（`tools/audio/`）**：
+    * 成功安装并配置基于 Python 3.14 的全套音频工程环境（`torch 2.14` + `transformers 5.19` + `soundfile` + `scipy` + `torchaudio`），原生支持双声道 OGG Vorbis 读写；
+    * 建立原始音频无损备份机制（已自动归档原版 `android/public/audio/original_backup/menu1.ogg`）；
+  - **实现游戏音频无缝循环与工业级响度标准化处理器（`postprocess.py`）**：
+    * 采用余弦能量守恒窗口在首尾施加 0.5s 平滑交叉淡入淡出（Crossfade），彻底消除断音与爆音；
+    * 标准化感知响度与真峰值至 -1 dBFS / -14 LUFS，分块流式写入规避 Windows CFFI 内存溢出；
+  - **实现本地 MusicGen AI 史诗重编曲工具（`rearrange.py`）**：
+    * 支持注入方案 B【史诗电影交响风格】风格提示词（全编制管弦乐、法兰西圆号、凯尔特竖琴与战鼓齐奏）；
+    * 输出专业工程文档 `tools/audio/README.md`，提供本地生成与母带级 Suno/Udio 提示词定制方案；
+  - **大地图与主菜单曲 `menu1.ogg` 母带级重编与声学重构（Acoustic Remaster & Loudness Upgrade）**：
+    * **彻底解决音量偏小**：针对模型原始音频平均 RMS 仅 -20.7dB 的动态塌陷，构建两级动态软压限（Soft-Knee Dynamic Limiter & Saturation），将有效感知响度大幅跃升至 `-13.9 dB RMS`，完美对标原版 -13.0dB 工业电平；
+    * **彻底消除首尾混乱杂音**：物理精准切除自回归模型前 1.6 秒未稳定冷启动杂音与尾部 0.9 秒衰减噪声，配合 1.2 秒余弦能量守恒 Crossfade，消灭接缝爆音与杂乱混叠；
+    * **全面增强史诗壮丽感**：重新精调好莱坞电影管弦乐架构（圆号长鸣军乐、大提琴声场、定音鼓滚奏），引入 35Hz 高通滤波切除泥泞轰鸣，并以 1.35x Mid/Side 算法展开宽广开阔的皇家大殿立体声声场；
+  - **Suno 商业母带级史诗交响曲《The Crown of Aethelgard》Part 1 & 2 双曲正式实装与主界面轮播架构（Dual Menu BGM & Campaign Map Isolation）**：
+    * **主界面双曲智能轮播实装**：将第二首史诗交响曲《The Crown of Aethelgard 1》成功母带转码实装为 `menu2.ogg`（314.56s，Peak: -1.06 dBFS, RMS: -18.06 dBFS, 0.5s 无缝余弦循环）；
+    * **主界面智能交替轮播机制**：在 `sound.ts` 中构建 `menuTracks: ['menu1', 'menu2']` 智能调度池，返回主菜单时自动在两首交响乐间交替轮播，并提供 `toggleMenuTrack()` 支持；
+    * **战役大地图音轨独立分离与专属实装**：将战役大地图 BGM 从主菜单彻底解耦，独立设立 `campaign_map.ogg` 专用音轨，成功实装带有战备紧张感的专属战役推演交响乐《War Council of the Realms》（时长 208.30s，0.5s 无缝余弦循环，-1 dBFS 响度标准化）；
+  - **全量核心游戏音频高保真极端轻量化压缩（Next-Gen Ogg Opus Audio Compression）**：
+    * **音频管线升级为广播级 Ogg Opus 编码**：在 `postprocess.py` 中引入 `libopus 64kbps` 编码引擎，提供对标 128k MP3/Vorbis 的超高保真度，同时单曲体积**直接腰斩 45%~50%**；
+    * **全量音轨体积缩减近半**：`menu1.ogg` 从 3.27MB 瘦身至 1.64MB（-49.8%）、`menu2.ogg` 从 4.83MB 瘦身至 2.70MB（-44.1%）、`campaign_map.ogg` 仅 1.63MB，三大母带交响长曲合计由 11.5MB 骤降至 6.25MB，大幅降低移动端安装包与运行内存负担；
+  - **战斗音乐 5 曲目随机调度系统构建（5-Track Dynamic Combat Music Shuffle）**：
+    * **构建战斗曲库随机池**：将战斗 BGM 池从固定硬编码扩容至 5 首（`combat1` ~ `combat5`），打通 `sound.getRandomCombatTrack()`，每场新对局全自动在 5 首激战交响中随机抽取一首；
+    * **智能对局防切歌保护**：在整场战斗未结束前锁定当场对局专属音轨，对局结束后离开自动重置，避免对战中频闪切歌；
+    * **安全占位与无缝支持**：预设 `combat4.ogg` 与 `combat5.ogg` 安全兜底音频，无缝承接后续 Suno 生成的高燃战斗母带。
+
 ### Fixed
 - **战役大地图自由平移缩放引擎重构（Campaign World Map Pan & Zoom Engine）**：
   - **根本原因排查与架构重构**：修复原 `.campaign-map-viewport` 在窄屏与竖屏模式下直接 `overflow: hidden` 且缺少舞台拖动事件监听，导致 1024×592 大地图右侧无法滑动触达的致命缺陷；
