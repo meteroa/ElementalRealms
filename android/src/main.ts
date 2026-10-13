@@ -42,6 +42,9 @@ type ViewMode =
 
 let currentView: ViewMode = typeof window !== 'undefined' && (window.location.search.includes('combat') || window.location.search.includes('battle')) ? 'battle' : 'menu';
 
+// Total Avatars Count
+export const TOTAL_FACES = 100;
+
 // Single Duel Setup State
 let playerFaceIndex = 0; // Face1
 let playerClassIndex = 0; // 0 = 随机, 1..11 = classes
@@ -105,12 +108,38 @@ let campaignProfiles: CampaignProfile[] = (() => {
   return [];
 })();
 
+function computeUnlockedCampaignLevels(completed: number[]): number[] {
+  const unlocked = new Set<number>([1]);
+  if (completed.includes(1)) {
+    unlocked.add(2);
+    unlocked.add(3);
+    unlocked.add(4);
+  }
+  if (completed.some(id => [2, 3, 4].includes(id))) {
+    unlocked.add(5);
+  }
+  if (completed.includes(5)) {
+    unlocked.add(6);
+  }
+  if (completed.includes(6)) {
+    unlocked.add(7);
+  }
+  if (completed.includes(7)) {
+    unlocked.add(8);
+  }
+  return Array.from(unlocked).sort((a, b) => a - b);
+}
+
 let activeCampaignId: string = campaignProfiles[0]?.id || '';
 let activeCampaign: CampaignProfile | null = campaignProfiles.find(p => p.id === activeCampaignId) || campaignProfiles[0] || null;
 
 let completedCampaignLevels: number[] = activeCampaign?.completedLevels || [];
-let unlockedCampaignLevels: number[] = activeCampaign?.unlockedLevels || [1];
+let unlockedCampaignLevels: number[] = computeUnlockedCampaignLevels(completedCampaignLevels);
 let selectedCampaignLevelId: number = activeCampaign?.selectedLevelId || 1;
+if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
+  const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
+  selectedCampaignLevelId = nextUncompleted || unlockedCampaignLevels[unlockedCampaignLevels.length - 1] || 1;
+}
 let campaignDifficultyIndex: number = activeCampaign?.difficultyIdx || 0;
 
 let showCampaignHubModal = false;
@@ -123,8 +152,14 @@ let campaignPlayerDifficultyIdx = 0;
 function syncActiveCampaign() {
   if (activeCampaign) {
     completedCampaignLevels = activeCampaign.completedLevels || [];
-    unlockedCampaignLevels = activeCampaign.unlockedLevels || [1];
+    unlockedCampaignLevels = computeUnlockedCampaignLevels(completedCampaignLevels);
+    activeCampaign.unlockedLevels = unlockedCampaignLevels;
     selectedCampaignLevelId = activeCampaign.selectedLevelId || 1;
+    if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
+      const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
+      selectedCampaignLevelId = nextUncompleted || unlockedCampaignLevels[unlockedCampaignLevels.length - 1] || 1;
+      activeCampaign.selectedLevelId = selectedCampaignLevelId;
+    }
     campaignDifficultyIndex = activeCampaign.difficultyIdx || 0;
   } else {
     completedCampaignLevels = [];
@@ -190,12 +225,29 @@ const CAMPAIGN_MAP1_NODES = [
   { levelId: 1, name: '德米尔', face: './faces/Face6.jpg', x: 18.5, y: 43.0, landmark: '麦田' },
   { levelId: 2, name: '闪银', face: './faces/Face7.jpg', x: 34.0, y: 39.0, landmark: '农舍' },
   { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 30.5, y: 57.5, landmark: '风车' },
-  { levelId: 4, name: '尼瑞恩', face: './faces/Face14.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
-  { levelId: 5, name: '维兰娜', face: './faces/Face21.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
-  { levelId: 6, name: '艾瑞欧', face: './faces/Face25.jpg', x: 62.0, y: 46.0, landmark: '东境要塞' },
-  { levelId: 7, name: '卡特拉', face: './faces/Face30.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
-  { levelId: 8, name: '风火领主', face: './faces/Face35.jpg', x: 82.0, y: 38.0, landmark: '风火天峰' },
+  { levelId: 4, name: '尼瑞恩', face: './faces/Face9.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
+  { levelId: 5, name: '洛瑞娜', face: './faces/Face10.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
+  { levelId: 6, name: '阿芙黛娅', face: './faces/Face11.jpg', x: 62.0, y: 46.0, landmark: '狂风要塞' },
+  { levelId: 7, name: '博瑞', face: './faces/Face12.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
+  { levelId: 8, name: '艾瑞欧', face: './faces/Face13.jpg', x: 82.0, y: 38.0, landmark: '禁锢熔炉' },
 ];
+
+const CAMPAIGN_MAP1_ROUTES = [
+  { from: 1, to: 2 },
+  { from: 1, to: 3 },
+  { from: 1, to: 4 },
+  { from: 2, to: 5 },
+  { from: 3, to: 5 },
+  { from: 4, to: 5 },
+  { from: 5, to: 6 },
+  { from: 6, to: 7 },
+  { from: 7, to: 8 },
+];
+
+let campaignMapPanX = 0;
+let campaignMapPanY = 0;
+let campaignMapScale = 1;
+let campaignMapInitialized = false;
 
 // ==========================================
 // LEAGUE OF HEROES STATE (Images 2 & 3)
@@ -3729,7 +3781,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">单局对战</div>
-              <div class="mode-card-desc">自定义 15 大流派与 78 款头像，人机快速博弈</div>
+              <div class="mode-card-desc">自定义 15 大流派与 ${TOTAL_FACES} 款高清典藏头像，人机快速博弈</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -3828,7 +3880,7 @@ function renderLanLobbyModal(): string {
 
         <!-- PROFILE CUSTOMIZATION BAR -->
         <div class="lan-profile-bar">
-          <div class="lan-profile-face-wrap" id="btn-lan-cycle-face" title="点击切换英雄形象 (共78款)">
+          <div class="lan-profile-face-wrap" id="btn-lan-cycle-face" title="点击切换英雄形象 (共${TOTAL_FACES}款)">
             <img src="./faces/Face${lanPlayerFaceId}.jpg" class="hero-avatar" alt="Avatar" />
             <div class="face-change-hint">换头像</div>
           </div>
@@ -4107,7 +4159,7 @@ function renderSingleDuelSetup(): string {
               <button class="duel-arrow-btn" id="btn-player-face-prev" title="上一个头像">◀</button>
               <div class="duel-avatar-wrap">
                 <img src="${pFaceUrl}" class="duel-avatar-img" alt="Player Face" />
-                <div class="duel-face-indicator">头像 ${playerFaceIndex + 1}/78</div>
+                <div class="duel-face-indicator">头像 ${playerFaceIndex + 1}/${TOTAL_FACES}</div>
               </div>
               <button class="duel-arrow-btn" id="btn-player-face-next" title="下一个头像">▶</button>
             </div>
@@ -4138,7 +4190,7 @@ function renderSingleDuelSetup(): string {
               <button class="duel-arrow-btn" id="btn-ai-face-prev" title="上一个头像">◀</button>
               <div class="duel-avatar-wrap">
                 <img src="${aiFaceUrl}" class="duel-avatar-img" alt="AI Face" />
-                <div class="duel-face-indicator">头像 ${aiFaceIndex + 1}/78</div>
+                <div class="duel-face-indicator">头像 ${aiFaceIndex + 1}/${TOTAL_FACES}</div>
               </div>
               <button class="duel-arrow-btn" id="btn-ai-face-next" title="下一个头像">▶</button>
             </div>
@@ -5349,45 +5401,77 @@ function formatStoryText(text: string): string {
 // RENDER MODE 1: CAMPAIGN WORLD MAP (Image 1)
 // ==========================================
 function renderCampaignMapScreen(): string {
-  const isFirstBeaten = completedCampaignLevels.includes(1);
+  unlockedCampaignLevels = computeUnlockedCampaignLevels(completedCampaignLevels);
 
-  // If first level beaten, unlock branching stages 2, 3, 4 (as in Image 1 reference)
-  const availableNodeIds = isFirstBeaten
-    ? [2, 3, 4]
-    : [1];
-
-  if (isFirstBeaten && selectedCampaignLevelId === 1) {
-    selectedCampaignLevelId = 2;
+  if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
+    const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
+    selectedCampaignLevelId = nextUncompleted || unlockedCampaignLevels[unlockedCampaignLevels.length - 1] || 1;
   }
   const currentLvl = (campaignData as CampaignLevel[]).find(l => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
 
   return `
     <div class="campaign-screen-view">
-      <div class="campaign-map-viewport">
-        <img src="./ui/Campaign_Map1.jpg" class="campaign-map-bg" alt="战役大地图" />
+      <div class="campaign-map-viewport" id="campaign-map-viewport">
+        <div class="campaign-map-stage" id="campaign-map-stage">
+          <img src="./ui/Campaign_Map1.jpg" class="campaign-map-bg" alt="战役大地图" />
 
-        <div class="campaign-top-banner-wrap">
-          <div class="campaign-top-banner">
-            <span>选择下一个对手:</span>
+          <!-- 路线 SVG 连线层 -->
+          <svg class="campaign-map-routes" viewBox="0 0 1024 592">
+            ${CAMPAIGN_MAP1_ROUTES.map(route => {
+              const fromNode = CAMPAIGN_MAP1_NODES.find(n => n.levelId === route.from)!;
+              const toNode = CAMPAIGN_MAP1_NODES.find(n => n.levelId === route.to)!;
+              const x1 = (fromNode.x / 100) * 1024;
+              const y1 = (fromNode.y / 100) * 592;
+              const x2 = (toNode.x / 100) * 1024;
+              const y2 = (toNode.y / 100) * 592;
+              const isCompleted = completedCampaignLevels.includes(route.to);
+              const isAvailable = unlockedCampaignLevels.includes(route.to) && completedCampaignLevels.includes(route.from);
+              const lineClass = isCompleted ? 'route-completed' : (isAvailable ? 'route-available' : 'route-locked');
+              return `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="campaign-route-line ${lineClass}" />`;
+            }).join('')}
+          </svg>
+
+          <div class="campaign-top-banner-wrap">
+            <div class="campaign-top-banner">
+              <span>选择下一个对手</span>
+            </div>
           </div>
+
+          ${CAMPAIGN_MAP1_NODES.map(n => {
+            const isSelected = n.levelId === selectedCampaignLevelId;
+            const isCompleted = completedCampaignLevels.includes(n.levelId);
+            const isUnlocked = unlockedCampaignLevels.includes(n.levelId);
+            const stateClass = isCompleted ? 'completed' : (isUnlocked ? 'available' : 'locked');
+            return `
+              <div class="campaign-node ${stateClass} ${isSelected ? 'selected' : ''}"
+                   data-level-id="${n.levelId}"
+                   data-unlocked="${isUnlocked ? '1' : '0'}"
+                   style="left: ${n.x}%; top: ${n.y}%;"
+                   title="第 ${n.levelId} 关 · ${n.name} (${n.landmark})">
+                <div class="campaign-node-badge-title">第 ${n.levelId} 关 · ${n.name}</div>
+                <div class="campaign-node-avatar-frame">
+                  <img src="${n.face}" class="campaign-node-img" alt="${n.name}" />
+                  ${isCompleted ? '<div class="campaign-node-status-badge">✓</div>' : ''}
+                  ${!isUnlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
+                </div>
+                <div class="campaign-node-landmark-tag">${n.landmark}</div>
+                <div class="campaign-node-pointer"></div>
+              </div>
+            `;
+          }).join('')}
         </div>
 
-        ${CAMPAIGN_MAP1_NODES.filter(n => availableNodeIds.includes(n.levelId) || completedCampaignLevels.includes(n.levelId)).map(n => {
-          const isSelected = n.levelId === selectedCampaignLevelId;
-          const isCompleted = completedCampaignLevels.includes(n.levelId);
-          return `
-            <div class="campaign-node ${isSelected ? 'selected' : ''}"
-                 data-level-id="${n.levelId}"
-                 style="left: ${n.x}%; top: ${n.y}%;"
-                 title="${n.name} (${n.landmark})">
-              <div class="campaign-node-avatar-frame">
-                <img src="${n.face}" class="campaign-node-img" alt="${n.name}" />
-                ${isCompleted ? '<div class="campaign-node-status-badge">✓</div>' : ''}
-              </div>
-              <div class="campaign-node-pointer"></div>
-            </div>
-          `;
-        }).join('')}
+        <!-- 悬浮地图操控按钮 -->
+        <div class="campaign-map-controls">
+          <button class="map-ctrl-btn" id="btn-campaign-zoom-in" title="放大地图 (或鼠标滚轮向上)">＋</button>
+          <button class="map-ctrl-btn" id="btn-campaign-zoom-out" title="缩小地图 (或鼠标滚轮向下)">－</button>
+          <button class="map-ctrl-btn" id="btn-campaign-recenter" title="聚焦当前关卡">🎯</button>
+          <button class="map-ctrl-btn" id="btn-campaign-fit" title="全景居中">🗺️</button>
+        </div>
+
+        <div class="campaign-map-drag-hint">
+          <span>🖱️ 拖拽平移 · 滚轮/按钮缩放 · 点击关卡挑战</span>
+        </div>
       </div>
 
       <div class="campaign-bottom-deck">
@@ -6318,7 +6402,7 @@ function attachEventListeners() {
   });
 
   document.getElementById('btn-lan-cycle-face')?.addEventListener('click', () => {
-    lanPlayerFaceId = (lanPlayerFaceId % 78) + 1;
+    lanPlayerFaceId = (lanPlayerFaceId % TOTAL_FACES) + 1;
     saveLanProfilePreferences();
     sound.play('click');
     render();
@@ -6757,12 +6841,12 @@ function attachEventListeners() {
 
   document.getElementById('btn-player-face-prev')?.addEventListener('click', () => {
     sound.play('click');
-    playerFaceIndex = (playerFaceIndex - 1 + 78) % 78;
+    playerFaceIndex = (playerFaceIndex - 1 + TOTAL_FACES) % TOTAL_FACES;
     render();
   });
   document.getElementById('btn-player-face-next')?.addEventListener('click', () => {
     sound.play('click');
-    playerFaceIndex = (playerFaceIndex + 1) % 78;
+    playerFaceIndex = (playerFaceIndex + 1) % TOTAL_FACES;
     render();
   });
 
@@ -6789,12 +6873,12 @@ function attachEventListeners() {
 
   document.getElementById('btn-ai-face-prev')?.addEventListener('click', () => {
     sound.play('click');
-    aiFaceIndex = (aiFaceIndex - 1 + 78) % 78;
+    aiFaceIndex = (aiFaceIndex - 1 + TOTAL_FACES) % TOTAL_FACES;
     render();
   });
   document.getElementById('btn-ai-face-next')?.addEventListener('click', () => {
     sound.play('click');
-    aiFaceIndex = (aiFaceIndex + 1) % 78;
+    aiFaceIndex = (aiFaceIndex + 1) % TOTAL_FACES;
     render();
   });
 
@@ -7372,16 +7456,244 @@ function attachEventListeners() {
   });
 
   // ===================================
-  // CAMPAIGN MAP ACTIONS (Image 1)
+  // CAMPAIGN MAP ACTIONS & PAN/ZOOM CONTROLS (Image 1)
   // ===================================
-  document.querySelectorAll('.campaign-node').forEach((nodeEl) => {
-    nodeEl.addEventListener('click', () => {
-      const lvlId = parseInt((nodeEl as HTMLElement).dataset.levelId || '1', 10);
-      sound.play('click');
-      selectedCampaignLevelId = lvlId;
-      render();
+  function initCampaignMapInteractions() {
+    const viewport = document.getElementById('campaign-map-viewport');
+    const stage = document.getElementById('campaign-map-stage');
+    if (!viewport || !stage) return;
+
+    const STAGE_W = 1024;
+    const STAGE_H = 592;
+
+    function updateTransform(smooth = false) {
+      if (!stage) return;
+      stage.style.transition = smooth ? 'transform 0.28s cubic-bezier(0.25, 1, 0.5, 1)' : 'none';
+      stage.style.transform = `translate3d(${campaignMapPanX}px, ${campaignMapPanY}px, 0) scale(${campaignMapScale})`;
+    }
+
+    function clampPan(x: number, y: number, scale: number): { x: number; y: number } {
+      if (!viewport) return { x, y };
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      const sw = STAGE_W * scale;
+      const sh = STAGE_H * scale;
+
+      const minX = Math.min(0, vw - sw - 40);
+      const maxX = Math.max(0, vw - sw > 0 ? (vw - sw) / 2 : 40);
+      const minY = Math.min(0, vh - sh - 40);
+      const maxY = Math.max(0, vh - sh > 0 ? (vh - sh) / 2 : 40);
+
+      return {
+        x: Math.max(minX, Math.min(maxX, x)),
+        y: Math.max(minY, Math.min(maxY, y))
+      };
+    }
+
+    function focusLevel(levelId: number, smooth = true) {
+      if (!viewport) return;
+      const node = CAMPAIGN_MAP1_NODES.find(n => n.levelId === levelId) || CAMPAIGN_MAP1_NODES[0];
+      const nx = (node.x / 100) * STAGE_W;
+      const ny = (node.y / 100) * STAGE_H;
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+
+      const targetX = (vw / 2) - (nx * campaignMapScale);
+      const targetY = (vh / 2) - (ny * campaignMapScale);
+      const clamped = clampPan(targetX, targetY, campaignMapScale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
+      updateTransform(smooth);
+    }
+
+    function fitAll(smooth = true) {
+      if (!viewport) return;
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      const scale = Math.max(0.55, Math.min(1.2, Math.min(vw / STAGE_W, vh / STAGE_H)));
+      campaignMapScale = scale;
+      campaignMapPanX = (vw - STAGE_W * scale) / 2;
+      campaignMapPanY = (vh - STAGE_H * scale) / 2;
+      updateTransform(smooth);
+    }
+
+    // 初次进入时计算最佳自适应视角并对焦当前关卡
+    if (!campaignMapInitialized) {
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      campaignMapScale = Math.max(0.72, Math.min(1.15, Math.max(vw / STAGE_W, vh / STAGE_H)));
+      focusLevel(selectedCampaignLevelId, false);
+      campaignMapInitialized = true;
+    } else {
+      updateTransform(false);
+    }
+
+    // 拖拽手势交互 (鼠标与单指触摸)
+    let isDragging = false;
+    let dragStartX = 0;
+    let dragStartY = 0;
+    let startPanX = 0;
+    let startPanY = 0;
+    let dragDist = 0;
+    let suppressClick = false;
+
+    viewport.addEventListener('pointerdown', (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest('.campaign-map-controls')) return;
+      isDragging = true;
+      dragStartX = e.clientX;
+      dragStartY = e.clientY;
+      startPanX = campaignMapPanX;
+      startPanY = campaignMapPanY;
+      dragDist = 0;
+      suppressClick = false;
+      viewport.setPointerCapture(e.pointerId);
+      viewport.classList.add('is-dragging');
+      stage.style.transition = 'none';
     });
-  });
+
+    viewport.addEventListener('pointermove', (e: PointerEvent) => {
+      if (!isDragging) return;
+      const dx = e.clientX - dragStartX;
+      const dy = e.clientY - dragStartY;
+      dragDist += Math.hypot(dx, dy);
+      if (dragDist > 6) {
+        suppressClick = true;
+      }
+      const clamped = clampPan(startPanX + dx, startPanY + dy, campaignMapScale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
+      updateTransform(false);
+    });
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!isDragging) return;
+      isDragging = false;
+      viewport.classList.remove('is-dragging');
+      try { viewport.releasePointerCapture(e.pointerId); } catch {}
+      if (dragDist > 6) {
+        suppressClick = true;
+        setTimeout(() => { suppressClick = false; }, 80);
+      }
+    };
+
+    viewport.addEventListener('pointerup', onPointerUp);
+    viewport.addEventListener('pointercancel', onPointerUp);
+
+    // 滚轮缩放 (以鼠标位置为中心)
+    viewport.addEventListener('wheel', (e: WheelEvent) => {
+      e.preventDefault();
+      const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+      const oldScale = campaignMapScale;
+      const newScale = Math.max(0.5, Math.min(2.0, oldScale * zoomFactor));
+      if (newScale === oldScale) return;
+
+      const rect = viewport.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      campaignMapPanX = mouseX - (mouseX - campaignMapPanX) * (newScale / oldScale);
+      campaignMapPanY = mouseY - (mouseY - campaignMapPanY) * (newScale / oldScale);
+      campaignMapScale = newScale;
+
+      const clamped = clampPan(campaignMapPanX, campaignMapPanY, newScale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
+      updateTransform(false);
+    }, { passive: false });
+
+    // 控制栏按钮事件
+    document.getElementById('btn-campaign-zoom-in')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.play('click');
+      const newScale = Math.min(2.0, campaignMapScale * 1.2);
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      campaignMapPanX = (vw / 2) - ((vw / 2) - campaignMapPanX) * (newScale / campaignMapScale);
+      campaignMapPanY = (vh / 2) - ((vh / 2) - campaignMapPanY) * (newScale / campaignMapScale);
+      campaignMapScale = newScale;
+      const clamped = clampPan(campaignMapPanX, campaignMapPanY, newScale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
+      updateTransform(true);
+    });
+
+    document.getElementById('btn-campaign-zoom-out')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.play('click');
+      const newScale = Math.max(0.5, campaignMapScale * 0.83);
+      const vw = viewport.clientWidth;
+      const vh = viewport.clientHeight;
+      campaignMapPanX = (vw / 2) - ((vw / 2) - campaignMapPanX) * (newScale / campaignMapScale);
+      campaignMapPanY = (vh / 2) - ((vh / 2) - campaignMapPanY) * (newScale / campaignMapScale);
+      campaignMapScale = newScale;
+      const clamped = clampPan(campaignMapPanX, campaignMapPanY, newScale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
+      updateTransform(true);
+    });
+
+    document.getElementById('btn-campaign-recenter')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.play('click');
+      focusLevel(selectedCampaignLevelId, true);
+    });
+
+    document.getElementById('btn-campaign-fit')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.play('click');
+      fitAll(true);
+    });
+
+    // 节点点击交互与防误触
+    document.querySelectorAll('.campaign-node').forEach((nodeEl) => {
+      nodeEl.addEventListener('click', (e) => {
+        if (suppressClick) return;
+        e.stopPropagation();
+        const lvlId = parseInt((nodeEl as HTMLElement).dataset.levelId || '1', 10);
+        const isUnlocked = (nodeEl as HTMLElement).dataset.unlocked === '1';
+
+        if (!isUnlocked) {
+          sound.play('click');
+          showToastNotice(`⚔️ 第 ${lvlId} 关尚未解锁，请先突破前置关卡！`);
+          nodeEl.classList.add('shake-locked');
+          setTimeout(() => nodeEl.classList.remove('shake-locked'), 400);
+          return;
+        }
+
+        sound.play('click');
+        selectedCampaignLevelId = lvlId;
+
+        // 样式切换与平滑镜头对焦
+        document.querySelectorAll('.campaign-node').forEach(el => {
+          el.classList.toggle('selected', parseInt((el as HTMLElement).dataset.levelId || '0', 10) === lvlId);
+        });
+        focusLevel(lvlId, true);
+
+        // 动态更新底部剧情与对手信息面板
+        const currentLvl = (campaignData as CampaignLevel[]).find(l => l.id === lvlId) || (campaignData as CampaignLevel[])[0];
+        const deckCenter = document.querySelector('.campaign-deck-center');
+        if (deckCenter) {
+          deckCenter.innerHTML = `
+            <div class="campaign-story-header">
+              <span class="campaign-story-title">${currentLvl.oppName} · ${currentLvl.title}</span>
+              <span class="campaign-story-hp">生命值: ${currentLvl.enemyHp}</span>
+            </div>
+            <div class="campaign-story-text">
+              ${formatStoryText(currentLvl.story)}
+            </div>
+            ${currentLvl.rules ? `
+              <div class="campaign-story-rules">
+                <strong>战斗特殊规则：</strong>${currentLvl.rules.replace(/\r?\n/g, ' ')}
+              </div>
+            ` : ''}
+          `;
+        }
+        saveCampaignProfiles();
+      });
+    });
+  }
+
+  initCampaignMapInteractions();
 
   document.getElementById('btn-campaign-diff-prev')?.addEventListener('click', () => {
     sound.play('click');
@@ -7519,13 +7831,13 @@ function attachEventListeners() {
 
   document.getElementById('btn-campaign-face-prev')?.addEventListener('click', () => {
     sound.play('click');
-    campaignPlayerFaceId = ((campaignPlayerFaceId - 2 + 78) % 78) + 1;
+    campaignPlayerFaceId = ((campaignPlayerFaceId - 2 + TOTAL_FACES) % TOTAL_FACES) + 1;
     render();
   });
 
   document.getElementById('btn-campaign-face-next')?.addEventListener('click', () => {
     sound.play('click');
-    campaignPlayerFaceId = (campaignPlayerFaceId % 78) + 1;
+    campaignPlayerFaceId = (campaignPlayerFaceId % TOTAL_FACES) + 1;
     render();
   });
 
@@ -7622,12 +7934,12 @@ function attachEventListeners() {
   // ===================================
   document.getElementById('btn-league-face-prev')?.addEventListener('click', () => {
     sound.play('click');
-    leaguePlayerFaceId = ((leaguePlayerFaceId - 2 + 78) % 78) + 1;
+    leaguePlayerFaceId = ((leaguePlayerFaceId - 2 + TOTAL_FACES) % TOTAL_FACES) + 1;
     render();
   });
   document.getElementById('btn-league-face-next')?.addEventListener('click', () => {
     sound.play('click');
-    leaguePlayerFaceId = (leaguePlayerFaceId % 78) + 1;
+    leaguePlayerFaceId = (leaguePlayerFaceId % TOTAL_FACES) + 1;
     render();
   });
 
@@ -8076,8 +8388,10 @@ function attachEventListeners() {
       if (!completedCampaignLevels.includes(selectedCampaignLevelId)) {
         completedCampaignLevels.push(selectedCampaignLevelId);
       }
-      if (selectedCampaignLevelId === 1) {
-        unlockedCampaignLevels = [1, 2, 3, 4];
+      unlockedCampaignLevels = computeUnlockedCampaignLevels(completedCampaignLevels);
+      const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
+      if (nextUncompleted) {
+        selectedCampaignLevelId = nextUncompleted;
       }
       saveCampaignProfiles();
     }
