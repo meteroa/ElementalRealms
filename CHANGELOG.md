@@ -7,6 +7,72 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-15
 
+- **新增 3 首高品质战斗背景音乐与音频管线优化（Combat Tracks combat10, combat11, combat12 Integration）**：
+  - 对三首 Suno 原创管弦及战阵战斗曲完成专业母带与 0.5s 余弦无缝循环交叉淡入淡出（Seamless Loop Crossfade）及 -1 dBFS 响度标准化处理；
+  - 导出并接入 `combat10.ogg` (183.94s, 原 Grim Heavy Orchestral March)、`combat11.ogg` (204.10s, 原 LA CALAMIDAD)、`combat12.ogg` (214.12s, 原 Untitled)；
+  - 接入 `sound.ts` 音频预加载队列与战斗随机播放曲目池，支持平滑淡入淡出播放。
+
+- **战斗场景扩充 4 款电影级战场背景与系统设置随机背景支持（4 New Battlefields & Random Battlefield Toggle）**：
+  - 全新生成并集成 4 款 16:9 高清电影级幻想战场：深渊裂隙（`battlefield_abyss.jpg`）、极地雪原（`battlefield_tundra.jpg`）、丝路大漠（`battlefield_desert.jpg`）、苍穹神坛（`battlefield_shrine.jpg`），全战场背景扩充至 8 款；
+  - 系统设置弹窗（Options Modal）中重构战场背景面板，提供 8 款场景一键预览切换；
+  - 新增“🎲 战斗时使用随机背景”功能开关，开启后每场战斗在全部 8 款背景中真随机选取，选择状态自动持久化保存。
+
+- **Suno 音频下载油猴插件歌曲名与元数据匹配修正（Suno Downloader Metadata & Next Track Race Condition Fix）**：
+  - 解决点击下载时因 Suno 在播放结束前自动切歌导致捕获到下一首自动轮播歌曲名的问题；
+  - 通过提取发声 `<audio>` 真实 `src` 中的 `clipId`（UUID）反向绑定 DOM 元数据，避免全页面非精准查找；
+  - 启动录制时立即捕获当前歌曲快照 `currentRecordingTrack` 锁定文件名，并在录制倒数 0.3s 时主动暂停播放器，彻底切断自动轮播篡改 DOM 的竞态条件。
+
+- **清理 PC 历史遗留资产与 Git 历史净化（Purge PC Directory from Local, Remote & Git History）**：
+  - 本地与远程仓库彻底移除 `pc/` 文件夹；
+  - 使用 `git-filter-repo` 全面抹除所有 Git 历史提交中涉及 `pc/` 的版本记录，减小仓库体积并规范仓库结构。
+
+- **东方古典地域风格严肃战场音乐定制 Prompts 库扩展（Oriental Classical Regional Battlefield Prompts <70 BPM）**：
+  - 针对带有浓厚地域风格（中国古典、丝路西域边关、水墨剑戟修罗）的高压对战需求，定制 3 组节奏严格压制在 70 BPM 以下（60~65 BPM）的战斗 BGM 提示词；
+  - 深度融合东方传统打击器乐（重堂鼓、大太鼓、青铜编钟、拍板）与独奏战阵器乐（琵琶急煞、古筝扫弦、苍凉筚篥与陶埙、杜读管、尺八破竹裂音、扬琴），结合暗黑低音管弦，打造生死一线、步步为营的肃杀战意；
+  - 完整曲式标签与参数规范已同步追加至 `tools/audio/README.md`。
+
+- **战役三大战区（Map 1, Map 2, Map 3）与全 23 场战役全线贯通与终局防卡死（Campaign 3 Continents & All 23 Levels Full Navigation）**：
+  - 彻底梳理并接通 PC 原版完整战役链路：战役总计拥有 **3 块大陆（Map 1, Map 2, Map 3）**，共 **23 场剧情战役**（大陆 I：第 1~8 关；大陆 II：第 9~16 关；大陆 III：第 17~23 关，第 23 关决战最高导师铎拉克 Dorlak）；
+  - 补全第 3 块大陆的节点定义（`CAMPAIGN_MAP3_NODES`）、行军路线（`CAMPAIGN_MAP3_ROUTES`）、背景地图（`Campaign_Map3.jpg`）与首领立绘；
+  - 接入第二大陆至第三大陆星门（`CAMPAIGN_PORTAL_MAP2_TO_3`，通关第 16 关解锁）与第三大陆返回星门；
+  - 大地图控制栏升级为三大战区轮转切换（`大陆 I`、`大陆 II`、`大陆 III`），关卡通关后自适应平滑推镜聚焦并自动跳转下一大陆，彻底杜绝打完第二大陆卡住的问题。
+- **联赛创建角色横版/移动端弹窗边界溢出彻底修复（League New Character Modal Responsive Overflow Fix）**：
+  - 针对横版及移动端小屏下，角色创建弹窗宽度超纲、文字被截断、右侧单选步进器“10 人 (含玩家)”破出弹窗外框的缺陷进行根治；
+  - 重构模态框布局机制，设置 `width: min(92vw, 540px)` 与 `max-height: 94vh; overflow-y: auto;`；
+  - 网格布局改用 `clamp(120px, 15vw, 160px) minmax(0, 1fr)` 配合 `min-width: 0;` 根除 Grid 子元素溢出问题；
+  - 选项文本引入省略号弹性截断与小屏幕媒体查询，彻底解决右侧组件穿模现象。
+- **基于施法前元素值（preCastMana）的技能判定与数值结算系统重构（Pre-Cast Mana Dependency System Audit & Fix）**：
+  - 根治因系统先扣除卡牌自身消耗能量导致技能按消耗后残留元素值判定的系统性缺陷；
+  - 在 `playCard` 扣费前对施法者所有元素能量进行完整快照（`preCastMana`），并在生物召唤入场技能与法术效果中穿透传递；
+  - 全面修正：
+    * **气系【狮鹫】（`griffin_strike`）**：严格以召唤前气元素值是否达到 5 点为准执行直接打击；
+    * **土系【仙女圣徒】（`faerie_sage_heal`）**：以召唤前土系能量判定治疗量；
+    * **火系【大恶魔】（`demon_greater_summon`）**：以召唤前火系能量结算灭世冲击；
+    * **气系【闪电术】（`lightning_bolt_scaled`）**：按 `5 + 施法前气系能量` 计算伤害；
+    * **火系【世界末日】（`armageddon`）**：按 `8 + 施法前火系能量` 计算全场伤害；
+    * **土系【活力恢复】（`rejuvenation_scaled`）**：按 `施法前土系能量 * 2` 计算英雄回复；
+    * **死灵【灵魂狂怒】（`rage_of_souls`）**：按 `9 + 施法前死灵能量` 结算斩杀；
+    * **元素生物入场基础攻击力**（如气灵、火灵）：以召唤前元素值设定初始攻击力。
+- **法术伤害结算与随从阵亡清理时序彻底解耦（Decouple Spell Damage & Dead Cleanup Before Combat Phase）**：
+  - 解决魔法卡牌打死对位随从后，己方生物未察觉对位已死而将本应直击敌方英雄的伤害错误倾泻在已死生物上的战斗时序 Bug；
+  - 重构伤害与攻击判定流程：法术造成伤害后立即触发飘字扣血更新并延时 500ms 展现受击反馈，随后立即执行 `cleanupDead()` 将空槽位彻底抹除并再次延时 350ms 呈现空槽；
+  - 后续生物攻击阶段在干净棋盘上执行，严密确保阵亡生物槽位为空，使对位友军精准直击对方英雄。
+- **严肃紧张·暗黑战阵风格战场音乐定制 Prompts（Serious & Tense Battlefield Combat Prompts <80 BPM）**：
+  - 针对此前提示词过于舒缓、更像安眠曲的问题，按照战场交响规范全面重构；
+  - 速度严格控制在 80 BPM 以下（68~76 BPM，沉稳压迫战阵步态），全面引入重装定音鼓/太鼓顿挫、低音铜管咆哮、压抑大提琴顿音骨干（Cello Ostinato）、不和谐弦乐摩擦与金属战击重音；
+  - 重新定制 5 组不同战场情境的 Suno / Udio 提示词（铁甲战阵、黑魔导裁决、深渊巨兽苏醒、血月围城绝境反扑、混沌黄昏），并已同步归档至 `tools/audio/README.md`。
+
+- **横版对手头像与元素能量极小间距调优与小屏适配（Landscape Opponent Ultra-Compact Layout Fix）**：
+  - 针对小屏幕/小高度横屏（`@media (max-height: 620px), (max-width: 900px)`）下媒体查询强制头像框高度为 48px 导致空隙未被彻底压缩的问题，全面重构横版紧凑机制；
+  - 头像框收缩至 32px，头像主体 26px，能量条高度压至 17~19px，各元素边距全面收缩并设 gap 为 1px；卡片堆叠间距收紧至 3~5px，再次提拉己方信息栏 15~20px，彻底消除多余留黑。
+- **战役模式剧情首领名称纠正、关卡规则初始随从入场与大地图传送门（Campaign Boss Alignment, Initial Minions & Map 2 Portal）**：
+  - **首领名称纠偏**：比对 PC 原版 `Opp01.txt` ~ `Opp70.txt` 剧情，全面修正第 6~23 关首领名称与章节移位错误（第 6 关纠正为“斯哈克”，第 7 关为“阿芙黛娅”，第 8 关为“博瑞”，第 9 关为“艾瑞欧”等，匹配第 1~3 大陆剧情与 Flavour 文本）；
+  - **关卡初始特殊随从入场**：按原版规则在战役开战时注入战场随从：第 6 关对手开局额外进驻【气灵】；第 7 关对手开局额外进驻 3 张【精灵医者】；第 8 关玩家开局额外进驻【禁锢元素】；后续关卡（第 9 关疯猫、第 10 关火山、第 11 关吸血鬼）同步接入；
+  - **战役特殊胜负裁定**：第 6 关击杀对手气灵即判胜；第 7 关超 15 回合判负；第 5 关坚守 8 回合判胜；第 11 关杀死全部吸血鬼判胜；
+  - **第二大陆（Map 2）与双向星门传送体系实装**：在第一大陆右上角接入传送星门，通关第 8 关后激活星门脉冲光效并支持点击穿梭至第二大陆（第 9~16 关）；在第二大陆左下角接入返回星门，控制栏增设大陆切换按钮，支持查阅未解锁关卡情报。
+- **战斗背景音乐快节奏音轨移除与慢速（<60 BPM）Prompts 库构建（Combat BGM Tuning & Slow Prompts Suite）**：
+  - 将节奏过快的 `combat1`, `combat2`, `combat5` 移出随机战斗轮播池，保留舒缓温润的交响曲目（`combat4`, `combat6`, `combat7`, `combat8`, `combat9`），缺省回退设为 `combat4`；
+  - 针对战棋博弈深思需求，全新定制生成 5 组节奏降至 60 以下（48~58 BPM）、采用舒缓温润乐器（爱尔兰哨笛、鲁特琴、凯尔特大竖琴、大提琴长弓连奏、木质排箫、钢片琴、柔和无字微光哼唱）的 Suno / Udio 提示词，并归档至 `tools/audio/README.md`。
 - **横版对手卡片紧凑化与信息栏纵向空间释放（Landscape Opponent Card Spacing & Vertical Flow Optimization）**：
   - 针对横版（Landscape）下对手英雄卡片头像行与下方元素能量栏之间存在过宽空黑间隙（导致下方玩家英雄栏与卡牌/战报检视区受挤压）的问题进行修正；
   - 移除 `.combat-hero-row.opponent` 原写死的强制固定高度（`clamp(136px, calc(122px + 3.8vh), 162px)`）与 `justify-content: space-between`，重构为自适应高度、顶对齐与精致 `gap: clamp(3px, 0.5vh, 6px)` 间距；

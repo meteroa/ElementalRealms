@@ -1978,7 +1978,7 @@ body, html {
 .combat-heroes-stack {
   display: flex;
   flex-direction: column;
-  gap: clamp(6px, 0.8vh, 10px);
+  gap: clamp(3px, 0.4vh, 5px);
   width: 100%;
 }
 
@@ -1999,39 +1999,70 @@ body, html {
   background: linear-gradient(135deg, rgba(38, 16, 22, 0.95) 0%, rgba(20, 10, 14, 0.98) 100%);
   border: 1.8px solid #b91c1c;
   box-shadow: 0 0 12px rgba(185, 28, 28, 0.3), 0 3px 8px rgba(0, 0, 0, 0.75);
-  height: auto;
-  min-height: 0;
+  height: auto !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: flex-start !important;
+  gap: 1px !important;
+  padding: 2px clamp(4px, 0.6vw, 8px) !important;
+}
+
+.combat-hero-row.opponent .combat-hero-top-row {
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: clamp(3px, 0.5vh, 6px);
-  padding: clamp(5px, 0.6vh, 8px) clamp(8px, 0.9vw, 14px);
+  align-items: center;
+  gap: clamp(4px, 0.5vw, 8px);
+  width: 100%;
+}
+
+.combat-hero-row.opponent .combat-hero-portrait-wrap {
+  width: clamp(34px, calc(32px + 0.5vw), 40px) !important;
+  height: clamp(34px, calc(32px + 0.5vw), 40px) !important;
+}
+
+.combat-hero-row.opponent .combat-hero-avatar {
+  width: clamp(28px, calc(26px + 0.5vw), 34px) !important;
+  height: clamp(28px, calc(26px + 0.5vw), 34px) !important;
+}
+
+.combat-hero-row.opponent .combat-hero-hp {
+  font-size: clamp(22px, calc(20px + 0.5vw), 28px);
 }
 
 .combat-hero-top-row {
   display: flex;
   align-items: center;
-  gap: clamp(8px, 0.9vw, 16px);
+  gap: clamp(4px, 0.6vw, 10px);
   width: 100%;
 }
 
 .hero-mana-bar.opponent-full-width {
   width: 100%;
   display: flex;
-  gap: clamp(3px, 0.4vw, 6px);
-  height: clamp(26px, calc(24px + 0.6vh), 32px);
-  margin-top: 0;
+  gap: clamp(1px, 0.3vw, 4px);
+  height: clamp(19px, calc(17px + 0.4vh), 22px) !important;
+  margin-top: 0 !important;
 }
 
 .hero-mana-bar.opponent-full-width .hero-mana-chip {
   flex: 1;
   min-width: 0;
-  height: 100%;
-  padding: 0 2px;
+  height: 100% !important;
+  padding: 0 1px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
+  gap: 1px;
+}
+
+.hero-mana-bar.opponent-full-width .hero-mana-chip .chip-icon {
+  font-size: clamp(10px, 1.1vw, 12px);
+  line-height: 1;
+}
+
+.hero-mana-bar.opponent-full-width .hero-mana-chip .chip-val {
+  font-size: clamp(13px, 1.4vw, 16px);
+  line-height: 1;
 }
 
 .combat-hero-row.opponent::after {
@@ -3858,37 +3889,68 @@ body, html {
     line-height: 1.35;
     font-weight: 600;
   }
-  .combat-hero-row.opponent {
-    height: clamp(100px, 21vh, 126px) !important;
-    padding: 3px 6px !important;
+  .combat-heroes-stack {
     gap: 2px !important;
+  }
+  .combat-hero-row.opponent {
+    height: auto !important;
+    min-height: 0 !important;
+    padding: 1px 5px !important;
+    gap: 1px !important;
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
+  }
+  .combat-hero-row.opponent .combat-hero-portrait-wrap {
+    width: 32px !important;
+    height: 32px !important;
+  }
+  .combat-hero-row.opponent .combat-hero-avatar {
+    width: 26px !important;
+    height: 26px !important;
+  }
+  .combat-hero-row.opponent .combat-hero-hp {
+    font-size: 20px !important;
+  }
+  .combat-hero-row.opponent .hero-mana-bar.opponent-full-width {
+    height: 17px !important;
+    gap: 1px !important;
+    margin-top: 0 !important;
+  }
+  .combat-hero-row.opponent .hero-mana-bar.opponent-full-width .hero-mana-chip {
+    height: 100% !important;
+    padding: 0 1px !important;
+    gap: 1px !important;
+  }
+  .combat-hero-row.opponent .hero-mana-bar.opponent-full-width .hero-mana-chip .chip-icon {
+    font-size: 9.5px !important;
+  }
+  .combat-hero-row.opponent .hero-mana-bar.opponent-full-width .hero-mana-chip .chip-val {
+    font-size: 12px !important;
   }
   .combat-hero-row.player {
-    height: clamp(40px, 8.5vh, 48px) !important;
+    height: clamp(38px, 8vh, 44px) !important;
     padding: 2px 6px !important;
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
   }
-  .combat-hero-portrait-wrap {
-    width: 48px !important;
-    height: 48px !important;
+  .combat-hero-row.player .combat-hero-portrait-wrap {
+    width: 42px !important;
+    height: 42px !important;
   }
-  .combat-hero-avatar {
-    width: 40px !important;
-    height: 40px !important;
+  .combat-hero-row.player .combat-hero-avatar {
+    width: 36px !important;
+    height: 36px !important;
   }
-  .combat-hero-hp {
-    font-size: 24px !important;
+  .combat-hero-row.player .combat-hero-hp {
+    font-size: 22px !important;
   }
   .hero-mana-chip {
-    height: 26px !important;
+    height: 22px !important;
   }
   .hero-mana-chip .chip-val {
-    font-size: 15px !important;
+    font-size: 13px !important;
     font-weight: 900 !important;
   }
 }
@@ -5888,6 +5950,44 @@ body, html {
   border-radius: 50%;
 }
 
+/* Star Portal to Continent 2 / Continent 1 */
+.campaign-portal {
+  cursor: pointer;
+  z-index: 32;
+}
+
+.campaign-portal .campaign-node-avatar-frame {
+  background: radial-gradient(circle, #38bdf8 0%, #1e1b4b 60%, #030712 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-color: #818cf8;
+}
+
+.campaign-portal-icon {
+  font-size: 26px;
+  animation: portalSpin 4s linear infinite;
+  display: inline-block;
+  filter: drop-shadow(0 0 8px #60a5fa);
+}
+
+@keyframes portalSpin {
+  0% { transform: rotate(0deg) scale(1); }
+  50% { transform: rotate(180deg) scale(1.15); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+.campaign-portal.portal-active .campaign-node-avatar-frame {
+  border-color: #a855f7;
+  box-shadow: 0 0 24px rgba(168, 85, 247, 0.95), 0 0 12px rgba(56, 189, 248, 0.8);
+  animation: portalPulse 2s infinite alternate;
+}
+
+@keyframes portalPulse {
+  0% { box-shadow: 0 0 14px rgba(168, 85, 247, 0.7), 0 0 6px rgba(56, 189, 248, 0.5); }
+  100% { box-shadow: 0 0 32px rgba(168, 85, 247, 1), 0 0 20px rgba(56, 189, 248, 0.9); }
+}
+
 .shake-locked {
   animation: shakeNode 0.35s ease-in-out;
 }
@@ -6145,15 +6245,19 @@ body, html {
 }
 
 .league-new-char-modal {
-  width: clamp(580px, 58vw, 760px);
+  width: min(92vw, 540px);
+  max-width: 95vw;
+  max-height: 94vh;
+  overflow-y: auto;
+  box-sizing: border-box;
   background: #2a221b linear-gradient(155deg, rgba(46, 36, 28, 0.98) 0%, rgba(22, 17, 13, 0.99) 100%);
-  border: 3.5px solid #8e723a;
-  border-radius: 16px;
+  border: 3px solid #8e723a;
+  border-radius: 14px;
   box-shadow: 0 0 0 1px #423512, inset 0 0 45px rgba(0, 0, 0, 0.9), 0 25px 70px #000;
-  padding: clamp(20px, 2.5vh, 32px) clamp(24px, 2.5vw, 38px);
+  padding: clamp(14px, 2vh, 24px) clamp(16px, 2vw, 26px);
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 12px;
   animation: zoomInCard 0.22s ease-out;
   position: relative;
 }
@@ -6165,41 +6269,46 @@ body, html {
 }
 
 .league-modal-title {
-  font-size: clamp(24px, 2.5vw, 32px);
+  font-size: clamp(20px, 2.2vw, 28px);
   font-weight: 900;
   color: #4ade80;
   text-shadow: 0 2px 6px #000;
-  letter-spacing: 3px;
+  letter-spacing: 2px;
 }
 
 .league-modal-content-grid {
   display: grid;
-  grid-template-columns: clamp(160px, 18vw, 220px) 1fr;
-  gap: 24px;
+  grid-template-columns: clamp(120px, 15vw, 160px) minmax(0, 1fr);
+  gap: clamp(12px, 1.8vw, 20px);
   align-items: center;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .league-avatar-picker-col {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .league-arrow-btn {
   background: rgba(14, 11, 8, 0.85);
   border: 1.5px solid #8e723a;
   color: #ffd700;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 900;
-  width: 32px;
-  height: 52px;
+  width: 28px;
+  height: 46px;
   border-radius: 5px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
 .league-arrow-btn:hover {
@@ -6209,10 +6318,10 @@ body, html {
 }
 
 .league-avatar-portrait-wrap {
-  width: clamp(120px, 13vw, 160px);
-  height: clamp(140px, 15vw, 190px);
-  border: 2.5px solid #a8843c;
-  border-radius: 10px;
+  width: clamp(96px, 11vw, 130px);
+  height: clamp(120px, 13vw, 160px);
+  border: 2px solid #a8843c;
+  border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.85);
   background: #110e0b;
@@ -6227,30 +6336,38 @@ body, html {
 .league-fields-col {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .league-field-row {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 3px;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .league-field-label {
-  font-size: clamp(14.5px, 1.25vw, 18px);
+  font-size: clamp(13px, 1.1vw, 16px);
   font-weight: 800;
   color: #d1b58a;
+  white-space: nowrap;
 }
 
 .league-text-input {
   background: rgba(14, 11, 8, 0.92);
   border: 1.5px solid #8e723a;
   border-radius: 6px;
-  padding: 8px 14px;
-  height: 44px;
+  padding: 6px 10px;
+  height: 38px;
+  width: 100%;
   box-sizing: border-box;
   color: #ffd700;
-  font-size: clamp(16px, 1.35vw, 20px);
+  font-size: clamp(14px, 1.2vw, 17px);
   font-weight: 800;
   outline: none;
 }
@@ -6267,19 +6384,97 @@ body, html {
   background: rgba(14, 11, 8, 0.92);
   border: 1.5px solid #8e723a;
   border-radius: 6px;
-  padding: 6px 10px;
-  height: 44px;
+  padding: 4px 8px;
+  height: 38px;
+  width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
+  gap: 4px;
+}
+
+.league-choice-stepper .campaign-diff-btn {
+  flex-shrink: 0;
 }
 
 .league-choice-val {
-  font-size: clamp(16px, 1.35vw, 20px);
-  font-weight: 900;
+  font-size: clamp(13px, 1.1vw, 16px);
+  font-weight: 800;
   color: #c4b5fd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+  flex: 1;
+  min-width: 0;
 }
 
 .league-choice-val.diff {
   color: #fde047;
+}
+
+@media (max-width: 520px) {
+  .league-new-char-modal {
+    width: 95vw;
+    padding: 12px 14px;
+    gap: 10px;
+  }
+  .league-modal-content-grid {
+    grid-template-columns: 96px minmax(0, 1fr);
+    gap: 8px;
+  }
+  .league-avatar-portrait-wrap {
+    width: 80px;
+    height: 105px;
+  }
+  .league-arrow-btn {
+    width: 22px;
+    height: 36px;
+    font-size: 14px;
+  }
+  .league-text-input,
+  .league-choice-stepper {
+    height: 35px;
+    padding: 3px 6px;
+  }
+  .league-choice-val {
+    font-size: 12px;
+  }
+}
+
+@media (max-height: 520px) {
+  .league-new-char-modal {
+    max-height: 96vh;
+    padding: 8px 14px;
+    gap: 6px;
+  }
+  .league-modal-content-grid {
+    gap: 10px;
+  }
+  .league-avatar-portrait-wrap {
+    width: 76px;
+    height: 94px;
+  }
+  .league-arrow-btn {
+    height: 30px;
+    width: 20px;
+  }
+  .league-fields-col {
+    gap: 5px;
+  }
+  .league-field-row {
+    gap: 1px;
+  }
+  .league-text-input,
+  .league-choice-stepper {
+    height: 30px;
+    padding: 2px 6px;
+  }
+  .league-choice-val {
+    font-size: 11.5px;
+  }
+  .league-modal-title {
+    font-size: 18px;
+  }
 }
 
 .league-modal-actions {

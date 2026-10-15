@@ -127,6 +127,43 @@ function computeUnlockedCampaignLevels(completed: number[]): number[] {
   if (completed.includes(7)) {
     unlocked.add(8);
   }
+  if (completed.includes(8)) {
+    unlocked.add(9);
+  }
+  if (completed.includes(9)) {
+    unlocked.add(10);
+    unlocked.add(11);
+  }
+  if (completed.some(id => [10, 11].includes(id))) {
+    unlocked.add(12);
+  }
+  if (completed.includes(12)) {
+    unlocked.add(13);
+  }
+  if (completed.includes(13)) {
+    unlocked.add(14);
+    unlocked.add(15);
+  }
+  if (completed.some(id => [14, 15].includes(id))) {
+    unlocked.add(16);
+  }
+  if (completed.includes(16)) {
+    unlocked.add(17);
+  }
+  if (completed.includes(17)) {
+    unlocked.add(18);
+    unlocked.add(19);
+  }
+  if (completed.some(id => [18, 19].includes(id))) {
+    unlocked.add(20);
+  }
+  if (completed.includes(20)) {
+    unlocked.add(21);
+    unlocked.add(22);
+  }
+  if (completed.some(id => [21, 22].includes(id))) {
+    unlocked.add(23);
+  }
   return Array.from(unlocked).sort((a, b) => a - b);
 }
 
@@ -140,6 +177,7 @@ if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
   const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
   selectedCampaignLevelId = nextUncompleted || unlockedCampaignLevels[unlockedCampaignLevels.length - 1] || 1;
 }
+let campaignMapIndex: 1 | 2 | 3 = (selectedCampaignLevelId >= 17) ? 3 : ((selectedCampaignLevelId >= 9) ? 2 : 1);
 let campaignDifficultyIndex: number = activeCampaign?.difficultyIdx || 0;
 
 let showCampaignHubModal = false;
@@ -231,9 +269,9 @@ const CAMPAIGN_MAP1_NODES = [
   { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 30.5, y: 57.5, landmark: '风车' },
   { levelId: 4, name: '尼瑞恩', face: './faces/Face9.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
   { levelId: 5, name: '洛瑞娜', face: './faces/Face10.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
-  { levelId: 6, name: '阿芙黛娅', face: './faces/Face11.jpg', x: 62.0, y: 46.0, landmark: '狂风要塞' },
-  { levelId: 7, name: '博瑞', face: './faces/Face12.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
-  { levelId: 8, name: '艾瑞欧', face: './faces/Face13.jpg', x: 82.0, y: 38.0, landmark: '禁锢熔炉' },
+  { levelId: 6, name: '斯哈克', face: './faces/Face11.jpg', x: 62.0, y: 46.0, landmark: '狂风要塞' },
+  { levelId: 7, name: '阿芙黛娅', face: './faces/Face12.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
+  { levelId: 8, name: '博瑞', face: './faces/Face13.jpg', x: 82.0, y: 38.0, landmark: '禁锢熔炉' },
 ];
 
 const CAMPAIGN_MAP1_ROUTES = [
@@ -247,6 +285,58 @@ const CAMPAIGN_MAP1_ROUTES = [
   { from: 6, to: 7 },
   { from: 7, to: 8 },
 ];
+
+// 第二大陆（Chapter 2：第 9 ~ 16 关）
+const CAMPAIGN_MAP2_NODES = [
+  { levelId: 9, name: '艾瑞欧', face: './faces/Face14.jpg', x: 35.0, y: 76.0, landmark: '荒野兽穴' },
+  { levelId: 10, name: '卡特拉', face: './faces/Face15.jpg', x: 22.0, y: 46.0, landmark: '绝望火山' },
+  { levelId: 11, name: '曼迪阿杜斯', face: './faces/Face16.jpg', x: 31.0, y: 61.0, landmark: '暗夜营地' },
+  { levelId: 12, name: '沃兰娜', face: './faces/Face17.jpg', x: 52.0, y: 76.0, landmark: '巨石荒原' },
+  { levelId: 13, name: '火焰领主', face: './faces/Face18.jpg', x: 56.0, y: 60.0, landmark: '绿光秘境' },
+  { levelId: 14, name: '加法亚', face: './faces/Face19.jpg', x: 64.0, y: 74.0, landmark: '献祭神坛' },
+  { levelId: 15, name: '图瑞恩', face: './faces/Face20.jpg', x: 60.0, y: 42.0, landmark: '审判城堡' },
+  { levelId: 16, name: '弗斯拉夫', face: './faces/Face21.jpg', x: 68.0, y: 23.0, landmark: '水晶苍穹' },
+];
+
+const CAMPAIGN_MAP2_ROUTES = [
+  { from: 9, to: 10 },
+  { from: 9, to: 11 },
+  { from: 10, to: 12 },
+  { from: 11, to: 12 },
+  { from: 12, to: 13 },
+  { from: 13, to: 14 },
+  { from: 13, to: 15 },
+  { from: 14, to: 16 },
+  { from: 15, to: 16 },
+];
+
+// 第三大陆（Chapter 3：第 17 ~ 23 关）
+const CAMPAIGN_MAP3_NODES = [
+  { levelId: 17, name: '哈米尔', face: './faces/Face22.jpg', x: 26.0, y: 72.0, landmark: '龙之天梯' },
+  { levelId: 18, name: '哈拉尔', face: './faces/Face23.jpg', x: 38.0, y: 56.0, landmark: '永雨之地' },
+  { levelId: 19, name: '龙王', face: './faces/Face24.jpg', x: 28.0, y: 38.0, landmark: '龙王之穴' },
+  { levelId: 20, name: '黑暗凯文', face: './faces/Face25.jpg', x: 50.0, y: 50.0, landmark: '暗灵圣地' },
+  { levelId: 21, name: '阿特朗', face: './faces/Face26.jpg', x: 62.0, y: 64.0, landmark: '魔法学院' },
+  { levelId: 22, name: '风之领主', face: './faces/Face27.jpg', x: 66.0, y: 38.0, landmark: '风暴之殿' },
+  { levelId: 23, name: '铎拉克', face: './faces/Face28.jpg', x: 82.0, y: 26.0, landmark: '星灵湮灭塔' },
+];
+
+const CAMPAIGN_MAP3_ROUTES = [
+  { from: 17, to: 18 },
+  { from: 17, to: 19 },
+  { from: 18, to: 20 },
+  { from: 19, to: 20 },
+  { from: 20, to: 21 },
+  { from: 20, to: 22 },
+  { from: 21, to: 23 },
+  { from: 22, to: 23 },
+];
+
+// 大陆传送门坐标
+const CAMPAIGN_PORTAL_MAP1 = { x: 89.5, y: 24.5, targetMap: 2, label: '星门 · 前往第二大陆' };
+const CAMPAIGN_PORTAL_MAP2_TO_1 = { x: 21.0, y: 84.0, targetMap: 1, label: '星门 · 返回第一大陆' };
+const CAMPAIGN_PORTAL_MAP2_TO_3 = { x: 86.0, y: 22.0, targetMap: 3, label: '星门 · 前往第三大陆' };
+const CAMPAIGN_PORTAL_MAP3 = { x: 18.0, y: 82.0, targetMap: 2, label: '星门 · 返回第二大陆' };
 
 let campaignMapPanX = 0;
 let campaignMapPanY = 0;
@@ -1397,12 +1487,17 @@ if (!spellFxLayer) {
 }
 
 let currentBattlefieldTheme: string = localStorage.getItem('battlefield_theme') || 'citadel';
+let randomBattlefieldEnabled: boolean = localStorage.getItem('battlefield_random_enabled') === 'true';
 
 const battlefieldBgs: Record<string, string> = {
   citadel: './ui/battlefield_citadel.jpg',
   sky: './ui/battlefield_sky.jpg',
   volcano: './ui/battlefield_volcano.jpg',
   forest: './ui/battlefield_forest.jpg',
+  abyss: './ui/battlefield_abyss.jpg',
+  tundra: './ui/battlefield_tundra.jpg',
+  desert: './ui/battlefield_desert.jpg',
+  shrine: './ui/battlefield_shrine.jpg',
 };
 
 function getThemeName(key: string): string {
@@ -1411,7 +1506,19 @@ function getThemeName(key: string): string {
     case 'sky': return '天界圣峰';
     case 'volcano': return '熔岩炼狱';
     case 'forest': return '永恒密林';
+    case 'abyss': return '深渊裂隙';
+    case 'tundra': return '极地雪原';
+    case 'desert': return '丝路大漠';
+    case 'shrine': return '苍穹神坛';
     default: return '星辉圣殿';
+  }
+}
+
+function applyRandomBattlefieldThemeIfNeeded() {
+  if (randomBattlefieldEnabled) {
+    const allThemes = Object.keys(battlefieldBgs);
+    const chosen = allThemes[Math.floor(Math.random() * allThemes.length)];
+    currentBattlefieldTheme = chosen;
   }
 }
 
@@ -1452,7 +1559,7 @@ function saveCompletedBattleReplay(eng: SpectromancerEngine, mode: string) {
   const eName = eng.enemy.name || '对手';
   const pFace = currentBattleSource === 'lan' ? (eng.player.face || `./faces/Face${lanPlayerFaceId}.jpg`) : `./faces/Face${playerFaceIndex + 1}.jpg`;
   const eFace = currentBattleSource === 'campaign' 
-    ? (CAMPAIGN_MAP1_NODES.find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
+    ? ([...CAMPAIGN_MAP1_NODES, ...CAMPAIGN_MAP2_NODES].find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
     : (currentBattleSource === 'league'
       ? (activeLeague?.standings[(activeLeague.currentMatch - 1) % activeLeague.standings.length]?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
       : (currentBattleSource === 'lan' ? (eng.enemy.face || `./faces/Face${aiFaceIndex + 1}.jpg`) : `./faces/Face${aiFaceIndex + 1}.jpg`));
@@ -5115,20 +5222,32 @@ function renderOptionsModal(): string {
 
           <!-- Battlefield Background Theme -->
           <div style="background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-            <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
               <div>
                 <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🗺️ 对战战场背景环境</div>
-                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">选择战斗对决主界面的远景圣所主题</div>
+                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">选择战斗对决主界面的远景圣所主题，支持特定主题或开启全随机轮播</div>
               </div>
-              <span id="options-theme-label" style="font-size:clamp(14px, 1.2vw, 16px); color:#854d0e; font-weight:900; background:#fef3c7; border:1.5px solid #fde68a; padding:4px 14px; border-radius:8px;">
-                ${getThemeName(currentBattlefieldTheme)}
-              </span>
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span id="options-theme-label" style="font-size:clamp(13px, 1.1vw, 15px); color:#854d0e; font-weight:900; background:#fef3c7; border:1.5px solid #fde68a; padding:4px 12px; border-radius:8px;">
+                  ${randomBattlefieldEnabled ? '🎲 战斗随机轮播' : getThemeName(currentBattlefieldTheme)}
+                </span>
+                <div style="display:flex; align-items:center; gap:6px;" title="战斗时使用随机背景">
+                  <span style="font-size:12px; font-weight:800; color:#854d0e;">随机背景</span>
+                  <div class="slide-toggle-track ${randomBattlefieldEnabled ? 'active' : ''}" id="btn-toggle-random-battlefield" role="switch" aria-checked="${randomBattlefieldEnabled}">
+                    <div class="slide-toggle-knob"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:10px;">
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'citadel' ? 'start' : 'close'}" id="btn-theme-citadel" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🏛️ 星辉圣殿</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'sky' ? 'start' : 'close'}" id="btn-theme-sky" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">☁️ 天界圣峰</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'volcano' ? 'start' : 'close'}" id="btn-theme-volcano" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🌋 熔岩炼狱</button>
-              <button class="duel-stone-action-btn ${currentBattlefieldTheme === 'forest' ? 'start' : 'close'}" id="btn-theme-forest" style="height:44px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">🌲 永恒密林</button>
+            <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:8px;">
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'citadel' ? 'start' : 'close'}" id="btn-theme-citadel" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">🏛️ 星辉圣殿</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'sky' ? 'start' : 'close'}" id="btn-theme-sky" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">☁️ 天界圣峰</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'volcano' ? 'start' : 'close'}" id="btn-theme-volcano" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">🌋 熔岩炼狱</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'forest' ? 'start' : 'close'}" id="btn-theme-forest" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">🌲 永恒密林</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'abyss' ? 'start' : 'close'}" id="btn-theme-abyss" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">🌌 深渊裂隙</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'tundra' ? 'start' : 'close'}" id="btn-theme-tundra" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">❄️ 极地雪原</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'desert' ? 'start' : 'close'}" id="btn-theme-desert" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">🏜️ 丝路大漠</button>
+              <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'shrine' ? 'start' : 'close'}" id="btn-theme-shrine" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">✨ 苍穹神坛</button>
             </div>
           </div>
 
@@ -5754,17 +5873,36 @@ function renderCampaignMapScreen(): string {
   }
   const currentLvl = (campaignData as CampaignLevel[]).find(l => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
 
+  const currentMapBg = campaignMapIndex === 3
+    ? './ui/Campaign_Map3.jpg'
+    : (campaignMapIndex === 2 ? './ui/Campaign_Map2.jpg' : './ui/Campaign_Map1.jpg');
+  const activeNodes = campaignMapIndex === 3
+    ? CAMPAIGN_MAP3_NODES
+    : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+  const activeRoutes = campaignMapIndex === 3
+    ? CAMPAIGN_MAP3_ROUTES
+    : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_ROUTES : CAMPAIGN_MAP1_ROUTES);
+  const portal1Unlocked = completedCampaignLevels.includes(8);
+  const portal2Unlocked = completedCampaignLevels.includes(16);
+
+  const bannerText = campaignMapIndex === 1
+    ? '第一大陆 · 黎明平原与要塞 (第 1 ~ 8 关)'
+    : (campaignMapIndex === 2
+        ? '第二大陆 · 元素荒原与苍穹 (第 9 ~ 16 关)'
+        : '第三大陆 · 龙之群峰与终焉神殿 (第 17 ~ 23 关)');
+
   return `
     <div class="campaign-screen-view">
       <div class="campaign-map-viewport" id="campaign-map-viewport">
         <div class="campaign-map-stage" id="campaign-map-stage">
-          <img src="./ui/Campaign_Map1.jpg" class="campaign-map-bg" alt="战役大地图" />
+          <img src="${currentMapBg}" class="campaign-map-bg" alt="战役大地图" />
 
           <!-- 路线 SVG 连线层 -->
           <svg class="campaign-map-routes" viewBox="0 0 1024 592">
-            ${CAMPAIGN_MAP1_ROUTES.map(route => {
-              const fromNode = CAMPAIGN_MAP1_NODES.find(n => n.levelId === route.from)!;
-              const toNode = CAMPAIGN_MAP1_NODES.find(n => n.levelId === route.to)!;
+            ${activeRoutes.map(route => {
+              const fromNode = activeNodes.find(n => n.levelId === route.from);
+              const toNode = activeNodes.find(n => n.levelId === route.to);
+              if (!fromNode || !toNode) return '';
               const x1 = (fromNode.x / 100) * 1024;
               const y1 = (fromNode.y / 100) * 592;
               const x2 = (toNode.x / 100) * 1024;
@@ -5778,11 +5916,11 @@ function renderCampaignMapScreen(): string {
 
           <div class="campaign-top-banner-wrap">
             <div class="campaign-top-banner">
-              <span>选择下一个对手</span>
+              <span>${bannerText}</span>
             </div>
           </div>
 
-          ${CAMPAIGN_MAP1_NODES.map(n => {
+          ${activeNodes.map(n => {
             const isSelected = n.levelId === selectedCampaignLevelId;
             const isCompleted = completedCampaignLevels.includes(n.levelId);
             const isUnlocked = unlockedCampaignLevels.includes(n.levelId);
@@ -5804,10 +5942,71 @@ function renderCampaignMapScreen(): string {
               </div>
             `;
           }).join('')}
+
+          ${campaignMapIndex === 1 ? `
+            <!-- Map 1 星门: 前往第二大陆 -->
+            <div class="campaign-node campaign-portal ${portal1Unlocked ? 'portal-active available' : 'locked'}"
+                 data-portal-target="2"
+                 data-unlocked="${portal1Unlocked ? '1' : '0'}"
+                 style="left: ${CAMPAIGN_PORTAL_MAP1.x}%; top: ${CAMPAIGN_PORTAL_MAP1.y}%;"
+                 title="${portal1Unlocked ? '星门 · 穿越至第二大陆 (第9~16关)' : '星门 (需击败第8关博瑞激活)'}">
+              <div class="campaign-node-badge-title">${portal1Unlocked ? '✨ 星门 · 前往第二大陆 ➔' : '🔒 星门 (未激活)'}</div>
+              <div class="campaign-node-avatar-frame">
+                <span class="campaign-portal-icon">🌀</span>
+                ${!portal1Unlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
+              </div>
+              <div class="campaign-node-landmark-tag">星魂传送门</div>
+              <div class="campaign-node-pointer"></div>
+            </div>
+          ` : (campaignMapIndex === 2 ? `
+            <!-- Map 2 星门: 返回第一大陆 -->
+            <div class="campaign-node campaign-portal portal-active available"
+                 data-portal-target="1"
+                 data-unlocked="1"
+                 style="left: ${CAMPAIGN_PORTAL_MAP2_TO_1.x}%; top: ${CAMPAIGN_PORTAL_MAP2_TO_1.y}%;"
+                 title="星门 · 返回第一大陆 (第1~8关)">
+              <div class="campaign-node-badge-title">⬅ 星门 · 返回第一大陆</div>
+              <div class="campaign-node-avatar-frame">
+                <span class="campaign-portal-icon">🚪</span>
+              </div>
+              <div class="campaign-node-landmark-tag">星魂传送门</div>
+              <div class="campaign-node-pointer"></div>
+            </div>
+
+            <!-- Map 2 星门: 前往第三大陆 -->
+            <div class="campaign-node campaign-portal ${portal2Unlocked ? 'portal-active available' : 'locked'}"
+                 data-portal-target="3"
+                 data-unlocked="${portal2Unlocked ? '1' : '0'}"
+                 style="left: ${CAMPAIGN_PORTAL_MAP2_TO_3.x}%; top: ${CAMPAIGN_PORTAL_MAP2_TO_3.y}%;"
+                 title="${portal2Unlocked ? '星门 · 穿越至第三大陆 (第17~23关)' : '星门 (需击败第16关弗斯拉夫激活)'}">
+              <div class="campaign-node-badge-title">${portal2Unlocked ? '✨ 星门 · 前往第三大陆 ➔' : '🔒 星门 (未激活)'}</div>
+              <div class="campaign-node-avatar-frame">
+                <span class="campaign-portal-icon">🌀</span>
+                ${!portal2Unlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
+              </div>
+              <div class="campaign-node-landmark-tag">星魂传送门</div>
+              <div class="campaign-node-pointer"></div>
+            </div>
+          ` : `
+            <!-- Map 3 星门: 返回第二大陆 -->
+            <div class="campaign-node campaign-portal portal-active available"
+                 data-portal-target="2"
+                 data-unlocked="1"
+                 style="left: ${CAMPAIGN_PORTAL_MAP3.x}%; top: ${CAMPAIGN_PORTAL_MAP3.y}%;"
+                 title="星门 · 返回第二大陆 (第9~16关)">
+              <div class="campaign-node-badge-title">⬅ 星门 · 返回第二大陆</div>
+              <div class="campaign-node-avatar-frame">
+                <span class="campaign-portal-icon">🚪</span>
+              </div>
+              <div class="campaign-node-landmark-tag">星魂传送门</div>
+              <div class="campaign-node-pointer"></div>
+            </div>
+          `)}
         </div>
 
         <!-- 悬浮地图操控按钮 -->
         <div class="campaign-map-controls">
+          <button class="map-ctrl-btn" id="btn-campaign-toggle-map" title="切换大陆地图 (当前：第 ${campaignMapIndex} 大陆)">🗺️ 大陆${campaignMapIndex === 1 ? '②' : (campaignMapIndex === 2 ? '③' : '①')}</button>
           <button class="map-ctrl-btn" id="btn-campaign-zoom-in" title="放大地图 (或鼠标滚轮向上)">＋</button>
           <button class="map-ctrl-btn" id="btn-campaign-zoom-out" title="缩小地图 (或鼠标滚轮向下)">－</button>
           <button class="map-ctrl-btn" id="btn-campaign-recenter" title="聚焦当前关卡">🎯</button>
@@ -5815,7 +6014,7 @@ function renderCampaignMapScreen(): string {
         </div>
 
         <div class="campaign-map-drag-hint">
-          <span>🖱️ 拖拽平移 · 滚轮/按钮缩放 · 点击关卡挑战</span>
+          <span>🖱️ 拖拽平移 · 滚轮/按钮缩放 · 点击关卡挑战 · 星门穿越大陆</span>
         </div>
       </div>
 
@@ -6632,13 +6831,21 @@ function getCombatBgmForCurrentBattle(): string {
   return activeBattleBgm;
 }
 
+let hasPickedBattlefieldForMatch: boolean = false;
+
 function syncModeBgm() {
   if (currentView === 'battle' || currentView === 'replay_viewer') {
+    if (!hasPickedBattlefieldForMatch) {
+      applyRandomBattlefieldThemeIfNeeded();
+      hasPickedBattlefieldForMatch = true;
+    }
     sound.playBgm(getCombatBgmForCurrentBattle());
   } else if (currentView === 'campaign') {
+    hasPickedBattlefieldForMatch = false;
     activeBattleBgm = '';
     sound.playBgm('campaign_map');
   } else {
+    hasPickedBattlefieldForMatch = false;
     activeBattleBgm = '';
     sound.playBgm('menu');
   }
@@ -7632,43 +7839,47 @@ function attachEventListeners() {
     }
   });
 
+  const allBattlefieldThemes = ['citadel', 'sky', 'volcano', 'forest', 'abyss', 'tundra', 'desert', 'shrine'] as const;
+
   const updateThemeButtons = () => {
     const lbl = document.getElementById('options-theme-label');
-    if (lbl) lbl.textContent = getThemeName(currentBattlefieldTheme);
-    (['citadel', 'sky', 'volcano', 'forest'] as const).forEach(t => {
+    if (lbl) {
+      lbl.textContent = randomBattlefieldEnabled ? '🎲 战斗随机轮播' : getThemeName(currentBattlefieldTheme);
+    }
+    const toggleTrack = document.getElementById('btn-toggle-random-battlefield');
+    if (toggleTrack) {
+      if (randomBattlefieldEnabled) {
+        toggleTrack.classList.add('active');
+        toggleTrack.setAttribute('aria-checked', 'true');
+      } else {
+        toggleTrack.classList.remove('active');
+        toggleTrack.setAttribute('aria-checked', 'false');
+      }
+    }
+    allBattlefieldThemes.forEach(t => {
       const b = document.getElementById(`btn-theme-${t}`);
       if (b) {
-        b.className = `duel-stone-action-btn ${currentBattlefieldTheme === t ? 'start' : 'close'}`;
+        b.className = `duel-stone-action-btn ${(!randomBattlefieldEnabled && currentBattlefieldTheme === t) ? 'start' : 'close'}`;
       }
     });
   };
 
-  document.getElementById('btn-theme-citadel')?.addEventListener('click', () => {
+  document.getElementById('btn-toggle-random-battlefield')?.addEventListener('click', () => {
     sound.play('click');
-    currentBattlefieldTheme = 'citadel';
-    localStorage.setItem('battlefield_theme', 'citadel');
+    randomBattlefieldEnabled = !randomBattlefieldEnabled;
+    localStorage.setItem('battlefield_random_enabled', randomBattlefieldEnabled ? 'true' : 'false');
     updateThemeButtons();
   });
 
-  document.getElementById('btn-theme-sky')?.addEventListener('click', () => {
-    sound.play('click');
-    currentBattlefieldTheme = 'sky';
-    localStorage.setItem('battlefield_theme', 'sky');
-    updateThemeButtons();
-  });
-
-  document.getElementById('btn-theme-volcano')?.addEventListener('click', () => {
-    sound.play('click');
-    currentBattlefieldTheme = 'volcano';
-    localStorage.setItem('battlefield_theme', 'volcano');
-    updateThemeButtons();
-  });
-
-  document.getElementById('btn-theme-forest')?.addEventListener('click', () => {
-    sound.play('click');
-    currentBattlefieldTheme = 'forest';
-    localStorage.setItem('battlefield_theme', 'forest');
-    updateThemeButtons();
+  allBattlefieldThemes.forEach(t => {
+    document.getElementById(`btn-theme-${t}`)?.addEventListener('click', () => {
+      sound.play('click');
+      randomBattlefieldEnabled = false;
+      localStorage.setItem('battlefield_random_enabled', 'false');
+      currentBattlefieldTheme = t;
+      localStorage.setItem('battlefield_theme', t);
+      updateThemeButtons();
+    });
   });
 
 
@@ -7991,7 +8202,8 @@ function attachEventListeners() {
 
     function focusLevel(levelId: number, smooth = true) {
       if (!viewport) return;
-      const node = CAMPAIGN_MAP1_NODES.find(n => n.levelId === levelId) || CAMPAIGN_MAP1_NODES[0];
+      const currentNodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+      const node = currentNodes.find(n => n.levelId === levelId) || currentNodes[0];
       const nx = (node.x / 100) * STAGE_W;
       const ny = (node.y / 100) * STAGE_H;
       const vw = viewport.clientWidth;
@@ -8101,6 +8313,18 @@ function attachEventListeners() {
     }, { passive: false });
 
     // 控制栏按钮事件
+    document.getElementById('btn-campaign-toggle-map')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sound.play('click');
+      campaignMapIndex = (campaignMapIndex % 3 + 1) as 1 | 2 | 3;
+      const nodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+      if (!nodes.some(n => n.levelId === selectedCampaignLevelId)) {
+        selectedCampaignLevelId = nodes[0].levelId;
+      }
+      render();
+      focusLevel(selectedCampaignLevelId, false);
+    });
+
     document.getElementById('btn-campaign-zoom-in')?.addEventListener('click', (e) => {
       e.stopPropagation();
       sound.play('click');
@@ -8143,23 +8367,48 @@ function attachEventListeners() {
       fitAll(true);
     });
 
-    // 节点点击交互与防误触
+    // 节点与传送门点击交互与防误触
     document.querySelectorAll('.campaign-node').forEach((nodeEl) => {
       nodeEl.addEventListener('click', (e) => {
         if (suppressClick) return;
         e.stopPropagation();
+
+        // 传送门点击交互
+        const portalTarget = (nodeEl as HTMLElement).dataset.portalTarget;
+        if (portalTarget) {
+          const targetMap = parseInt(portalTarget, 10) as 1 | 2 | 3;
+          const isUnlocked = (nodeEl as HTMLElement).dataset.unlocked === '1';
+          if (!isUnlocked) {
+            sound.play('click');
+            const reqBoss = targetMap === 2 ? '博瑞' : '弗斯拉夫';
+            showToastNotice(`🌀 星门尚未激活，请先击败该大陆最终首领【${reqBoss}】！`);
+            nodeEl.classList.add('shake-locked');
+            setTimeout(() => nodeEl.classList.remove('shake-locked'), 400);
+            return;
+          }
+          sound.play('victory');
+          campaignMapIndex = targetMap;
+          const targetNodes = targetMap === 3 ? CAMPAIGN_MAP3_NODES : (targetMap === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+          selectedCampaignLevelId = targetNodes[0].levelId;
+          const continentNames = { 1: '第一大陆', 2: '第二大陆', 3: '第三大陆' };
+          showToastNotice(`✨ 穿越星门，您已抵达【${continentNames[targetMap]}】！`);
+          render();
+          focusLevel(selectedCampaignLevelId, false);
+          return;
+        }
+
         const lvlId = parseInt((nodeEl as HTMLElement).dataset.levelId || '1', 10);
         const isUnlocked = (nodeEl as HTMLElement).dataset.unlocked === '1';
 
         if (!isUnlocked) {
           sound.play('click');
-          showToastNotice(`⚔️ 第 ${lvlId} 关尚未解锁，请先突破前置关卡！`);
+          showToastNotice(`⚔️ 第 ${lvlId} 关尚未解锁，可先查阅对手情报与战场规则！`);
           nodeEl.classList.add('shake-locked');
           setTimeout(() => nodeEl.classList.remove('shake-locked'), 400);
-          return;
+        } else {
+          sound.play('click');
         }
 
-        sound.play('click');
         selectedCampaignLevelId = lvlId;
 
         // 样式切换与平滑镜头对焦
@@ -8186,6 +8435,13 @@ function attachEventListeners() {
               </div>
             ` : ''}
           `;
+        }
+
+        const startBtn = document.getElementById('btn-campaign-start-battle');
+        if (startBtn) {
+          startBtn.textContent = isUnlocked ? '开始战斗' : '关卡未解锁';
+          (startBtn as HTMLElement).style.opacity = isUnlocked ? '1' : '0.6';
+          (startBtn as HTMLElement).style.filter = isUnlocked ? 'none' : 'grayscale(0.5)';
         }
         saveCampaignProfiles();
       });
@@ -8217,6 +8473,11 @@ function attachEventListeners() {
   });
 
   document.getElementById('btn-campaign-start-battle')?.addEventListener('click', () => {
+    if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
+      sound.play('click');
+      showToastNotice(`⚔️ 第 ${selectedCampaignLevelId} 关尚未解锁，请先突破前置关卡！`);
+      return;
+    }
     sound.play('click');
     currentBattleSource = 'campaign';
     const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
@@ -8266,6 +8527,59 @@ function attachEventListeners() {
       if (goblin) {
         initialEnemyCreatures.push({ slot: 1, card: goblin });
         initialEnemyCreatures.push({ slot: 4, card: goblin });
+      }
+    }
+
+    // Level 6 (Sirroca / 斯哈克): Enemy starts with an Air Elemental
+    if (selectedCampaignLevelId === 6) {
+      const airElem = allCards.find(c => c.id === 'air_air_elemental');
+      if (airElem) {
+        initialEnemyCreatures.push({ slot: 2, card: airElem });
+      }
+    }
+
+    // Level 7 (Avdofya / 阿芙黛娅): Enemy starts with 3 Elven Healers
+    if (selectedCampaignLevelId === 7) {
+      const healer = allCards.find(c => c.id === 'earth_elvish_healer');
+      if (healer) {
+        initialEnemyCreatures.push({ slot: 1, card: healer });
+        initialEnemyCreatures.push({ slot: 2, card: healer });
+        initialEnemyCreatures.push({ slot: 3, card: healer });
+      }
+    }
+
+    // Level 8 (Borey / 博瑞): Player starts with a Cloistered Elemental
+    if (selectedCampaignLevelId === 8) {
+      const cloistered = allCards.find(c => c.id === 'gop_cloistered_elemental');
+      if (cloistered) {
+        initialPlayerCreatures.push({ slot: 2, card: cloistered });
+      }
+    }
+
+    // Level 9 (Alrio / 艾瑞欧): Enemy starts with Mad Cat of Alrio
+    if (selectedCampaignLevelId === 9) {
+      const cat = allCards.find(c => c.id === 'gop_mad_cat_of_alrio');
+      if (cat) {
+        initialEnemyCreatures.push({ slot: 2, card: cat });
+      }
+    }
+
+    // Level 10 (Katla / 卡特拉): Both sides start with a Volcano
+    if (selectedCampaignLevelId === 10) {
+      const volcano = allCards.find(c => c.id === 'gop_volcano');
+      if (volcano) {
+        initialPlayerCreatures.push({ slot: 2, card: volcano });
+        initialEnemyCreatures.push({ slot: 2, card: volcano });
+      }
+    }
+
+    // Level 11 (Melidiadus / 曼迪阿杜斯): Enemy starts with 3 Vampires
+    if (selectedCampaignLevelId === 11) {
+      const vampire = allCards.find(c => c.id === 'gop_vampire');
+      if (vampire) {
+        initialEnemyCreatures.push({ slot: 1, card: vampire });
+        initialEnemyCreatures.push({ slot: 2, card: vampire });
+        initialEnemyCreatures.push({ slot: 3, card: vampire });
       }
     }
 
@@ -8899,6 +9213,11 @@ function attachEventListeners() {
       const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
       if (nextUncompleted) {
         selectedCampaignLevelId = nextUncompleted;
+      }
+      if (selectedCampaignLevelId >= 17 || completedCampaignLevels.includes(16)) {
+        campaignMapIndex = 3;
+      } else if (selectedCampaignLevelId >= 9 || completedCampaignLevels.includes(8)) {
+        campaignMapIndex = 2;
       }
       saveCampaignProfiles();
     }

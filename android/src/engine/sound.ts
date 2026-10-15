@@ -422,13 +422,14 @@ class SoundManager {
 
   private menuTracks: string[] = ['menu1', 'menu2'];
   private currentMenuTrackIdx: number = 0;
-  private combatTracks: string[] = ['combat1', 'combat2', 'combat4', 'combat5', 'combat6', 'combat7', 'combat8', 'combat9'];
+  private combatTracks: string[] = ['combat4', 'combat6', 'combat7', 'combat8', 'combat9', 'combat10', 'combat11', 'combat12'];
 
   // Preload essential high-frequency SFX and core BGM into memory via Web Audio
   private preloadCoreSounds() {
     const frequent = [
       'menu1.ogg', 'menu2.ogg', 'campaign_map.ogg',
-      'combat1.ogg', 'combat2.ogg', 'combat4.ogg', 'combat5.ogg', 'combat6.ogg', 'combat7.ogg', 'combat8.ogg', 'combat9.ogg',
+      'combat4.ogg', 'combat6.ogg', 'combat7.ogg', 'combat8.ogg', 'combat9.ogg',
+      'combat10.ogg', 'combat11.ogg', 'combat12.ogg',
       'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'btn3.ogg', 'summon1.ogg', 'summondrop.ogg',
       'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg', 'ritual_of_glory.ogg', 'doombolt.ogg'
     ];
@@ -543,7 +544,7 @@ class SoundManager {
     if (cleanTrack === 'battle' || cleanTrack === 'combat' || cleanTrack === 'random_combat') {
       cleanTrack = this.getRandomCombatTrack();
     }
-    if (cleanTrack === 'battle1') cleanTrack = 'combat1';
+    if (cleanTrack === 'battle1') cleanTrack = 'combat4';
     if (cleanTrack === 'campaign') cleanTrack = 'campaign_map';
 
     // 智能在两首主界面史诗交响曲之间切换轮播
@@ -555,9 +556,9 @@ class SoundManager {
       cleanTrack = this.menuTracks[this.currentMenuTrackIdx];
     }
 
-    const validTracks = ['menu1', 'menu2', 'campaign_map', 'combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6', 'combat7', 'combat8', 'combat9'];
+    const validTracks = ['menu1', 'menu2', 'campaign_map', 'combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6', 'combat7', 'combat8', 'combat9', 'combat10', 'combat11', 'combat12'];
     if (!validTracks.includes(cleanTrack)) {
-      cleanTrack = 'combat1';
+      cleanTrack = 'combat4';
     }
 
     if (!force && this.currentTrack === cleanTrack && (this.isWebAudioBgmPlaying || (this.bgmAudio && !this.bgmAudio.paused) || this.plusBgmPlayer)) {
@@ -662,7 +663,7 @@ class SoundManager {
 
   public startBgm() {
     if (!this.isWebAudioBgmPlaying && !this.bgmAudio && !this.plusBgmPlayer) {
-      this.playBgm(this.currentTrack || 'combat1', true);
+      this.playBgm(this.currentTrack || 'combat4', true);
     } else {
       this.updateBgmOutput();
     }

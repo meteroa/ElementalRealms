@@ -1162,6 +1162,7 @@ export class SpectromancerEngine {
       if (!host || host.card.id !== 'forest_magic_rabbit') return false;
     }
 
+    const preCastMana: Record<ElementType, number> = { ...actor.mana };
     let finalCost = card.cost;
     const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
     oppBoard.forEach((c) => {
@@ -1204,6 +1205,11 @@ export class SpectromancerEngine {
     if (card.isActivatedAbility) {
       const baseCardId = card.id.replace('ability_', '');
       await this.executeBeastActivatedAbility(who, baseCardId, card, targetSlot);
+      this.notify();
+      await this.delay(500);
+      this.cleanupDead();
+      this.notify();
+      await this.delay(350);
 
       this.replaySteps.push({
         turn: this.turnCount,
@@ -1308,7 +1314,7 @@ export class SpectromancerEngine {
       const initialAtk = inheritedAttack !== null
         ? inheritedAttack
         : ((card.attack === -1 && card.ability === 'attack_equal_element_power')
-          ? (actor.mana[card.element as ElementType] || 0)
+          ? (preCastMana[card.element as ElementType] || 0)
           : (card.attack || 0));
 
       const creature: BoardCreature = {
@@ -1383,17 +1389,23 @@ export class SpectromancerEngine {
       }, 700);
       await this.delay(450);
 
-      await this.resolveOnSummon(who, card, targetSlot);
+      await this.resolveOnSummon(who, card, targetSlot, preCastMana);
       this.notify();
       await this.delay(450);
       this.cleanupDead();
       this.notify();
+      await this.delay(350);
     } else {
       if (this.onCardEnterSlot) {
         await this.onCardEnterSlot({ who, card, targetSlot });
       }
       this.log(`${actor.name} 施放了法术【${card.nameCn}】！`, 'info');
-      await this.resolveSpell(who, card, targetSlot);
+      await this.resolveSpell(who, card, targetSlot, preCastMana);
+      this.notify();
+      await this.delay(500); // 确保法术伤害扣血、飘字与命中特效在场上完整展现
+      this.cleanupDead();    // 清理死亡随从，清空槽位
+      this.notify();
+      await this.delay(350); // 棋盘空位呈现完毕后再进入攻击结算
     }
 
     this.replaySteps.push({
@@ -1566,12 +1578,13 @@ export class SpectromancerEngine {
     }
   }
 
-  private async resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number): Promise<void> {
+  private async resolveOnSummon(who: 'player' | 'enemy', card: CardDef, targetSlot: number, preCastMana?: Record<ElementType, number>): Promise<void> {
     const actor = who === 'player' ? this.player : this.enemy;
     const opponent = who === 'player' ? this.enemy : this.player;
     const opposingSide = who === 'player' ? 'enemy' : 'player';
     const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
     const myBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const manaRef = preCastMana || actor.mana;
     if (card.ability === 'all_friendly_attack_1') {
       sound.play('strenghtening');
       this.recalculateBoardStats();
@@ -1719,7 +1732,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'demon_greater_summon': {
-        const fireDmg = Math.min(10, Math.max(1, actor.mana.fire));
+        const fireDmg = Math.min(10, Math.max(1, manaRef.fire));
         opponent.hp -= fireDmg;
         this.triggerDamage(opposingSide, 'hero', fireDmg);
         opposingBoard.forEach((c, idx) => {
@@ -1772,7 +1785,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'griffin_strike': {
-        if (actor.mana.air >= 5) {
+        if (manaRef.air >= 5) {
           opponent.hp -= 5;
           this.triggerDamage(opposingSide, 'hero', 5);
           sound.play('attack');
@@ -1781,7 +1794,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'faerie_sage_heal': {
-        const healAmt = Math.min(10, Math.max(1, actor.mana.earth));
+        const healAmt = Math.min(10, Math.max(1, manaRef.earth));
         actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
         this.triggerHeal(who, 'hero', healAmt);
         sound.play('heal');
@@ -2157,13 +2170,13 @@ export class SpectromancerEngine {
     }
   }
 
-  private async resolveSpell(who: 'player' | 'enemy', card: CardDef, targetSlot?: number) {
+  private async resolveSpell(who: 'player' | 'enemy', card: CardDef, targetSlot?: number, preCastMana?: Record<ElementType, number>) {
     // Mark this damage window as "spell damage by `who`" so Treefolk Protector's aura can be
     // applied centrally in triggerDamage().
     this.activeSpellCaster = who;
     this.spellAbsorbedThisCast = 0;
     try {
-      await this.resolveSpellEffect(who, card, targetSlot);
+      await this.resolveSpellEffect(who, card, targetSlot, preCastMana);
     } finally {
       this.activeSpellCaster = null;
       if (this.spellAbsorbedThisCast > 0) {
@@ -2173,12 +2186,13 @@ export class SpectromancerEngine {
     }
   }
 
-  private async resolveSpellEffect(who: 'player' | 'enemy', card: CardDef, targetSlot?: number) {
+  private async resolveSpellEffect(who: 'player' | 'enemy', card: CardDef, targetSlot?: number, preCastMana?: Record<ElementType, number>) {
     const actor = who === 'player' ? this.player : this.enemy;
     const opponent = who === 'player' ? this.enemy : this.player;
     const opposingSide = who === 'player' ? 'enemy' : 'player';
     const opposingBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
     const myBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const manaRef = preCastMana || actor.mana;
 
     // Dragon increases its owner's spell damage by 50%; Faerie Apprentice adds a flat +1
     // (PC: "increases the damage its owner's spells deal by 1", not a percentage).
@@ -2258,7 +2272,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'lightning_bolt_scaled': {
-        const base = 5 + actor.mana.air;
+        const base = 5 + manaRef.air;
         const dmg = spellDmg(base);
         opponent.hp -= dmg;
         this.triggerDamage(opposingSide, 'hero', dmg);
@@ -2289,7 +2303,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'rejuvenation_scaled': {
-        const healAmt = actor.mana.earth * 2;
+        const healAmt = manaRef.earth * 2;
         actor.hp = Math.min(actor.maxHp, actor.hp + healAmt);
         this.triggerHeal(who, 'hero', healAmt);
         this.log(`【${card.nameCn}】大地回春，为 ${actor.name} 恢复 ${healAmt} 点生命！`, 'heal');
@@ -2615,7 +2629,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'armageddon': {
-        const base = 8 + actor.mana.fire;
+        const base = 8 + manaRef.fire;
         const dmg = spellDmg(base);
         opponent.hp -= dmg;
         this.triggerDamage(opposingSide, 'hero', dmg);
@@ -2679,7 +2693,7 @@ export class SpectromancerEngine {
         break;
       }
       case 'rage_of_souls': {
-        const dmg = spellDmg(9 + (actor.mana.death || 0));
+        const dmg = spellDmg(9 + (manaRef.death || 0));
         let killedCount = 0;
         opposingBoard.forEach((c, idx) => {
           if (c && !c.spellImmune) {
@@ -4373,28 +4387,103 @@ export class SpectromancerEngine {
       this.winner = 'player';
       sound.play('victory');
       this.log('⚔️ 双方英雄同时力竭，判定玩家获胜！', 'heal');
+      this.recordCampaignVictory();
     } else if (this.enemy.hp <= 0) {
       this.gameOver = true;
       this.winner = 'player';
       sound.play('victory');
       this.log(`🎉 恭喜！你击败了 ${this.enemy.name}，斩获了对决的胜利！`, 'heal');
-
-      // Save campaign level unlock
-      if (this.currentCampaign) {
-        try {
-          const nextId = this.currentCampaign.id + 1;
-          const unlocked = JSON.parse(localStorage.getItem('unlocked_campaigns') || '[1]');
-          if (!unlocked.includes(nextId)) {
-            unlocked.push(nextId);
-            localStorage.setItem('unlocked_campaigns', JSON.stringify(unlocked));
-          }
-        } catch {}
-      }
+      this.recordCampaignVictory();
     } else if (this.player.hp <= 0) {
       this.gameOver = true;
       this.winner = 'enemy';
       sound.play('defeat');
       this.log(`💀 你的生命值耗尽，被 ${this.enemy.name} 击败了！`, 'damage');
+    }
+
+    // Campaign Special Battlefield Victory / Defeat Rules
+    if (!this.gameOver && this.currentCampaign) {
+      const campId = this.currentCampaign.id;
+
+      // Level 6 (Sirroca / 斯哈克): "胜利条件：对方生命耗尽或者玩家杀死气灵。"
+      if (campId === 6) {
+        const hasAirElemental = this.enemyBoard.some(c => c !== null && c.card.id === 'air_air_elemental');
+        if (!hasAirElemental) {
+          this.gameOver = true;
+          this.winner = 'player';
+          sound.play('victory');
+          this.log('🎉 斯哈克的气灵已被彻底消灭！狂风平息，判定玩家斩获胜利！', 'heal');
+          this.recordCampaignVictory();
+          return;
+        }
+      }
+
+      // Level 5 (Lorana / 洛瑞娜): "胜利条件：对方生命耗尽或者玩家在八回合内生还。"
+      if (campId === 5 && this.turnCount >= 8) {
+        this.gameOver = true;
+        this.winner = 'player';
+        sound.play('victory');
+        this.log('🛡️ 你已在拉卡瓦河畔坚守超过8个回合，成功生还，判定玩家获胜！', 'heal');
+        this.recordCampaignVictory();
+        return;
+      }
+
+      // Level 7 (Avdofya / 阿芙黛娅): "胜利条件：在十五回合内对方生命耗尽。失败条件：未达成胜利条件。"
+      if (campId === 7 && this.turnCount > 15 && this.enemy.hp > 0) {
+        this.gameOver = true;
+        this.winner = 'enemy';
+        sound.play('defeat');
+        this.log('⏳ 战斗已超过15回合，未能阻止阿芙黛娅的邪恶仪式，战斗失败！', 'damage');
+        return;
+      }
+
+      // Level 3 (Fedemir / 费德米尔): "胜利条件：在十回合内对方生命耗尽。失败条件：未达成胜利条件。"
+      if (campId === 3 && this.turnCount > 10 && this.enemy.hp > 0) {
+        this.gameOver = true;
+        this.winner = 'enemy';
+        sound.play('defeat');
+        this.log('⏳ 战斗已超过10回合，未能在限定时间内击溃费德米尔，任务失败！', 'damage');
+        return;
+      }
+
+      // Level 4 (Nirion / 尼瑞恩): "胜利条件：对方生命耗尽或者玩家召唤心灵大师。"
+      if (campId === 4) {
+        const hasMindMaster = this.playerBoard.some(c => c !== null && (c.card.id === 'control_mind_master' || c.card.nameCn.includes('心灵大师')));
+        if (hasMindMaster) {
+          this.gameOver = true;
+          this.winner = 'player';
+          sound.play('victory');
+          this.log('✨ 玩家成功召唤了心灵大师并说服了尼瑞恩，判定玩家获胜！', 'heal');
+          this.recordCampaignVictory();
+          return;
+        }
+      }
+
+      // Level 11 (Melidiadus / 曼迪阿杜斯): "胜利条件：杀死场上所有的吸血鬼。"
+      if (campId === 11) {
+        const hasVampires = this.enemyBoard.some(c => c !== null && (c.card.id === 'gop_vampire' || c.card.nameCn.includes('吸血鬼')));
+        if (!hasVampires) {
+          this.gameOver = true;
+          this.winner = 'player';
+          sound.play('victory');
+          this.log('🧛 场上所有的吸血鬼已被全部斩杀，曼迪阿杜斯力量枯竭，判定玩家获胜！', 'heal');
+          this.recordCampaignVictory();
+          return;
+        }
+      }
+    }
+  }
+
+  private recordCampaignVictory() {
+    if (this.currentCampaign) {
+      try {
+        const nextId = this.currentCampaign.id + 1;
+        const unlocked = JSON.parse(localStorage.getItem('unlocked_campaigns') || '[1]');
+        if (!unlocked.includes(nextId)) {
+          unlocked.push(nextId);
+          localStorage.setItem('unlocked_campaigns', JSON.stringify(unlocked));
+        }
+      } catch {}
     }
   }
 
