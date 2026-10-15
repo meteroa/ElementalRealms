@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-15
 
+- **新增项目全景说明文档与 .gitignore 本地忽略解耦（Add Project README & Untrack .gitignore）**：
+  - 在项目根目录创建完整的项目说明文档 `README.md`，系统性整理游戏概览、核心特色（三大战区23关战役、大师联赛、P2P联机、100款古典油画头像、史诗交响BGM）、技术架构、目录结构、开发构建与安装包打包指南及规则说明；
+  - 彻底将 `.gitignore` 从 Git 版本库追踪中解耦（`untrack`），将其配置至本地私有排除策略（`.git/info/exclude`），确保本地忽略规则完好持续运行的同时，`.gitignore` 文件本身不再上传至远程仓库。
+
 - **移除远程工具与 Agent 目录及 Android 工程目录深度精简（Remove tools & .agents from Remote & Clean Android Directory）**：
   - 从 Git 版本控制与远程仓库中彻底移除 `tools/` 与 `.agents/` 目录跟踪（本地文件完好保留），并在根目录 `.gitignore` 中配置永久忽略；
   - 深度精简 `android/` 目录结构：移除冗余提取脚本 `extract_cards.py`、单次排查迁移脚本（`scripts/` 目录）、临时排查脚本目录（`scratch/`）以及 `faces/original_backup` 中 79 张未使用的旧版低清头像备份与空目录，显著减轻工程负担并加快构建部署。

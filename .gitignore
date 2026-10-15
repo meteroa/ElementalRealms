@@ -1,9 +1,0 @@
-# Build & Tools
-.env
-.env.*
-scratch/
-pc
-tools
-.agents
-.agent
-release_apk/
