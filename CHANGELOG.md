@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-15
 
+- **移除远程工具与 Agent 目录及 Android 工程目录深度精简（Remove tools & .agents from Remote & Clean Android Directory）**：
+  - 从 Git 版本控制与远程仓库中彻底移除 `tools/` 与 `.agents/` 目录跟踪（本地文件完好保留），并在根目录 `.gitignore` 中配置永久忽略；
+  - 深度精简 `android/` 目录结构：移除冗余提取脚本 `extract_cards.py`、单次排查迁移脚本（`scripts/` 目录）、临时排查脚本目录（`scratch/`）以及 `faces/original_backup` 中 79 张未使用的旧版低清头像备份与空目录，显著减轻工程负担并加快构建部署。
+
 - **战役三大战区大地图手绘重绘与关卡节点坐标高精校准（Campaign Maps Full Redraw & Node Precision Calibration）**：
   - 针对此前 AI 盲抽导致建筑过大、节点漂移与风格过于崭新的问题，全面重构大地图视觉体系；
   - 采用经典 2000 年代 CRPG 战棋（《英雄无敌3/4》《神圣纪事》）古典手绘油画与古羊皮纸质感，重绘全 3 张战役大陆地图（`Campaign_Map1.jpg`, `Campaign_Map2.jpg`, `Campaign_Map3.jpg`），恢复精巧细腻的微缩战略沙盘建筑尺度；

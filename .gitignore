@@ -1,12 +1,9 @@
 # Build & Tools
-tools/realesrgan/*.exe
-tools/realesrgan/*.dll
-tools/realesrgan/models/
-tools/*.zip
-tools/sensenova/config.json
 .env
 .env.*
 scratch/
 pc
 tools
+.agents
+.agent
 release_apk/
