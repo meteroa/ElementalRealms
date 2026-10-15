@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-15
 
-- **新增项目全景说明文档与 .gitignore 本地忽略解耦（Add Project README & Untrack .gitignore）**：
-  - 在项目根目录创建完整的项目说明文档 `README.md`，系统性整理游戏概览、核心特色（三大战区23关战役、大师联赛、P2P联机、100款古典油画头像、史诗交响BGM）、技术架构、目录结构、开发构建与安装包打包指南及规则说明；
-  - 彻底将 `.gitignore` 从 Git 版本库追踪中解耦（`untrack`），将其配置至本地私有排除策略（`.git/info/exclude`），确保本地忽略规则完好持续运行的同时，`.gitignore` 文件本身不再上传至远程仓库。
+- **项目全景说明文档重撰与 .gitignore 本地忽略解耦（Rewrite Project README & Untrack .gitignore）**：
+  - 重撰项目根目录说明文档 `README.md`，将《元素秘境 · 魔导对决》完全作为独立出品的魔导奇幻对战卡牌游戏进行全景官方介绍，系统性阐述六槽位攻防机制、五系自然能量成长、15 大魔导流派体系、三大战区 23 关史诗推演、大师联赛、免服 P2P 房间联机、100 款古典油画肖像与交响配乐体系，规范快速开发构建流程；
+  - 彻底将 `.gitignore` 从 Git 版本库追踪中解耦（`untrack`），将其配置至本地私有排除策略（`.git/info/exclude`），确保本地忽略规则完好持续运行的同时，`.gitignore` 文件本身从远程仓库中彻底移除并不再上传。
 
 - **移除远程工具与 Agent 目录及 Android 工程目录深度精简（Remove tools & .agents from Remote & Clean Android Directory）**：
   - 从 Git 版本控制与远程仓库中彻底移除 `tools/` 与 `.agents/` 目录跟踪（本地文件完好保留），并在根目录 `.gitignore` 中配置永久忽略；
