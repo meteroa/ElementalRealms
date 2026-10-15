@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-15
 
+- **战役三大战区大地图手绘重绘与关卡节点坐标高精校准（Campaign Maps Full Redraw & Node Precision Calibration）**：
+  - 针对此前 AI 盲抽导致建筑过大、节点漂移与风格过于崭新的问题，全面重构大地图视觉体系；
+  - 采用经典 2000 年代 CRPG 战棋（《英雄无敌3/4》《神圣纪事》）古典手绘油画与古羊皮纸质感，重绘全 3 张战役大陆地图（`Campaign_Map1.jpg`, `Campaign_Map2.jpg`, `Campaign_Map3.jpg`），恢复精巧细腻的微缩战略沙盘建筑尺度；
+  - 彻底消除了 2008 年原版扫描底边的白色白块切割断层与噪点，平滑补齐海湾与地表植被；
+  - 精确重校代码中的三大战区关卡节点（`CAMPAIGN_MAP1_NODES`, `CAMPAIGN_MAP2_NODES`, `CAMPAIGN_MAP3_NODES`）与星门传送门（`CAMPAIGN_PORTAL_MAP*`）百分比坐标，使全 23 个战斗关卡节点、行军路线与地图上的麦田、农舍、风车、圣殿神龛、拉卡瓦河渡口、狂风巨石阵、绝望火山裂口、审判城堡、冰川水晶宫、飞空龙穴、浮空圣所、古代角斗场等实际地貌建筑达到 **100% 严丝合缝对齐**。
+
 - **新增 3 首高品质战斗背景音乐与音频管线优化（Combat Tracks combat10, combat11, combat12 Integration）**：
   - 对三首 Suno 原创管弦及战阵战斗曲完成专业母带与 0.5s 余弦无缝循环交叉淡入淡出（Seamless Loop Crossfade）及 -1 dBFS 响度标准化处理；
   - 导出并接入 `combat10.ogg` (183.94s, 原 Grim Heavy Orchestral March)、`combat11.ogg` (204.10s, 原 LA CALAMIDAD)、`combat12.ogg` (214.12s, 原 Untitled)；

@@ -264,38 +264,38 @@ function deleteCampaignProfile(id: string) {
 }
 
 const CAMPAIGN_MAP1_NODES = [
-  { levelId: 1, name: '德米尔', face: './faces/Face6.jpg', x: 18.5, y: 43.0, landmark: '麦田' },
-  { levelId: 2, name: '闪银', face: './faces/Face7.jpg', x: 34.0, y: 39.0, landmark: '农舍' },
-  { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 30.5, y: 57.5, landmark: '风车' },
-  { levelId: 4, name: '尼瑞恩', face: './faces/Face9.jpg', x: 22.0, y: 67.0, landmark: '圣殿城堡' },
-  { levelId: 5, name: '洛瑞娜', face: './faces/Face10.jpg', x: 48.0, y: 32.0, landmark: '拉卡瓦河畔' },
-  { levelId: 6, name: '斯哈克', face: './faces/Face11.jpg', x: 62.0, y: 46.0, landmark: '狂风要塞' },
-  { levelId: 7, name: '阿芙黛娅', face: './faces/Face12.jpg', x: 74.0, y: 60.0, landmark: '荒芜山谷' },
-  { levelId: 8, name: '博瑞', face: './faces/Face13.jpg', x: 82.0, y: 38.0, landmark: '禁锢熔炉' },
+  { levelId: 1, name: '德米尔', face: './faces/Face6.jpg', x: 23.5, y: 44.0, landmark: '麦田' },
+  { levelId: 2, name: '闪银', face: './faces/Face7.jpg', x: 33.2, y: 51.5, landmark: '农舍' },
+  { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 28.5, y: 71.0, landmark: '风车' },
+  { levelId: 4, name: '尼瑞恩', face: './faces/Face9.jpg', x: 20.5, y: 73.5, landmark: '圣殿城堡' },
+  { levelId: 5, name: '洛瑞娜', face: './faces/Face10.jpg', x: 37.0, y: 74.0, landmark: '拉卡瓦河畔' },
+  { levelId: 6, name: '斯哈克', face: './faces/Face11.jpg', x: 47.0, y: 49.0, landmark: '狂风要塞' },
+  { levelId: 7, name: '阿芙黛娅', face: './faces/Face12.jpg', x: 56.5, y: 69.0, landmark: '荒芜山谷' },
+  { levelId: 8, name: '博瑞', face: './faces/Face13.jpg', x: 73.2, y: 19.5, landmark: '禁锢熔炉' },
 ];
 
 const CAMPAIGN_MAP1_ROUTES = [
   { from: 1, to: 2 },
   { from: 1, to: 3 },
   { from: 1, to: 4 },
-  { from: 2, to: 5 },
+  { from: 2, to: 6 },
   { from: 3, to: 5 },
   { from: 4, to: 5 },
-  { from: 5, to: 6 },
+  { from: 5, to: 7 },
   { from: 6, to: 7 },
   { from: 7, to: 8 },
 ];
 
 // 第二大陆（Chapter 2：第 9 ~ 16 关）
 const CAMPAIGN_MAP2_NODES = [
-  { levelId: 9, name: '艾瑞欧', face: './faces/Face14.jpg', x: 35.0, y: 76.0, landmark: '荒野兽穴' },
-  { levelId: 10, name: '卡特拉', face: './faces/Face15.jpg', x: 22.0, y: 46.0, landmark: '绝望火山' },
-  { levelId: 11, name: '曼迪阿杜斯', face: './faces/Face16.jpg', x: 31.0, y: 61.0, landmark: '暗夜营地' },
-  { levelId: 12, name: '沃兰娜', face: './faces/Face17.jpg', x: 52.0, y: 76.0, landmark: '巨石荒原' },
-  { levelId: 13, name: '火焰领主', face: './faces/Face18.jpg', x: 56.0, y: 60.0, landmark: '绿光秘境' },
-  { levelId: 14, name: '加法亚', face: './faces/Face19.jpg', x: 64.0, y: 74.0, landmark: '献祭神坛' },
-  { levelId: 15, name: '图瑞恩', face: './faces/Face20.jpg', x: 60.0, y: 42.0, landmark: '审判城堡' },
-  { levelId: 16, name: '弗斯拉夫', face: './faces/Face21.jpg', x: 68.0, y: 23.0, landmark: '水晶苍穹' },
+  { levelId: 9, name: '艾瑞欧', face: './faces/Face14.jpg', x: 33.7, y: 76.0, landmark: '荒野兽穴' },
+  { levelId: 10, name: '卡特拉', face: './faces/Face15.jpg', x: 21.0, y: 46.5, landmark: '绝望火山' },
+  { levelId: 11, name: '曼迪阿杜斯', face: './faces/Face16.jpg', x: 29.8, y: 60.8, landmark: '暗夜营地' },
+  { levelId: 12, name: '沃兰娜', face: './faces/Face17.jpg', x: 50.8, y: 75.2, landmark: '巨石荒原' },
+  { levelId: 13, name: '火焰领主', face: './faces/Face18.jpg', x: 54.7, y: 59.1, landmark: '绿光秘境' },
+  { levelId: 14, name: '加法亚', face: './faces/Face19.jpg', x: 63.0, y: 73.5, landmark: '献祭神坛' },
+  { levelId: 15, name: '图瑞恩', face: './faces/Face20.jpg', x: 73.7, y: 49.0, landmark: '审判城堡' },
+  { levelId: 16, name: '弗斯拉夫', face: './faces/Face21.jpg', x: 79.1, y: 22.0, landmark: '水晶苍穹' },
 ];
 
 const CAMPAIGN_MAP2_ROUTES = [
@@ -312,13 +312,13 @@ const CAMPAIGN_MAP2_ROUTES = [
 
 // 第三大陆（Chapter 3：第 17 ~ 23 关）
 const CAMPAIGN_MAP3_NODES = [
-  { levelId: 17, name: '哈米尔', face: './faces/Face22.jpg', x: 26.0, y: 72.0, landmark: '龙之天梯' },
-  { levelId: 18, name: '哈拉尔', face: './faces/Face23.jpg', x: 38.0, y: 56.0, landmark: '永雨之地' },
-  { levelId: 19, name: '龙王', face: './faces/Face24.jpg', x: 28.0, y: 38.0, landmark: '龙王之穴' },
-  { levelId: 20, name: '黑暗凯文', face: './faces/Face25.jpg', x: 50.0, y: 50.0, landmark: '暗灵圣地' },
-  { levelId: 21, name: '阿特朗', face: './faces/Face26.jpg', x: 62.0, y: 64.0, landmark: '魔法学院' },
-  { levelId: 22, name: '风之领主', face: './faces/Face27.jpg', x: 66.0, y: 38.0, landmark: '风暴之殿' },
-  { levelId: 23, name: '铎拉克', face: './faces/Face28.jpg', x: 82.0, y: 26.0, landmark: '星灵湮灭塔' },
+  { levelId: 17, name: '哈米尔', face: './faces/Face22.jpg', x: 25.9, y: 71.8, landmark: '龙之天梯' },
+  { levelId: 18, name: '哈拉尔', face: './faces/Face23.jpg', x: 28.8, y: 56.5, landmark: '永雨之地' },
+  { levelId: 19, name: '龙王', face: './faces/Face24.jpg', x: 27.3, y: 22.0, landmark: '龙王之穴' },
+  { levelId: 20, name: '黑暗凯文', face: './faces/Face25.jpg', x: 41.5, y: 54.0, landmark: '暗灵圣地' },
+  { levelId: 21, name: '阿特朗', face: './faces/Face26.jpg', x: 57.6, y: 22.8, landmark: '魔法学院' },
+  { levelId: 22, name: '风之领主', face: './faces/Face27.jpg', x: 54.7, y: 60.0, landmark: '风暴之殿' },
+  { levelId: 23, name: '铎拉克', face: './faces/Face28.jpg', x: 80.1, y: 26.2, landmark: '星灵湮灭塔' },
 ];
 
 const CAMPAIGN_MAP3_ROUTES = [
@@ -333,9 +333,9 @@ const CAMPAIGN_MAP3_ROUTES = [
 ];
 
 // 大陆传送门坐标
-const CAMPAIGN_PORTAL_MAP1 = { x: 89.5, y: 24.5, targetMap: 2, label: '星门 · 前往第二大陆' };
-const CAMPAIGN_PORTAL_MAP2_TO_1 = { x: 21.0, y: 84.0, targetMap: 1, label: '星门 · 返回第一大陆' };
-const CAMPAIGN_PORTAL_MAP2_TO_3 = { x: 86.0, y: 22.0, targetMap: 3, label: '星门 · 前往第三大陆' };
+const CAMPAIGN_PORTAL_MAP1 = { x: 66.0, y: 26.0, targetMap: 2, label: '星门 · 前往第二大陆' };
+const CAMPAIGN_PORTAL_MAP2_TO_1 = { x: 18.0, y: 82.0, targetMap: 1, label: '星门 · 返回第一大陆' };
+const CAMPAIGN_PORTAL_MAP2_TO_3 = { x: 88.5, y: 21.0, targetMap: 3, label: '星门 · 前往第三大陆' };
 const CAMPAIGN_PORTAL_MAP3 = { x: 18.0, y: 82.0, targetMap: 2, label: '星门 · 返回第二大陆' };
 
 let campaignMapPanX = 0;
