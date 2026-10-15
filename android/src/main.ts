@@ -1,6 +1,6 @@
 import './style.css';
 import { SpectromancerEngine } from './engine/game';
-import type { CardDef, ElementType, HeroClass, CampaignLevel, NetworkUserProfile, NetworkMessage } from './types';
+import type { CardDef, BoardCreature, ElementType, HeroClass, CampaignLevel, NetworkUserProfile, NetworkMessage } from './types';
 import campaignData from './data/campaign.json';
 import cardsData from './data/cards.json';
 import tournamentData from './data/tournament.json';
@@ -185,11 +185,15 @@ function saveCampaignProfiles() {
 }
 
 function createNewCampaignProfile(name: string, faceId: number, classIdx: number, diffIdx: number) {
+  let resolvedClassIdx = classIdx;
+  if (resolvedClassIdx === 0 || HERO_CLASSES[resolvedClassIdx]?.id === 'random') {
+    resolvedClassIdx = Math.floor(Math.random() * (HERO_CLASSES.length - 1)) + 1;
+  }
   const newProfile: CampaignProfile = {
     id: 'campaign_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     playerName: name.trim() || '战役领主',
     playerFaceId: faceId,
-    playerClassIdx: classIdx,
+    playerClassIdx: resolvedClassIdx,
     difficultyIdx: diffIdx,
     difficulty: campaignDifficulties[diffIdx] || '容易',
     completedLevels: [],
@@ -955,7 +959,8 @@ function isFriendlyTargetSpell(card?: CardDef | null): boolean {
     card.id.includes('haste') ||
     card.id.includes('explosion') ||
     card.id.includes('blood_ritual') ||
-    card.id.includes('sacrifice')
+    card.id.includes('sacrifice') ||
+    card.id.includes('divine_justice')
   );
 }
 
@@ -1092,6 +1097,11 @@ let builderPoolFilter: ElementType = 'fire';
 let hoveredBuilderCard: CardDef | null = null;
 let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' = 'duel';
 let showRulesModal = false;
+let showCombatLogsModal = false;
+let showCardDetailModal = false;
+let detailedCard: CardDef | null = null;
+let detailedCreatureSlot: { creature: BoardCreature; side: 'player' | 'enemy' } | null = null;
+const APP_VERSION = 'v2.5.0 Mobile · HD';
 
 const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; artImg: string; desc: string }[] = [
   { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.webp', desc: '随机选择一个强大的法师流派' },
@@ -1675,7 +1685,6 @@ function getNextOpponentForLeague(): any {
 }
 
 function createNewLeagueProfile(name: string, faceId: number, classIdx: number, diffIdx: number, contestantCount = 10) {
-  const chosenClass = HERO_CLASSES[classIdx] || HERO_CLASSES[3];
   const tourList = tournamentData as any[];
 
   // Choose (contestantCount - 1) unique AI opponents from tournamentData
@@ -1689,12 +1698,18 @@ function createNewLeagueProfile(name: string, faceId: number, classIdx: number, 
 
   const selectedOpponents = shuffledIndices.map(idx => tourList[idx]);
 
+  let resolvedLeagueClassIdx = classIdx;
+  if (resolvedLeagueClassIdx === 0 || HERO_CLASSES[resolvedLeagueClassIdx]?.id === 'random') {
+    resolvedLeagueClassIdx = Math.floor(Math.random() * (HERO_CLASSES.length - 1)) + 1;
+  }
+  const actualChosenClass = HERO_CLASSES[resolvedLeagueClassIdx] || HERO_CLASSES[1];
+
   const initialStandings: LeagueCompetitor[] = [
     {
       name: name.trim() || '玩家',
       face: `./faces/Face${faceId}.jpg`,
-      className: chosenClass.id === 'random' ? 'sorcery' : (chosenClass.id as HeroClass),
-      classCn: chosenClass.nameCn,
+      className: actualChosenClass.id as HeroClass,
+      classCn: actualChosenClass.nameCn,
       wins: 0,
       score: 0,
       isPlayer: true
@@ -1716,7 +1731,7 @@ function createNewLeagueProfile(name: string, faceId: number, classIdx: number, 
     id: 'league_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     playerName: name.trim() || '玩家',
     playerFaceId: faceId,
-    playerClassIdx: classIdx,
+    playerClassIdx: resolvedLeagueClassIdx,
     difficulty: leagueDifficulties[diffIdx] || '容易',
     totalContestants: contestantCount,
     currentMatch: 1,
@@ -2667,14 +2682,23 @@ async function playSpellVFX(
 
   if (spellId === 'spec_healing_spray' || spellId.includes('healing_spray')) {
     sound.play('healing_spray');
-    const mySlots = document.querySelectorAll(`.combat-board-slot[data-side="${who}"]`);
-    mySlots.forEach((s) => {
-      const shield = document.createElement('div');
-      shield.className = 'vfx-shield-bubble';
-      s.appendChild(shield);
-      setTimeout(() => shield.remove(), 1100);
+    const slotsToHit = [targetSlot !== undefined ? targetSlot - 1 : -1, targetSlot ?? 2, targetSlot !== undefined ? targetSlot + 1 : -1];
+    slotsToHit.forEach((sIdx) => {
+      if (sIdx >= 0 && sIdx < 5) {
+        const slotEl = document.querySelector(`.combat-board-slot[data-side="${who}"][data-slot-index="${sIdx}"]`) as HTMLElement | null;
+        if (slotEl) {
+          const mist = document.createElement('div');
+          mist.className = 'vfx-healing-spray-mist';
+          slotEl.appendChild(mist);
+          slotEl.classList.add('card-impact-hit');
+          setTimeout(() => {
+            mist.remove();
+            slotEl.classList.remove('card-impact-hit');
+          }, 950);
+        }
+      }
     });
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 850));
     return;
   }
 
@@ -2710,42 +2734,71 @@ async function playSpellVFX(
   if (spellId === 'earth_rejuvenation' || spellId.includes('rejuvenation')) {
     sound.play('rejuvenation');
     const hero = getHeroPos(who);
-    const tree = document.createElement('div');
-    tree.className = 'vfx-ritforest-tree';
-    tree.style.left = `${hero.x}px`;
-    tree.style.top = `${hero.y}px`;
-    layer.appendChild(tree);
+    const aura = document.createElement('div');
+    aura.className = 'vfx-rejuvenate-aura';
+    aura.style.left = `${hero.x}px`;
+    aura.style.top = `${hero.y}px`;
+    layer.appendChild(aura);
 
     if (hero.el) {
       hero.el.classList.add('card-impact-hit');
-      setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 600);
+      setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 700);
     }
 
     await new Promise((r) => setTimeout(r, 900));
-    tree.remove();
+    aura.remove();
     return;
   }
 
   // Nature's Fury (PC Sounds.ctl: Natures_Fury -> naturalfury.ogg, vol=200)
   if (spellId === 'earth_natures_fury') {
     sound.play('naturalfury');
+
+    // 1. Emerald flash & violent screen shake
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash-nature';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 400);
+
     app.classList.add('screen-shake');
-    setTimeout(() => app.classList.remove('screen-shake'), 600);
+    setTimeout(() => app.classList.remove('screen-shake'), 650);
 
     const oppHero = getHeroPos(oppSide);
-    const forest = document.createElement('div');
-    forest.className = 'vfx-ritforest-tree';
-    forest.style.left = `${oppHero.x}px`;
-    forest.style.top = `${oppHero.y}px`;
-    layer.appendChild(forest);
 
-    if (oppHero.el) {
-      oppHero.el.classList.add('card-impact-hit');
-      setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 600);
-    }
+    // 2. Roaring bear phantom spirit surging forward
+    const bear = document.createElement('div');
+    bear.className = 'vfx-nature-fury-bear';
+    bear.style.left = `${oppHero.x}px`;
+    bear.style.top = `${oppHero.y}px`;
+    layer.appendChild(bear);
+
+    // 3. Savage triple claw tear across opponent hero
+    setTimeout(() => {
+      const claw = document.createElement('div');
+      claw.className = 'vfx-nature-fury-claw';
+      claw.style.left = `${oppHero.x}px`;
+      claw.style.top = `${oppHero.y}px`;
+      layer.appendChild(claw);
+
+      const burst = document.createElement('div');
+      burst.className = 'vfx-nature-fury-burst';
+      burst.style.left = `${oppHero.x}px`;
+      burst.style.top = `${oppHero.y}px`;
+      layer.appendChild(burst);
+
+      if (oppHero.el) {
+        oppHero.el.classList.add('card-impact-hit');
+        setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 600);
+      }
+
+      setTimeout(() => {
+        claw.remove();
+        burst.remove();
+      }, 700);
+    }, 200);
 
     await new Promise((r) => setTimeout(r, 950));
-    forest.remove();
+    bear.remove();
     return;
   }
 
@@ -3004,12 +3057,10 @@ async function playSpellVFX(
       const col = document.createElement('div');
       col.className = 'vfx-glory-column';
       s.appendChild(col);
-      const shield = document.createElement('div');
-      shield.className = 'vfx-shield-bubble';
-      s.appendChild(shield);
+      s.classList.add('card-impact-hit');
       setTimeout(() => {
         col.remove();
-        shield.remove();
+        s.classList.remove('card-impact-hit');
       }, 1000);
     });
 
@@ -3021,13 +3072,78 @@ async function playSpellVFX(
     sound.play('divineint');
     const hero = getHeroPos(who);
     if (hero.el) {
-      const shield = document.createElement('div');
-      shield.className = 'vfx-shield-bubble';
-      hero.el.appendChild(shield);
-      setTimeout(() => shield.remove(), 1100);
+      // 1. Celestial golden beam descending upon the hero
+      const beam = document.createElement('div');
+      beam.className = 'vfx-divine-intervention-pillar';
+      beam.style.left = `${hero.x}px`;
+      layer.appendChild(beam);
+
+      // 2. Radiant golden halo expanding from hero
+      const halo = document.createElement('div');
+      halo.className = 'vfx-divine-intervention-halo';
+      halo.style.left = `${hero.x}px`;
+      halo.style.top = `${hero.y}px`;
+      layer.appendChild(halo);
+
+      // 3. Four elemental mana orbs rising (+2 Fire, Water, Air, Earth)
+      const colors = ['#f97316', '#38bdf8', '#facc15', '#4ade80'];
+      const offsets = [-24, -8, 8, 24];
+      colors.forEach((color, i) => {
+        const orb = document.createElement('div');
+        orb.className = 'vfx-mana-orb-rise';
+        orb.style.backgroundColor = color;
+        orb.style.boxShadow = `0 0 14px ${color}, 0 0 24px #fff`;
+        orb.style.left = `${hero.x + offsets[i]}px`;
+        orb.style.top = `${hero.y}px`;
+        orb.style.setProperty('--dx', `${offsets[i] * 1.5}px`);
+        layer.appendChild(orb);
+        setTimeout(() => orb.remove(), 950);
+      });
+
+      // 4. Hero heal +10 visual feedback
+      hero.el.classList.add('card-impact-hit');
+      setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 800);
+
+      setTimeout(() => {
+        beam.remove();
+        halo.remove();
+      }, 1050);
     }
 
-    await new Promise((r) => setTimeout(r, 850));
+    await new Promise((r) => setTimeout(r, 950));
+    return;
+  }
+
+  if (spellId === 'holy_wrath_of_god' || spellId.includes('wrath_of_god')) {
+    sound.play('wrathofgod');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 650);
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const sr = s.getBoundingClientRect();
+        const col = document.createElement('div');
+        col.className = 'vfx-wrath-column';
+        col.style.left = `${sr.left + sr.width / 2}px`;
+        layer.appendChild(col);
+
+        const burst = document.createElement('div');
+        burst.className = 'vfx-wrath-burst';
+        burst.style.left = `${sr.left + sr.width / 2}px`;
+        burst.style.top = `${sr.top + sr.height / 2}px`;
+        layer.appendChild(burst);
+
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          col.remove();
+          burst.remove();
+          s.classList.remove('card-impact-hit');
+        }, 800);
+      }, i * 75);
+    });
+
+    await new Promise((r) => setTimeout(r, 1000));
     return;
   }
 
@@ -3206,8 +3322,87 @@ async function playSpellVFX(
     return;
   }
 
-  if (spellId.includes('cursed') || spellId.includes('drain') || card.element === 'death') {
-    sound.play(spellId.includes('cursed') ? 'cursedfog' : 'drainsouls');
+  if (spellId === 'death_drain_souls' || spellId.includes('drain_soul')) {
+    sound.play('drainsouls');
+    const hero = getHeroPos(who);
+
+    const apparition = document.createElement('div');
+    apparition.className = 'vfx-spirits-apparition';
+    apparition.style.left = `${targetX}px`;
+    apparition.style.top = `${targetY}px`;
+    layer.appendChild(apparition);
+
+    if (destEl) {
+      destEl.classList.add('card-impact-hit');
+      setTimeout(() => destEl?.classList.remove('card-impact-hit'), 600);
+    }
+
+    setTimeout(() => {
+      const orb = document.createElement('div');
+      orb.className = 'vfx-essence-drain-orb';
+      orb.style.background = 'radial-gradient(circle, #fff 10%, #a855f7 45%, #581c87 85%, transparent 100%)';
+      orb.style.boxShadow = '0 0 25px #c084fc, 0 0 45px #9333ea';
+      orb.style.setProperty('--start-x', `${targetX}px`);
+      orb.style.setProperty('--start-y', `${targetY}px`);
+      orb.style.setProperty('--end-x', `${hero.x}px`);
+      orb.style.setProperty('--end-y', `${hero.y}px`);
+      layer.appendChild(orb);
+      setTimeout(() => {
+        orb.remove();
+        if (hero.el) {
+          hero.el.classList.add('card-impact-hit');
+          setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 500);
+        }
+      }, 750);
+    }, 200);
+
+    await new Promise((r) => setTimeout(r, 1050));
+    apparition.remove();
+    return;
+  }
+
+  if (spellId === 'death_cursed_fog' || spellId.includes('cursed_fog')) {
+    sound.play('cursedfog');
+    app.classList.add('screen-shake');
+    setTimeout(() => app.classList.remove('screen-shake'), 600);
+
+    const fog = document.createElement('div');
+    fog.className = 'spell-vfx-acidic';
+    fog.style.background = 'radial-gradient(circle at center, rgba(88, 28, 135, 0.75) 0%, rgba(59, 7, 100, 0.55) 50%, transparent 85%)';
+    layer.appendChild(fog);
+
+    const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
+    enemySlots.forEach((s, i) => {
+      setTimeout(() => {
+        const sr = s.getBoundingClientRect();
+        const apparition = document.createElement('div');
+        apparition.className = 'vfx-spirits-apparition';
+        apparition.style.left = `${sr.left + sr.width / 2}px`;
+        apparition.style.top = `${sr.top + sr.height / 2}px`;
+        layer.appendChild(apparition);
+        s.classList.add('card-impact-hit');
+        setTimeout(() => {
+          apparition.remove();
+          s.classList.remove('card-impact-hit');
+        }, 700);
+      }, i * 60);
+    });
+
+    const oppHero = getHeroPos(oppSide);
+    if (oppHero.el) {
+      setTimeout(() => {
+        oppHero.el?.classList.add('card-impact-hit');
+        setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 500);
+      }, 300);
+    }
+
+    await new Promise((r) => setTimeout(r, 1000));
+    fog.remove();
+    return;
+  }
+
+  if (card.element === 'death') {
+    sound.play('drainsouls');
     const apparition = document.createElement('div');
     apparition.className = 'vfx-spirits-apparition';
     apparition.style.left = `${targetX}px`;
@@ -3303,6 +3498,37 @@ async function playSpellVFX(
     }, 260);
 
     await new Promise((r) => setTimeout(r, 1000));
+    return;
+  }
+
+  // 10. BEAST SCORPION ACTIVATED ABILITY: VENOM SPRAY (毒蝎主动技能：毒液喷射)
+  if (spellId === 'ability_beast_scorpion' || spellId === 'beast_scorpion' || spellId.includes('scorpion')) {
+    sound.play('poison');
+    const venomBurst = document.createElement('div');
+    venomBurst.className = 'vfx-venom-spray-burst';
+    venomBurst.style.left = `${targetX}px`;
+    venomBurst.style.top = `${targetY}px`;
+    layer.appendChild(venomBurst);
+
+    for (let i = 0; i < 8; i++) {
+      const drop = document.createElement('div');
+      drop.className = 'vfx-venom-droplet';
+      const angle = (Math.PI * 2 * i) / 8 + (Math.random() - 0.5) * 0.4;
+      const dist = 18 + Math.random() * 30;
+      drop.style.left = `${targetX + Math.cos(angle) * dist}px`;
+      drop.style.top = `${targetY + Math.sin(angle) * dist}px`;
+      drop.style.animationDelay = `${Math.random() * 0.15}s`;
+      layer.appendChild(drop);
+      setTimeout(() => drop.remove(), 650);
+    }
+
+    if (destEl) {
+      destEl.classList.add('card-impact-hit');
+      setTimeout(() => destEl?.classList.remove('card-impact-hit'), 500);
+    }
+
+    await new Promise((r) => setTimeout(r, 680));
+    venomBurst.remove();
     return;
   }
 
@@ -3842,7 +4068,7 @@ function renderMainMenu(): string {
         <div class="menu-footer-left">
           <span class="footer-tip">💡 提示：在战斗中轻触任意卡牌或生物，可在羊皮纸中查看详尽战术技能</span>
         </div>
-        <div class="menu-version-text">v 1.0 Mobile · HD</div>
+        <div class="menu-version-text">${APP_VERSION}</div>
       </div>
     </div>
   `;
@@ -4795,38 +5021,85 @@ function renderCampaignSetupModal(): string {
 
 
 function renderOptionsModal(): string {
+  const bgmVolPct = Math.round(sound.getBgmVolume() * 100);
+  const sfxVolPct = Math.round(sound.getSfxVolume() * 100);
+  const combatRate = sound.getCombatBgmRate();
+  const rateLabel = combatRate <= 0.88 ? '🐌 沉稳慢调 (0.88x)' : (combatRate <= 0.94 ? '🎼 典雅深沉 (0.92x)' : '⚡ 原版疾奏 (1.0x)');
+
   return `
     <div class="modal-overlay" id="options-modal-overlay">
       <div class="stone-options-dialog" style="width:clamp(560px, 58vw, 760px); max-height:88vh; display:flex; flex-direction:column;">
         <div class="options-header-banner" style="background: linear-gradient(90deg, #2b180d 0%, #4a2816 50%, #2b180d 100%); flex-shrink:0; display:flex; justify-content:space-between; align-items:center; padding:10px 20px;">
           <div class="options-title-text" style="color:#ffd700; font-size:clamp(18px, 1.5vw, 22px);">⚙️ 游戏选项与音频设置</div>
-          <div style="display:flex; align-items:center; gap:10px;">
-            <button class="modal-close-btn confirm-tick-btn" id="btn-confirm-options" style="position:static; width:34px; height:34px; font-size:20px; font-weight:bold; cursor:pointer;" title="确定完成">✓</button>
-            <button class="modal-close-btn" id="btn-close-options" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer; color:#f87171; background:rgba(239,68,68,0.18); border:1.5px solid #ef4444; border-radius:8px; display:inline-flex; align-items:center; justify-content:center;" title="关闭">×</button>
+          <div style="display:flex; align-items:center; gap:12px;">
+            <button class="options-seal-btn confirm" id="btn-confirm-options" title="确定完成">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+            <button class="options-seal-btn close" id="btn-close-options" title="关闭窗口">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="filter:drop-shadow(0 1px 2px rgba(0,0,0,0.6));"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
           </div>
         </div>
 
         <div style="flex:1; overflow-y:auto; padding:clamp(18px, 2.4vh, 28px); display:flex; flex-direction:column; gap:18px;">
-          <!-- BGM Setting -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-            <div>
-              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🎵 游戏背景音乐 (BGM)</div>
-              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制主菜单、大地图与决斗战斗背景配乐</div>
+          <!-- BGM Setting (Toggle + Volume Slider) -->
+          <div style="display:flex; flex-direction:column; gap:10px; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🎵 游戏背景音乐 (BGM)</div>
+                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制主菜单、大地图与决斗战斗背景配乐</div>
+              </div>
+              <button class="duel-stone-action-btn ${sound.bgmEnabled ? 'start' : 'close'}" id="btn-toggle-bgm" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
+                ${sound.bgmEnabled ? '🔊 已开启' : '🔇 已静音'}
+              </button>
             </div>
-            <button class="duel-stone-action-btn ${sound.bgmEnabled ? 'start' : 'close'}" id="btn-toggle-bgm" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
-              ${sound.bgmEnabled ? '🔊 已开启' : '🔇 已静音'}
-            </button>
+            <div style="display:flex; align-items:center; gap:14px; padding-top:10px; border-top:1px dashed rgba(212, 179, 120, 0.6);">
+              <span style="font-size:clamp(13px, 1vw, 14.5px); font-weight:800; color:#5c3d1e; white-space:nowrap;">音量调节</span>
+              <input type="range" id="slider-bgm-volume" min="0" max="100" value="${bgmVolPct}" class="fantasy-range-slider" style="flex:1;" />
+              <span id="label-bgm-volume" style="font-size:clamp(14px, 1.1vw, 16px); font-weight:900; color:#854d0e; min-width:44px; text-align:right; font-family:'Cinzel', Georgia, serif;">${bgmVolPct}%</span>
+            </div>
           </div>
 
-          <!-- SFX Setting -->
-          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
-            <div>
-              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🔔 战斗与技能音效 (SFX)</div>
-              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制生物召唤、攻击冲击、魔法轰击与界面音效</div>
+          <!-- SFX Setting (Toggle + Volume Slider) -->
+          <div style="display:flex; flex-direction:column; gap:10px; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🔔 战斗与技能音效 (SFX)</div>
+                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">控制生物召唤、攻击冲击、魔法轰击与界面音效</div>
+              </div>
+              <button class="duel-stone-action-btn ${sound.enabled ? 'start' : 'close'}" id="btn-toggle-sfx" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
+                ${sound.enabled ? '🔔 已开启' : '🔕 已静音'}
+              </button>
             </div>
-            <button class="duel-stone-action-btn ${sound.enabled ? 'start' : 'close'}" id="btn-toggle-sfx" style="padding:8px 24px; font-size:clamp(14px, 1.15vw, 16px); min-width:115px; height:42px;">
-              ${sound.enabled ? '🔔 已开启' : '🔕 已静音'}
-            </button>
+            <div style="display:flex; align-items:center; gap:14px; padding-top:10px; border-top:1px dashed rgba(212, 179, 120, 0.6);">
+              <span style="font-size:clamp(13px, 1vw, 14.5px); font-weight:800; color:#5c3d1e; white-space:nowrap;">音量调节</span>
+              <input type="range" id="slider-sfx-volume" min="0" max="100" value="${sfxVolPct}" class="fantasy-range-slider" style="flex:1;" />
+              <span id="label-sfx-volume" style="font-size:clamp(14px, 1.1vw, 16px); font-weight:900; color:#854d0e; min-width:44px; text-align:right; font-family:'Cinzel', Georgia, serif;">${sfxVolPct}%</span>
+            </div>
+          </div>
+
+          <!-- Combat Music Tempo Setting (慢放调节) -->
+          <div style="display:flex; flex-direction:column; gap:12px; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">⚔️ 战斗背景音乐节奏</div>
+                <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">慢放战斗背景音乐，平缓促战急迫感，烘托专注沉着的高维策略交锋</div>
+              </div>
+              <span id="label-combat-rate" style="font-size:clamp(13px, 1.1vw, 15px); color:#854d0e; font-weight:900; background:#fef3c7; border:1.5px solid #fde68a; padding:4px 12px; border-radius:8px;">
+                ${rateLabel}
+              </span>
+            </div>
+            <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;">
+              <button class="duel-stone-action-btn ${combatRate <= 0.88 ? 'start' : 'close'}" id="btn-combat-rate-slow" style="height:42px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">
+                🐌 沉稳慢调 (0.88x)
+              </button>
+              <button class="duel-stone-action-btn ${(combatRate > 0.88 && combatRate <= 0.94) ? 'start' : 'close'}" id="btn-combat-rate-mid" style="height:42px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">
+                🎼 典雅深沉 (0.92x)
+              </button>
+              <button class="duel-stone-action-btn ${combatRate > 0.94 ? 'start' : 'close'}" id="btn-combat-rate-orig" style="height:42px; font-size:clamp(13px, 1.1vw, 15px); padding:4px;">
+                ⚡ 原版疾奏 (1.0x)
+              </button>
+            </div>
           </div>
 
           <!-- Record Replays Toggle (Interactive Slide Switch) -->
@@ -5067,12 +5340,12 @@ function renderCombatScreen(): string {
           <!-- Double Parchment Container -->
           <div class="combat-double-parchment-container">
             <!-- 1. Upper: Card Inspection Parchment -->
-            <div class="combat-inspect-parchment">
+            <div class="combat-inspect-parchment" id="combat-inspect-parchment" style="cursor: pointer;" title="轻触展开全屏卡牌详情">
               ${previewCard ? `
                 <div class="parchment-card-top-row">
                   <img src="${toRel(previewCard.imgBigUrl || previewCard.imgUrl)}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
                   <div class="parchment-card-meta">
-                    <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费)</div>
+                    <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费) <span style="font-size: 10px; opacity: 0.6; float: right;">⤢</span></div>
                     <div class="parchment-card-sub" style="${previewCard.isActivatedAbility ? 'color: #8b3a00; font-weight: bold;' : ''}">
                       ${previewCard.isActivatedAbility
                         ? (previewCard.desc.includes('\n') ? previewCard.desc.split('\n')[0] : `【${previewCard.nameCn}】的主动技能，费用 ${previewCard.cost}`)
@@ -5100,7 +5373,7 @@ function renderCombatScreen(): string {
 
             <!-- 2. Lower: Combat Log Chronicle -->
             <div class="combat-log-parchment">
-              <div class="combat-log-header">📜 战斗实况记录</div>
+              <div class="combat-log-header" id="btn-combat-log" style="cursor: pointer;" title="轻触展开完整战历">📜 战斗实况记录 <span style="font-size: 10px; opacity: 0.6; float: right;">⤢</span></div>
               <div class="combat-log-scroll" id="combat-log-scroll">
                 ${engine.logs.length === 0 ? '<div class="combat-log-line info">对决刚刚开始，准备出牌...</div>' : ''}
                 ${[...engine.logs].reverse().map(l => `
@@ -5119,9 +5392,10 @@ function renderCombatScreen(): string {
           <!-- Prompt Banner (Floating Top: Authentic PC Ribbon) -->
           <div class="battlefield-prompt-banner ${selectedCard ? 'active' : ''}">
             ${selectedCard
-              ? (selectedCard.type === 'creature'
+              ? `<span style="margin-right:6px;">${selectedCard.type === 'creature'
                   ? `选择位置 ${selectedCard.nameCn}`
-                  : (selectedCard.requiresTarget ? `选择目标 ${selectedCard.nameCn}` : `选择施法 ${selectedCard.nameCn}`))
+                  : (selectedCard.requiresTarget ? `选择目标 ${selectedCard.nameCn}` : `选择施法 ${selectedCard.nameCn}`)}</span>
+                 <button class="banner-card-info-btn" id="btn-banner-inspect-card" style="pointer-events:auto; background:rgba(0,0,0,0.65); border:1px solid #ffd700; color:#ffd700; border-radius:4px; padding:1px 7px; font-size:11px; font-weight:800; cursor:pointer;" title="查看卡牌详情">ℹ️ 详情</button>`
               : ''}
           </div>
 
@@ -5296,6 +5570,80 @@ function renderCombatScreen(): string {
     ${showSurrenderModal ? renderSurrenderModal() : ''}
     ${aiAnnouncedCard ? renderAiAnnouncementModal(aiAnnouncedCard) : ''}
     ${showRulesModal ? renderBattlefieldRulesModal() : ''}
+    ${showCombatLogsModal ? renderCombatLogsModal() : ''}
+    ${showCardDetailModal && detailedCard ? renderCardDetailModal() : ''}
+  `;
+}
+
+function renderCombatLogsModal(): string {
+  return `
+    <div class="modal-overlay" id="combat-logs-modal-overlay">
+      <div class="stone-options-dialog" style="width:min(580px, 94vw); max-height:85vh; display:flex; flex-direction:column; padding:0; overflow:hidden;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #1e1b4b 0%, #312e81 50%, #1e1b4b 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 18px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#e0e7ff; font-size:16px;">📜 战斗实况记录 (${engine.logs.length}条)</div>
+          <button class="modal-close-btn" id="btn-close-combat-logs" style="position:static; width:32px; height:32px; font-size:20px; cursor:pointer;" title="关闭">×</button>
+        </div>
+        <div class="combat-log-modal-scroll" id="combat-log-modal-scroll" style="flex:1; overflow-y:auto; padding:12px 14px; display:flex; flex-direction:column; gap:6px; background:#f5edd9 url('/ui/Paper.png') center / 100% 100% no-repeat;">
+          ${engine.logs.length === 0 ? '<div class="combat-log-line info" style="font-size:13px; color:#5c4033; padding:8px;">对决刚刚开始，准备出牌...</div>' : ''}
+          ${[...engine.logs].reverse().map(l => `
+            <div class="combat-log-line ${l.type}" style="font-size:12.5px; line-height:1.45; padding:5px 8px; border-radius:4px; border:1px solid rgba(142,114,58,0.25); background:rgba(255,255,255,0.7);">${l.text}</div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderCardDetailModal(): string {
+  if (!detailedCard) return '';
+  const card = detailedCard;
+  const creature = detailedCreatureSlot?.creature;
+  const side = detailedCreatureSlot?.side;
+  const elemNames: Record<string, string> = { fire: '火系', water: '水系', air: '气系', earth: '土系', special: '巫术', death: '死灵', holy: '圣职', mechanics: '机械', control: '支配', chaos: '混沌', illusion: '幻术', beast: '驯兽', chrono: '时空', goblin: '地精', forest: '森林', golem: '魔匠', cult: '邪教', blood: '鲜血', spectromancer: '战场造物' };
+  const elemBadge = card.className ? (HERO_CLASSES.find(c => c.id === card.className)?.nameCn || '专属') : (elemNames[card.element] || '基础');
+
+  return `
+    <div class="modal-overlay" id="card-detail-modal-overlay">
+      <div class="stone-options-dialog" style="width:min(440px, 92vw); max-height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,0.85);">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #2b1d0c 0%, #4a3418 50%, #2b1d0c 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 16px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#ffd700; font-size:16px; font-weight:900;">
+            ${card.nameCn} <span style="font-size:13px; color:#e2c079;">(${card.cost}费)</span>
+          </div>
+          <button class="modal-close-btn" id="btn-close-card-detail" style="position:static; width:30px; height:30px; font-size:20px; cursor:pointer;" title="关闭">×</button>
+        </div>
+        <div style="flex:1; overflow-y:auto; padding:14px; background:#f5edd9 url('/ui/Paper.png') center / 100% 100% no-repeat; display:flex; flex-direction:column; gap:10px;">
+          <div style="display:flex; gap:14px; align-items:center;">
+            <img src="${toRel(card.imgBigUrl || card.imgUrl)}" style="width:105px; height:105px; object-fit:contain; border-radius:8px; border:2px solid #b89355; box-shadow:0 4px 12px rgba(0,0,0,0.35); flex-shrink:0; background:#1e140d;" alt="${card.nameCn}" />
+            <div style="flex:1; display:flex; flex-direction:column; gap:4px; min-width:0;">
+              <div style="font-size:14px; font-weight:900; color:#451a03;">${card.name}</div>
+              <div style="font-size:12px; color:#854d0e; font-weight:700;">
+                ${elemBadge} · ${card.type === 'creature' ? '生物' : '法术'}
+              </div>
+              ${card.type === 'creature' ? `
+                <div style="display:flex; gap:8px; margin-top:4px;">
+                  <span style="font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:900; background:#dc2626; color:#fff;">⚔️ 攻击: ${creature ? creature.currentAttack : formatCardAtk(card.attack)}</span>
+                  <span style="font-size:12.5px; padding:2px 8px; border-radius:4px; font-weight:900; background:#16a34a; color:#fff;">❤️ 生命: ${creature ? creature.currentLife : card.life}${creature ? `/${creature.maxLife}` : ''}</span>
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          ${creature ? `
+            <div style="font-size:11.5px; padding:6px 10px; border-radius:6px; background:rgba(217,119,6,0.12); border:1px solid rgba(217,119,6,0.3); color:#92400e; font-weight:700;">
+              【当前阵线状态】${side === 'player' ? '己方' : '敌方'} [${creature.slotIndex + 1}号位] ·
+              基础攻/命: ${creature.baseAttack}/${creature.maxLife}
+              ${creature.flying ? ' · 🕊️ 飞行' : ''}
+              ${creature.spellImmune ? ' · 🛡️ 魔免' : ''}
+              ${creature.skipNextAttack ? ' · 💫 眩晕待机' : ''}
+            </div>
+          ` : ''}
+
+          <div style="font-size:13px; line-height:1.6; color:#27180c; background:rgba(255,255,255,0.7); padding:10px 12px; border-radius:8px; border:1px solid #d4b378; word-break:break-word;">
+            ${card.desc}
+          </div>
+        </div>
+      </div>
+    </div>
   `;
 }
 
@@ -7084,6 +7432,68 @@ function attachEventListeners() {
     render();
   });
 
+  document.getElementById('btn-combat-log')?.addEventListener('click', () => {
+    sound.play('click');
+    showCombatLogsModal = true;
+    render();
+  });
+
+  document.getElementById('btn-close-combat-logs')?.addEventListener('click', () => {
+    sound.play('click');
+    showCombatLogsModal = false;
+    render();
+  });
+
+  document.getElementById('combat-logs-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      showCombatLogsModal = false;
+      render();
+    }
+  });
+
+  document.getElementById('btn-close-card-detail')?.addEventListener('click', () => {
+    sound.play('click');
+    showCardDetailModal = false;
+    render();
+  });
+
+  document.getElementById('card-detail-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      showCardDetailModal = false;
+      render();
+    }
+  });
+
+  document.getElementById('combat-inspect-parchment')?.addEventListener('click', () => {
+    const pCard = inspectedCard || selectedCard;
+    if (pCard) {
+      sound.play('click');
+      detailedCard = pCard;
+      const pCreature = engine.playerBoard.find(c => c && c.card.id === pCard.id);
+      const eCreature = engine.enemyBoard.find(c => c && c.card.id === pCard.id);
+      if (pCreature) {
+        detailedCreatureSlot = { creature: pCreature, side: 'player' };
+      } else if (eCreature) {
+        detailedCreatureSlot = { creature: eCreature, side: 'enemy' };
+      } else {
+        detailedCreatureSlot = null;
+      }
+      showCardDetailModal = true;
+      render();
+    }
+  });
+
+  document.getElementById('btn-banner-inspect-card')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sound.play('click');
+    if (selectedCard) {
+      detailedCard = selectedCard;
+      detailedCreatureSlot = null;
+      showCardDetailModal = true;
+      render();
+    }
+  });
+
   document.getElementById('btn-options-save-quit')?.addEventListener('click', () => {
     sound.play('click');
     if (saveCurrentBattle()) {
@@ -7111,9 +7521,50 @@ function attachEventListeners() {
   document.getElementById('btn-resume-battle-banner')?.addEventListener('click', handleLoadSavedBattle);
   document.getElementById('btn-resume-battle-action')?.addEventListener('click', handleLoadSavedBattle);
 
+  const bgmSlider = document.getElementById('slider-bgm-volume') as HTMLInputElement | null;
+  const bgmLabel = document.getElementById('label-bgm-volume');
+  bgmSlider?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    if (!isNaN(val)) {
+      if (bgmLabel) bgmLabel.textContent = `${val}%`;
+      sound.setBgmVolume(val / 100);
+      if (val > 0 && !sound.bgmEnabled) {
+        sound.bgmEnabled = true;
+        const btn = document.getElementById('btn-toggle-bgm');
+        if (btn) {
+          btn.className = 'duel-stone-action-btn start';
+          btn.textContent = '🔊 已开启';
+        }
+      }
+    }
+  });
+
+  const sfxSlider = document.getElementById('slider-sfx-volume') as HTMLInputElement | null;
+  const sfxLabel = document.getElementById('label-sfx-volume');
+  sfxSlider?.addEventListener('input', (e) => {
+    const val = parseInt((e.target as HTMLInputElement).value, 10);
+    if (!isNaN(val)) {
+      if (sfxLabel) sfxLabel.textContent = `${val}%`;
+      sound.setSfxVolume(val / 100);
+      if (val > 0 && !sound.enabled) {
+        sound.enabled = true;
+        const btn = document.getElementById('btn-toggle-sfx');
+        if (btn) {
+          btn.className = 'duel-stone-action-btn start';
+          btn.textContent = '🔔 已开启';
+        }
+      }
+    }
+  });
+
   document.getElementById('btn-toggle-bgm')?.addEventListener('click', () => {
     sound.play('click');
     sound.toggleBgm();
+    if (sound.bgmEnabled && sound.getBgmVolume() === 0) {
+      sound.setBgmVolume(0.5);
+      if (bgmSlider) bgmSlider.value = '50';
+      if (bgmLabel) bgmLabel.textContent = '50%';
+    }
     const btn = document.getElementById('btn-toggle-bgm');
     if (btn) {
       btn.className = `duel-stone-action-btn ${sound.bgmEnabled ? 'start' : 'close'}`;
@@ -7124,11 +7575,43 @@ function attachEventListeners() {
   document.getElementById('btn-toggle-sfx')?.addEventListener('click', () => {
     sound.play('click');
     sound.toggleMute();
+    if (sound.enabled && sound.getSfxVolume() === 0) {
+      sound.setSfxVolume(0.5);
+      if (sfxSlider) sfxSlider.value = '50';
+      if (sfxLabel) sfxLabel.textContent = '50%';
+    }
     const btn = document.getElementById('btn-toggle-sfx');
     if (btn) {
       btn.className = `duel-stone-action-btn ${sound.enabled ? 'start' : 'close'}`;
       btn.textContent = sound.enabled ? '🔔 已开启' : '🔕 已静音';
     }
+  });
+
+  const updateCombatRateButtons = (rate: number) => {
+    sound.setCombatBgmRate(rate);
+    const label = document.getElementById('label-combat-rate');
+    if (label) {
+      label.textContent = rate <= 0.88 ? '🐌 沉稳慢调 (0.88x)' : (rate <= 0.94 ? '🎼 典雅深沉 (0.92x)' : '⚡ 原版疾奏 (1.0x)');
+    }
+    const btnSlow = document.getElementById('btn-combat-rate-slow');
+    const btnMid = document.getElementById('btn-combat-rate-mid');
+    const btnOrig = document.getElementById('btn-combat-rate-orig');
+    if (btnSlow) btnSlow.className = `duel-stone-action-btn ${rate <= 0.88 ? 'start' : 'close'}`;
+    if (btnMid) btnMid.className = `duel-stone-action-btn ${(rate > 0.88 && rate <= 0.94) ? 'start' : 'close'}`;
+    if (btnOrig) btnOrig.className = `duel-stone-action-btn ${rate > 0.94 ? 'start' : 'close'}`;
+  };
+
+  document.getElementById('btn-combat-rate-slow')?.addEventListener('click', () => {
+    sound.play('click');
+    updateCombatRateButtons(0.88);
+  });
+  document.getElementById('btn-combat-rate-mid')?.addEventListener('click', () => {
+    sound.play('click');
+    updateCombatRateButtons(0.92);
+  });
+  document.getElementById('btn-combat-rate-orig')?.addEventListener('click', () => {
+    sound.play('click');
+    updateCombatRateButtons(1.0);
   });
 
   document.getElementById('btn-toggle-record-replays')?.addEventListener('click', () => {
@@ -7264,6 +7747,21 @@ function attachEventListeners() {
     const cardId = (el as HTMLElement).dataset.cardId!;
     const isOpponent = (el as HTMLElement).dataset.isOpponent === 'true';
 
+    el.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      sound.play('click');
+      const c = isOpponent
+        ? engine.getEffectiveHand('enemy').find((x) => x.id === cardId)
+        : engine.getEffectiveHand('player').find((x) => x.id === cardId);
+      if (c) {
+        inspectedCard = c;
+        detailedCard = c;
+        detailedCreatureSlot = null;
+        showCardDetailModal = true;
+        render();
+      }
+    });
+
     el.addEventListener('click', async () => {
       sound.play('click');
       if (isOpponent) {
@@ -7345,6 +7843,19 @@ function attachEventListeners() {
   document.querySelectorAll('.combat-board-slot').forEach((slotEl) => {
     const slotIdx = parseInt((slotEl as HTMLElement).dataset.slotIndex!);
     const side = (slotEl as HTMLElement).dataset.side!;
+
+    slotEl.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      const occ = side === 'player' ? engine.playerBoard[slotIdx] : engine.enemyBoard[slotIdx];
+      if (occ) {
+        sound.play('click');
+        inspectedCard = occ.card;
+        detailedCard = occ.card;
+        detailedCreatureSlot = { creature: occ, side: side as 'player' | 'enemy' };
+        showCardDetailModal = true;
+        render();
+      }
+    });
 
     slotEl.addEventListener('click', async () => {
       const occupied = side === 'player' ? engine.playerBoard[slotIdx] : engine.enemyBoard[slotIdx];
@@ -7708,10 +8219,15 @@ function attachEventListeners() {
   document.getElementById('btn-campaign-start-battle')?.addEventListener('click', () => {
     sound.play('click');
     currentBattleSource = 'campaign';
-    sound.playBgm(getCombatBgmForCurrentBattle());
     const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
-    const rawClassId = activeCampaign ? (HERO_CLASSES[activeCampaign.playerClassIdx]?.id || 'cleric') : 'cleric';
-    const pClass: HeroClass = rawClassId === 'random' ? 'cleric' : rawClassId;
+    const validClasses: HeroClass[] = [
+      'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
+      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
+    ];
+    const rawClassId = activeCampaign ? HERO_CLASSES[activeCampaign.playerClassIdx]?.id : undefined;
+    const pClass: HeroClass = (!rawClassId || rawClassId === 'random')
+      ? validClasses[Math.floor(Math.random() * validClasses.length)]
+      : rawClassId;
     const pName = activeCampaign ? activeCampaign.playerName : '战役法师';
     const pFace = activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg';
 

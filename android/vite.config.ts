@@ -9,6 +9,7 @@ export default defineConfig({
     port: 5174,
   },
   build: {
+    emptyOutDir: false,
     target: 'es2017',
     rollupOptions: {
       output: {

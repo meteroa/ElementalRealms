@@ -5,9 +5,83 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-10-13
+## [Unreleased] - 2026-10-15
+
+- **横版对手卡片紧凑化与信息栏纵向空间释放（Landscape Opponent Card Spacing & Vertical Flow Optimization）**：
+  - 针对横版（Landscape）下对手英雄卡片头像行与下方元素能量栏之间存在过宽空黑间隙（导致下方玩家英雄栏与卡牌/战报检视区受挤压）的问题进行修正；
+  - 移除 `.combat-hero-row.opponent` 原写死的强制固定高度（`clamp(136px, calc(122px + 3.8vh), 162px)`）与 `justify-content: space-between`，重构为自适应高度、顶对齐与精致 `gap: clamp(3px, 0.5vh, 6px)` 间距；
+  - 头像信息行与 5 系能量条紧密衔接，彻底消除无用留黑，对手卡片整体高度由 150px+ 压缩至约 100px，带动下方己方英雄信息栏及双羊皮纸整体向上平移释放 40~50px 纵向空间。
+- **系统设置 BGM 音量滑块与右上角复古魔幻印章按钮重塑（Options Modal Volume Sliders & Antique Seal Buttons）**：
+  - **背景音乐音量可调**：在系统设置弹窗中补齐原版缺失的 BGM 音量调节滑轨（`0% ~ 100%`），并同步补全 SFX 音效音量滑轨；底层音频引擎实现动态增益控制与 `localStorage` 持久化，拖动滑块即可实时调节听感音量；
+  - **右上角勾叉按钮魔幻风格化**：彻底淘汰突兀单调的现代单色 Unicode 字符 `✓` 与带红框方角按钮 `×`，全新定制古法蜡封与青铜包金印章按钮（`.options-seal-btn`）：确定键采用金边翡翠印章配合柔和微光，关闭键采用红铜朱砂封蜡配合立体雕刻，完美融入黑胡桃木与石板羊皮纸的奇幻质感。
+- **战斗背景音乐慢放模式与节奏切换支持（Combat BGM Slowdown & Dynamic Tempo Modes）**：
+  - 针对玩家反馈战斗背景音乐节奏过快、催促感强的问题，在音频引擎与设置弹窗中全面引入战斗音乐慢放（Slowdown）技术；
+  - 浏览器原生利用 `playbackRate` 并保持原音调（`preservesPitch`），提供三种节奏档位：【🐌 沉稳慢调 (0.88x)】、【🎼 典雅深沉 (0.92x)】与【⚡ 原版疾奏 (1.0x)】，默认以 0.92x 沉稳速度播放，不仅平缓急迫感、凸显交响乐宏大史诗感，而且在系统设置中切换即可实时无缝平滑变速试听。
+
+## [2.5.0] - 2026-10-14
+
+- **眩晕/跳过攻击沙漏素材去黑边方框与毒蝎专属毒液喷射动效（Fix Stun Hourglass Box Artifact & Add Scorpion Venom VFX）**：
+  - **沙漏去边框**：排查发现毒蝎麻痹入场效果（跳过下回合攻击）所使用的沙漏图标（`Stunned.png` / `stunned.png`）因直接从 PC 原版 TGA 带底色图块导出，周围附带一圈浅蓝灰色的正方形斜角边框，在随从上方旋转时形成突兀的旋转方块；现利用泛洪掩码算法彻底剥离周围无关背景，保留核心剔透沙漏与柔和投影，并将旋转转盘改为灵动悬浮微光呼吸动效（`.vfx-stunned-stars`）；
+  - **毒蝎主动技能动效补齐**：为毒蝎的主动技能【毒液喷射】（14点伤害）补齐专属施法特效（`.vfx-venom-spray-burst` 与 `.vfx-venom-droplet`），喷射高浓度翡翠腐蚀毒雾与多向剧毒飞溅微粒，配合原版 `poison.ogg` 音效带来扎实打击感。
+- **对战卡牌点击交互优化与冗余全屏弹窗解耦（Decouple Card Clicks from Redundant Detail Modal）**：
+  - 针对竖版界面已常驻卡牌检视羊皮纸、但点击在场生物/敌方手牌时仍会强行弹出遮挡屏幕的全屏卡牌信息模态框的问题进行根治；
+  - 移除战场生物槽位、对手手牌以及手牌短触时强行触发 `showCardDetailModal` 的过渡逻辑，点击卡牌或生物时仅即时将数据投影至中间羊皮纸，完全保持棋盘通透可视、不打断游戏交互；
+  - 将全屏超大卡牌模态框的展开权限收归至中段卡牌检视羊皮纸（点击羊皮纸可主动呼出大图弹窗）与桌面端右键，彻底兼顾日常极速操作与深度查阅需求。
+- **竖版对战手牌卡牌间距消除与中段双羊皮纸舒适高度调优（Portrait Hand Cards Gap Elimination & Parchment Comfort Tuning）**：
+  - 针对手牌行与行之间出现多余空白间距、且中段卡牌信息和战斗记录过矮（文字与战报受挤压）的问题进行专项优化；
+  - **消除手牌垂直间距**：移除手牌列容器的 `justify-content: space-between` 与卡牌固定的 `max-height` 截断，改为 `justify-content: flex-start` 配合 4 行卡牌 `flex: 1 1 0 !important; max-height: none !important;` 紧密等分填充，每行卡牌间仅保留微隙 2px 边框间隔，彻底杜绝大块黑底间距；
+  - **调高中段双羊皮纸**：将中段双羊皮纸容器高度由原本扁平的 `clamp(66px, 9vh, 76px)` 调高至舒适适中的黄金比例 `clamp(112px, 15vh, 132px)`，卡牌预览图提升至 34×34px，技能描述字号与行高升级（4-5 行规则文本一目了然无阻阅读），战斗实况记录可舒适展示 6-8 行完整战局动态；
+  - 左右双栏保持 100% 绝对等高对齐，界面整体上下层次分明、紧凑饱满。
+- **竖版顶部操作栏冗余【战斗记录】按钮彻底移除（Remove Redundant Top Combat Log Button）**：
+  - 根除此前中段隐藏战报时遗留的临时弹窗按钮，顶部操作栏恢复为原本正规的 6 键布局（`[对手卡牌]`、`[保存退出]`、`[战场规则]`、`[投降]`、`[获得建议]`、`[结束回合]`），每键宽度提升约 17%，手机窄屏上点按更宽松舒适；
+  - 将完整战历弹出交互直接绑定至中段战报标题栏（`📜 战斗实况记录 ⤢`），轻触即可呼出全量战历模态框。
+- **战役模式与联赛模式“随机派系”均变成战争牧师/巫术 Bug 彻底修复（Random Faction Bug Fix in Campaign & League）**：
+  - 战役模式创建角色时若选择“随机”，原本硬编码直接赋值为战争牧师（`rawClassId === 'random' ? 'cleric'`），现改为从 15 个可用流派中真随机抽取并固化档案职业；同时对既有选“随机”的旧档案在开战时做了真随机抽取兜底；
+  - 联赛模式创建选手时若选择“随机”，原本硬编码直接赋值为巫术（`chosenClass.id === 'random' ? 'sorcery'`），现改为真随机抽取合法流派并同步更新派系中文名与图标；单局对决与局域网对战经核验均已为标准真随机机制。
+- **【神圣干预】施法动画重构与“拳头”误区根除（Divine Intervention Heavenly Light & Mana Surge VFX）**：
+  - 彻底移除原形似“拳头”的金属盾牌动画（`vfx-shield-bubble`，其来源为带把手与铆钉的圆形盾牌素材在移动端缩放时形似一记铁拳冲击英雄），解决与立绘圣光降临意境脱节的问题；
+  - 基于卡牌立绘（跪地信徒祈祷天光降临）与技能（四系能量各+2及本体回血10点），全新重构为通天璀璨金色圣光柱（`.vfx-divine-intervention-pillar`）、神圣能量扩散光环（`.vfx-divine-intervention-halo`）、四系能量粒子上升涌动（火橙、水蓝、气黄、土绿）以及英雄本体圣愈发光反馈。
+- **全量魔法卡牌施法动画核对排查与问题修复（Spell VFX Full Audit & Visual Correction）**：
+  - 全面扫描全部 51 张法术牌，排查出并修复了以下与立绘、技能描述不匹配的卡牌动画：
+    * **【治疗喷雾】（`spec_healing_spray`）**：移除友军槽位上的金属盾牌特效，改为目标与相邻槽位的翡翠治愈水雾（`.vfx-healing-spray-mist`）；
+    * **【活力恢复】（`earth_rejuvenation`）**：移除在施法者头像上直接长出一整棵大树的突兀动画，改为生机盎然的翡翠生命充盈脉冲光环（`.vfx-rejuvenate-aura`）；
+    * **【灵魂汲取】（`death_drain_souls`）**：新增被汲取生物体向施法者本体飞回的紫幽幽魂光球（`.vfx-essence-drain-orb`）与生命回复反馈，完美匹配技能描述；
+    * **【诅咒之雾】（`death_cursed_fog`）**：由原本单个静态小幽灵升级为全屏暗影死灵迷雾与全槽位敌军震荡打击；
+    * **【神之审判】（`holy_wrath_of_god`）**：由屏幕中央单道光柱升级为天谴神圣光柱连续净化所有敌方随从槽位；
+    * **【光荣仪式】（`spec_ritual_of_glory`）**：移除随从身上的防御盾牌，保留进攻性攻击力增幅的荣耀圣光柱。
+- **【神圣审判】施法目标判定与范围伤害结算彻底修正（Holy Divine Justice Target & AOE Damage Fix）**：
+  - 修正 [`android/src/main.ts`](file:///d:/sync/project/Spectromancer/android/src/main.ts) 与 [`android/src/engine/game.ts`](file:///d:/sync/project/Spectromancer/android/src/engine/game.ts) 中 `isFriendlyTargetSpell` 判断，正式将 `divine_justice` 列入友方目标法术，玩家可正确选定己方目标生物；
+  - 修正 `divine_justice_heal_12_blast` 中群伤排除判定（由原槽位排除改为精确比对拥有者与槽位），彻底解决对位敌方生物错误免伤的倒错 Bug，确保除被圣疗的己方目标外全场所有其它生物均受到 12 点神圣暴击。
+- **【自然之怒】重构专属狂怒兽魂与爪击动画（Nature's Fury Beast Phantom & Claw VFX）**：
+  - 彻底移除原与【活力恢复】重叠的生树特效（`vfx-ritforest-tree`）；
+  - 基于卡牌原画狂怒咆哮熊与雷暴意境，定制专属全套特效：瞬间激发全屏翡翠电光闪烁（`.screen-flash-nature`）、剧烈震屏、咆哮狂熊魂影冲锋（`.vfx-nature-fury-bear`）与三重锐利自然撕裂爪痕（`.vfx-nature-fury-claw`）及冲击波光环（`.vfx-nature-fury-burst`）。
+- **竖版多弹窗边界溢出与元素截断全量修复（Portrait UI Boundaries & Overflow Rectification）**：
+  - **决战设定弹窗（Screenshot 2）**：在 [`style.css`](file:///d:/sync/project/Spectromancer/android/src/style.css) 中对底部 `.duel-class-picker` 施加竖屏弹性换行排版，将“职业:”标签独立居中置顶，下方紧凑排列箭头、职业标识与齿轮按钮，彻底杜绝文字与图标超出弹窗边界；
+  - **录像馆弹窗（Screenshot 3）**：优化 `.replay-item-card` 与操作按钮尺寸，防止右侧删除垃圾桶 🗑️ 超出白色羊皮纸卡片边框；
+  - **游戏帮助弹窗（Screenshot 4）**：解除 `.stone-options-dialog` 外层多余内边距与双重滚动条，根除首卡文字向上滚动挤入顶部 Sticky 栏下方导致截断显露单个“点。”的 Bug；将顶部 Tab 栏重构为平滑横向滚动容器并缩小竖屏字号与边距。
+- **版本号位置微调与工程版本同步更新（Version Display & Alignment）**：
+  - 在竖版媒体查询中微调 `.mobile-menu-footer` 边距与底部安全区（`env(safe-area-inset-bottom)`），将版本号文本自然向下平移至屏幕舒适下边缘；
+  - 将项目中长期停留在 1.0 的版本标识与 `package.json` 同步跃升至最新的 `v2.5.0 Mobile · HD`。
+
+### Changed
+- **竖版对战界面中间布局革新：双羊皮纸常驻与手牌卡牌高度紧凑化（Portrait Combat Middle Info & Log Parchment System）**：
+  - 采纳用户建议，将底部 5 列手牌区域的单卡高度进行适度紧凑化与弹性缩放，腾出宝贵屏幕中段垂直空间；
+  - 在玩家英雄栏与底部手牌区之间（屏幕正中央）恢复呈现双栏复古羊皮纸窗口（`.combat-double-parchment-container`）：左侧常驻展示当前选定/在场生物的卡牌立绘、费用、攻防与完整技能说明；右侧滚动展示最新战斗实况战报，玩家无需再频繁点击弹窗，即可在竖屏手机上时刻掌控场面信息与出牌详情。
+- **战斗音乐轮换池优化（Combat BGM Playlist Tuning）**：
+  - 从 `sound.ts` 战斗背景乐轮换池中移除曲目《Blood of the Northern Wild》（`combat3`），保留 5 首精选战棋交响曲动态轮播。
 
 ### Added
+- **3 首根目录音轨转 OGG 并加入战斗随机播放池（3 New Combat BGM Tracks Integrated）**：
+  - 将根目录下 3 首 WebM 音轨（`Take Me Back`、`The Cubes`、`Песнь отшельника`）经母带级 0.5s 无缝交叉淡入淡出循环与 `-1 dBFS` 峰值响度标准化，采用高质量广播级 `libopus 64kbps` 编码输出为 `combat7.ogg`、`combat8.ogg`、`combat9.ogg`，并备份无损 Vorbis 母盘至 `tools/audio/uncompressed/`；
+  - 扩展 `sound.ts` 中的 `combatTracks` 阵列与有效音轨名单，3 首新曲目正式加入全模式战斗背景乐随机播放池。
+
+### Added
+- **Suno 音乐下载体系重构：纯声轨流捕获与 WebM 转 MP3 方案落地（Suno Audio Stream Capture & WebM-to-MP3 Engine）**：
+  - **彻底废除 CDN 请求与防盗链依赖**：彻底放弃任何对 Suno CDN（CloudFront）的直接 HTTP 请求，规避 AWS MissingKey 与浏览器 CORS 拦截；
+  - **实现【一键自动播放并录制】功能（v3.1.0）**：在 [`tools/suno_downloader.user.js`](file:///d:/sync/project/Spectromancer/tools/suno_downloader.user.js) 中加入智能播放唤醒，点击按钮自动触发当前歌曲播放并从头开启声轨捕获，无需先手动点播放再点录制；
+  - **全套资产单个 ZIP 压缩包下载（v3.2.0）**：集成 `JSZip` 库，勾选后将音频（MP3/WebM）、高清封面（JPEG）与歌词文本（TXT）自动打成单个 `.zip` 压缩包一键下载，彻底消除浏览器因多文件连续下载弹出的拦截与提示弹窗；
+  - **本地自动化 CLI 下载工具落地**：新增 [`tools/audio/suno_capture.py`](file:///d:/sync/project/Spectromancer/tools/audio/suno_capture.py)，只需输入 Suno 歌曲链接，自动调度后台无头浏览器静音捕获 WebM，并利用 PyAV `libmp3lame` 原生编码为 320k 广播级 MP3、保存高清专辑封面与歌词文本。
+
 - **项目打包资源极端轻量化与母图资产安全归档（Package Size Optimization & Master Asset Archiving）**：
   - **母盘资产安全解耦与归档**：将 `android/public` 内部残留的 351 个非运行时母图（包含 248 个卡牌 `_master.png`、100 个头像 `Face*_master.png` 以及测试 `.wav` 音频共 687.41 MB）安全转移至独立归档目录 `tools/master_assets/` 永久留存，既不丢失任何高清素材，又彻底杜绝打包污染；
   - **构建产物与 APK 体积暴跌 93.6%**：清理后 `android/public/` 纯运行时体积由 733.9 MB 骤降至 **46.5 MB**，Vite 构建产物 `android/dist/` 从 736.5 MB 降至 **47.2 MB**（净省 689.3 MB），构建速度由 13 秒大幅跃升至 873 毫秒；
@@ -53,6 +127,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     * **安全占位与无缝支持**：预设 `combat4.ogg` 与 `combat5.ogg` 安全兜底音频，无缝承接后续 Suno 生成的高燃战斗母带。
 
 ### Fixed
+- **构建目录 unpackage 资产防清空保护与打包 APK 完整恢复（Unpackage Directory Protection & APK Recovery）**：
+  - **根本原因排查与修复**：Vite 生产构建默认开启 `emptyOutDir: true`，会在每次构建时清空 `android/dist/`，导致用户在 `dist/unpackage/release/apk/` 下的打包产物被移动至回收站；
+  - **资产 100% 完好复原**：已从系统回收站中完整寻回并复原原包 `__UNI__YSMJ100__20261013220238.apk`（5.10 MB，CRC 校验 723 项资源完好无损），恢复至原位 `android/dist/unpackage/release/apk/` 并同步永久冷备份至 `release_apk/`；
+  - **构建防清空保护**：在 `android/vite.config.ts` 中配置 `emptyOutDir: false`，确保后续执行 `npm run build` 时不会再误删任何外部放入的自定义文件夹与打包资产。
 - **战役大地图自由平移缩放引擎重构（Campaign World Map Pan & Zoom Engine）**：
   - **根本原因排查与架构重构**：修复原 `.campaign-map-viewport` 在窄屏与竖屏模式下直接 `overflow: hidden` 且缺少舞台拖动事件监听，导致 1024×592 大地图右侧无法滑动触达的致命缺陷；
   - **引入 1024×592 舞台级视口架构**：构建 `.campaign-map-stage` 承载背景大地图与绝对百分比节点，彻底消除移动端与不同长宽比下的地标错位；

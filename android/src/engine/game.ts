@@ -2460,7 +2460,7 @@ export class SpectromancerEngine {
         }
         const blast = spellDmg(12);
         [...myBoard, ...opposingBoard].forEach((c) => {
-          if (c && c.slotIndex !== targetSlot && !c.spellImmune) {
+          if (c && !(c.owner === who && c.slotIndex === targetSlot) && !c.spellImmune) {
             c.currentLife -= blast;
             this.triggerDamage(c.owner, c.slotIndex, blast);
           }
@@ -4407,7 +4407,8 @@ export class SpectromancerEngine {
       card.id.includes('haste') ||
       card.id.includes('explosion') ||
       card.id.includes('blood_ritual') ||
-      card.id.includes('sacrifice')
+      card.id.includes('sacrifice') ||
+      card.id.includes('divine_justice')
     );
   }
 

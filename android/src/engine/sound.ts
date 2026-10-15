@@ -14,6 +14,9 @@ class SoundManager {
   private isWebAudioBgmPlaying: boolean = false;
   public enabled: boolean = true;
   public bgmEnabled: boolean = true;
+  public bgmVolume: number = 0.65;
+  public sfxVolume: number = 0.8;
+  public combatBgmRate: number = 0.92;
 
   private audioPool: Map<string, HTMLAudioElement[]> = new Map();
   private audioCtx: AudioContext | null = null;
@@ -184,9 +187,30 @@ class SoundManager {
   };
 
   constructor() {
+    this.loadSettings();
     this.setupUnlockListener();
     this.preloadCoreSounds();
     this.playBgm('menu1');
+  }
+
+  private loadSettings() {
+    try {
+      const savedBgmVol = localStorage.getItem('sm_bgm_volume');
+      if (savedBgmVol !== null) {
+        const val = parseFloat(savedBgmVol);
+        if (!isNaN(val) && val >= 0 && val <= 1) this.bgmVolume = val;
+      }
+      const savedSfxVol = localStorage.getItem('sm_sfx_volume');
+      if (savedSfxVol !== null) {
+        const val = parseFloat(savedSfxVol);
+        if (!isNaN(val) && val >= 0 && val <= 1) this.sfxVolume = val;
+      }
+      const savedRate = localStorage.getItem('sm_combat_bgm_rate');
+      if (savedRate !== null) {
+        const val = parseFloat(savedRate);
+        if (!isNaN(val) && val >= 0.7 && val <= 1.3) this.combatBgmRate = val;
+      }
+    } catch {}
   }
 
   private getAudioContext(): AudioContext | null {
@@ -257,7 +281,7 @@ class SoundManager {
     return `./audio/${filename.toLowerCase()}`;
   }
 
-  private playWithPlus(file: string, vol: number = 0.8, isBgm: boolean = false): boolean {
+  private playWithPlus(file: string, vol?: number, isBgm: boolean = false): boolean {
     const w = typeof window !== 'undefined' ? (window as any) : null;
     if (!w || !w.plus || !w.plus.audio) return false;
 
@@ -267,8 +291,9 @@ class SoundManager {
       const player = w.plus.audio.createPlayer(primaryPath);
       if (!player) return false;
 
+      const effectiveVol = vol !== undefined ? vol : (isBgm ? ((this.enabled && this.bgmEnabled) ? this.bgmVolume : 0) : (0.8 * this.sfxVolume));
       if (typeof player.setVolume === 'function') {
-        player.setVolume(vol);
+        player.setVolume(effectiveVol);
       }
 
       if (isBgm) {
@@ -287,7 +312,7 @@ class SoundManager {
             this.plusBgmPlayer = null;
             setTimeout(() => {
               if (this.enabled && this.bgmEnabled && !this.plusBgmPlayer) {
-                this.playWithPlus(file, vol, true);
+                this.playWithPlus(file, undefined, true);
               }
             }, 50);
           }
@@ -321,7 +346,9 @@ class SoundManager {
     try {
       this.bgmAudio = new Audio(this.getAudioUrl(fileWithExt));
       this.bgmAudio.loop = true;
-      this.bgmAudio.volume = 0.45;
+      const effectiveVol = (this.enabled && this.bgmEnabled) ? this.bgmVolume : 0;
+      this.bgmAudio.volume = effectiveVol;
+      this.bgmAudio.playbackRate = this.getCurrentPlaybackRate();
       this.bgmAudio.addEventListener('ended', () => {
         if (this.enabled && this.bgmEnabled && this.bgmAudio) {
           this.bgmAudio.currentTime = 0;
@@ -395,13 +422,13 @@ class SoundManager {
 
   private menuTracks: string[] = ['menu1', 'menu2'];
   private currentMenuTrackIdx: number = 0;
-  private combatTracks: string[] = ['combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6'];
+  private combatTracks: string[] = ['combat1', 'combat2', 'combat4', 'combat5', 'combat6', 'combat7', 'combat8', 'combat9'];
 
   // Preload essential high-frequency SFX and core BGM into memory via Web Audio
   private preloadCoreSounds() {
     const frequent = [
       'menu1.ogg', 'menu2.ogg', 'campaign_map.ogg',
-      'combat1.ogg', 'combat2.ogg', 'combat3.ogg', 'combat4.ogg', 'combat5.ogg', 'combat6.ogg',
+      'combat1.ogg', 'combat2.ogg', 'combat4.ogg', 'combat5.ogg', 'combat6.ogg', 'combat7.ogg', 'combat8.ogg', 'combat9.ogg',
       'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'btn3.ogg', 'summon1.ogg', 'summondrop.ogg',
       'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg', 'ritual_of_glory.ogg', 'doombolt.ogg'
     ];
@@ -436,7 +463,7 @@ class SoundManager {
     }
   }
 
-  private async playWebAudioBgm(cleanTrack: string, vol: number = 0.45): Promise<boolean> {
+  private async playWebAudioBgm(cleanTrack: string, vol?: number): Promise<boolean> {
     try {
       const ctx = this.getAudioContext();
       if (!ctx) return false;
@@ -471,15 +498,17 @@ class SoundManager {
         this.bgmAudio = null;
       }
 
+      const effectiveVol = (this.enabled && this.bgmEnabled) ? (vol !== undefined ? vol : this.bgmVolume) : 0;
       if (!this.bgmGainNode) {
         this.bgmGainNode = ctx.createGain();
         this.bgmGainNode.connect(ctx.destination);
       }
-      this.bgmGainNode.gain.value = (this.enabled && this.bgmEnabled) ? vol : 0;
+      this.bgmGainNode.gain.value = effectiveVol;
 
       const src = ctx.createBufferSource();
       src.buffer = buffer;
       src.loop = true;
+      src.playbackRate.value = this.getCurrentPlaybackRate();
       src.connect(this.bgmGainNode);
       src.onended = () => {
         if (this.bgmSourceNode === src) {
@@ -526,7 +555,7 @@ class SoundManager {
       cleanTrack = this.menuTracks[this.currentMenuTrackIdx];
     }
 
-    const validTracks = ['menu1', 'menu2', 'campaign_map', 'combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6'];
+    const validTracks = ['menu1', 'menu2', 'campaign_map', 'combat1', 'combat2', 'combat3', 'combat4', 'combat5', 'combat6', 'combat7', 'combat8', 'combat9'];
     if (!validTracks.includes(cleanTrack)) {
       cleanTrack = 'combat1';
     }
@@ -542,13 +571,13 @@ class SoundManager {
     }
 
     // 1. Primary: Web Audio API (Zero latency, seamless loop, 0 native OS handle leaks)
-    const webAudioOk = await this.playWebAudioBgm(cleanTrack, 0.45);
+    const webAudioOk = await this.playWebAudioBgm(cleanTrack, this.bgmVolume);
     if (webAudioOk && this.isWebAudioBgmPlaying) {
       return;
     }
 
     // 2. Secondary fallback: 5+ Native Audio Player (HBuilderX / Android local)
-    if (this.playWithPlus(`${cleanTrack}.ogg`, 0.45, true)) {
+    if (this.playWithPlus(`${cleanTrack}.ogg`, this.bgmVolume, true)) {
       return;
     }
 
@@ -571,7 +600,7 @@ class SoundManager {
                   { file: `${cleanKey}.ogg`, volume: 0.8 };
 
       const vol = customVolume !== undefined ? customVolume : (def.volume ?? 0.8);
-      const safeVol = Math.max(0, Math.min(1, vol));
+      const safeVol = Math.max(0, Math.min(1, vol * this.sfxVolume));
 
       // 1. Web Audio API (Zero latency, concurrent, zero native handles)
       const ctx = this.getAudioContext();
@@ -639,10 +668,69 @@ class SoundManager {
     }
   }
 
+  public isCombatTrack(track?: string): boolean {
+    const t = (track || this.currentTrack).toLowerCase();
+    return t.startsWith('combat') || t.startsWith('battle');
+  }
+
+  public getCurrentPlaybackRate(): number {
+    return this.isCombatTrack() ? this.combatBgmRate : 1.0;
+  }
+
+  public setCombatBgmRate(rate: number) {
+    this.combatBgmRate = Math.max(0.7, Math.min(1.3, rate));
+    try {
+      localStorage.setItem('sm_combat_bgm_rate', this.combatBgmRate.toString());
+    } catch {}
+    this.applyPlaybackRate();
+  }
+
+  public getCombatBgmRate(): number {
+    return this.combatBgmRate;
+  }
+
+  public applyPlaybackRate() {
+    const targetRate = this.getCurrentPlaybackRate();
+    if (this.bgmSourceNode) {
+      try {
+        this.bgmSourceNode.playbackRate.value = targetRate;
+      } catch {}
+    }
+    if (this.bgmAudio) {
+      try {
+        this.bgmAudio.playbackRate = targetRate;
+      } catch {}
+    }
+  }
+
+  public setBgmVolume(val: number) {
+    this.bgmVolume = Math.max(0, Math.min(1, val));
+    try {
+      localStorage.setItem('sm_bgm_volume', this.bgmVolume.toString());
+    } catch {}
+    this.updateBgmOutput();
+  }
+
+  public getBgmVolume(): number {
+    return this.bgmVolume;
+  }
+
+  public setSfxVolume(val: number) {
+    this.sfxVolume = Math.max(0, Math.min(1, val));
+    try {
+      localStorage.setItem('sm_sfx_volume', this.sfxVolume.toString());
+    } catch {}
+  }
+
+  public getSfxVolume(): number {
+    return this.sfxVolume;
+  }
+
   private updateBgmOutput() {
     const shouldPlay = this.enabled && this.bgmEnabled;
+    const effectiveVol = shouldPlay ? this.bgmVolume : 0;
     if (this.bgmGainNode) {
-      this.bgmGainNode.gain.value = shouldPlay ? 0.45 : 0;
+      this.bgmGainNode.gain.value = effectiveVol;
     }
     if (!shouldPlay) {
       if (this.bgmAudio) this.bgmAudio.pause();
@@ -650,11 +738,20 @@ class SoundManager {
         try { this.plusBgmPlayer.pause(); } catch {}
       }
     } else {
+      this.applyPlaybackRate();
+      if (this.bgmAudio) {
+        this.bgmAudio.volume = effectiveVol;
+      }
       if (this.isWebAudioBgmPlaying) {
         const ctx = this.getAudioContext();
         if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
       } else if (this.plusBgmPlayer) {
-        try { this.plusBgmPlayer.resume(); } catch {}
+        try {
+          if (typeof this.plusBgmPlayer.setVolume === 'function') {
+            this.plusBgmPlayer.setVolume(effectiveVol);
+          }
+          this.plusBgmPlayer.resume();
+        } catch {}
       } else if (this.bgmAudio) {
         this.bgmAudio.play().catch(() => {});
       } else {
