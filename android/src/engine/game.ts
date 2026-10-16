@@ -44,7 +44,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'InactiveHellbot',
     imgUrl: './cards/InactiveHellbot.webp',
     imgBigUrl: './cards/InactiveHellbotBig.webp',
-    desc: '支付 4 点机械系能量，使【未激活的终极机械】变身为【地狱机兵】(3/28)。',
+    desc: '支付 4 点机械系能量，使【休眠深渊机铠】变身为【烈狱机铠】(3/28)。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -55,7 +55,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'NaturalHealing',
     imgUrl: './cards/NaturalHealing.webp',
     imgBigUrl: './cards/NaturalHealingBig.webp',
-    desc: '【魔法仓鼠】的主动技能，费用 3\n【魔法仓鼠】使己方所有生物回复18点生命。',
+    desc: '【灵巧地灵兽】的主动技能，费用 3\n【灵巧地灵兽】使己方所有生物回复18点生命。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -66,7 +66,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'Poison',
     imgUrl: './cards/Poison.webp',
     imgBigUrl: './cards/PoisonBig.webp',
-    desc: '【毒蝎】的主动技能，费用 2\n【毒蝎】对目标敌方生物造成14点伤害。',
+    desc: '【幽影剧毒蝎】的主动技能，费用 2\n【幽影剧毒蝎】对目标敌方生物造成14点伤害。',
     requiresTarget: true,
     targetType: 'enemy_creature',
   },
@@ -77,7 +77,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'Enrage',
     imgUrl: './cards/Enrage.webp',
     imgBigUrl: './cards/EnrageBig.webp',
-    desc: '【狼獾】的主动技能，费用 2\n【狼獾】完全回复至满生命，攻击力永久+2。',
+    desc: '【狂暴骨獾】的主动技能，费用 2\n【狂暴骨獾】完全回复至满生命，攻击力永久+2。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -88,51 +88,51 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'PumpEnergy',
     imgUrl: './cards/PumpEnergy.webp',
     imgBigUrl: './cards/PumpEnergyBig.webp',
-    desc: '【魔能兽】的主动技能，费用 1\n使拥有者的火系、水系、气系和土系能量各+1。',
+    desc: '【灵泉巨兽】的主动技能，费用 1\n使拥有者的火系、水系、气系和土系能量各+1。',
     requiresTarget: false,
     targetType: 'none',
   },
   beast_death_falcon: {
     name: 'Move Falcon',
-    nameCn: '隼之突袭',
+    nameCn: '逐风突袭',
     cost: 1,
     image: 'MoveFalcon',
     imgUrl: './cards/MoveFalcon.webp',
     imgBigUrl: './cards/MoveFalconBig.webp',
-    desc: '【死亡之隼】的主动技能，费用 1\n【死亡之隼】移动到目标空格处，并且对对方所有生物造成4点伤害。',
+    desc: '【逐风冥隼】的主动技能，费用 1\n【逐风冥隼】穿梭至目标空格处，并且对对方所有生物造成4点伤害。',
     requiresTarget: true,
     targetType: 'empty_friendly_slot',
   },
   beast_white_elephant: {
     name: 'Trumpet',
-    nameCn: '战吼',
+    nameCn: '原初战吼',
     cost: 0,
     image: 'Trumpet',
     imgUrl: './cards/Trumpet.webp',
     imgBigUrl: './cards/TrumpetBig.webp',
-    desc: '【白象】的主动技能，费用 0\n使拥有者的野兽系能量+1。',
+    desc: '【圣洁巨象】的主动技能，费用 0\n使拥有者的原初系能量+1。',
     requiresTarget: false,
     targetType: 'none',
   },
   beast_basilisk: {
     name: 'Gaze',
-    nameCn: '凝视',
+    nameCn: '石化凝视',
     cost: 0,
     image: 'Gaze',
     imgUrl: './cards/Gaze.webp',
     imgBigUrl: './cards/GazeBig.webp',
-    desc: '【巨蜥】的主动技能，费用 0\n对目标生物造成6点伤害。',
+    desc: '【石化巨蜥】的主动技能，费用 0\n对目标生物造成6点伤害。',
     requiresTarget: true,
     targetType: 'any_creature',
   },
   beast_ancient_dragon: {
     name: 'Breathe Fire',
-    nameCn: '火焰吐息',
+    nameCn: '太古烈焰吐息',
     cost: 3,
     image: 'BreatheFire',
     imgUrl: './cards/BreatheFire.webp',
     imgBigUrl: './cards/BreatheFireBig.webp',
-    desc: '【远古巨龙】的主动技能，费用 3\n【远古巨龙】对对方本体和对方所有生物各造成10点伤害。',
+    desc: '【太古苍龙】的主动技能，费用 3\n【太古苍龙】对对方本体和对方所有生物各造成10点伤害。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -143,7 +143,7 @@ export const RAGE_OF_SOULS_CARD: CardDef = {
   element: 'death',
   className: 'necromancer',
   name: 'Rage of Souls',
-  nameCn: '灵魂狂怒',
+  nameCn: '幽魂狂怒',
   type: 'spell',
   cost: 7,
   image: 'RageofSouls',
@@ -558,6 +558,28 @@ export class SpectromancerEngine {
       }
       actor.mana[elem] += g;
     });
+
+    // League Melidiadus rule: mana cannot exceed 12
+    if (this.leagueRule && this.leagueRule.includes('能量都不会超过12点')) {
+      activeElements.forEach((elem) => {
+        if (actor.mana[elem] > 12) actor.mana[elem] = 12;
+      });
+    }
+
+    // League Tiberius rule: random friendly creature takes 4 damage
+    if (this.leagueRule && this.leagueRule.includes('随机一个生物受到4点伤害')) {
+      const livingSlots: number[] = [];
+      board.forEach((c, idx) => { if (c) livingSlots.push(idx); });
+      if (livingSlots.length > 0) {
+        const slot = livingSlots[Math.floor(Math.random() * livingSlots.length)];
+        const target = board[slot]!;
+        target.currentLife -= 4;
+        this.triggerDamage(who, slot, 4);
+        sound.play('negativeeffect');
+        this.log(`【泰比利斯特技】神威激荡，【${target.card.nameCn}】受到 4 点伤害！`, 'damage');
+      }
+    }
+
     if (oppAstralGuardCount > 0) {
       this.log(`受到敌方【星魂守卫】星界压制，${actor.name} 本回合各系能量成长率 -${oppAstralGuardCount}！`, 'damage');
     }
@@ -1187,6 +1209,35 @@ export class SpectromancerEngine {
       this.log(`【${card.nameCn}】以 ${card.lifeCost} 点鲜血为祭，${actor.name} 生命降至 ${actor.hp}！`, 'damage');
     }
 
+    // League opponent reactive rules on card cast
+    if (this.leagueRule) {
+      if (this.leagueRule.includes('费用不少于9') && card.cost >= 9) {
+        const heal = Math.min(5, actor.maxHp - actor.hp);
+        actor.hp += heal;
+        this.triggerHeal(who, 'hero', heal);
+        this.log(`【杜斯坦特技】${actor.name} 施展九阶宏伟法术，汲取回响治愈 ${heal} 点生命！`, 'heal');
+      }
+      if (this.leagueRule.includes('对手获得1点与此卡牌同系的能量')) {
+        const opp = who === 'player' ? this.enemy : this.player;
+        if (opp.mana[card.element] !== undefined) {
+          opp.mana[card.element] += 1;
+          this.log(`【卡布瑞恩特技】对手 ${opp.name} 受到法术同调共鸣，获得 1 点 ${card.element.toUpperCase()} 能量！`, 'heal');
+        }
+      }
+      if (this.leagueRule.includes('对手失去1点与此卡牌同系的能量')) {
+        const opp = who === 'player' ? this.enemy : this.player;
+        if (opp.mana[card.element] !== undefined && opp.mana[card.element] > 0) {
+          opp.mana[card.element] -= 1;
+          this.log(`【乌姆卡兹特技】对手 ${opp.name} 受到法力剥夺，失去 1 点 ${card.element.toUpperCase()} 能量！`, 'damage');
+        }
+      }
+      if (this.leagueRule.includes('耗费了此系所有能量') && actor.mana[card.element] === 0) {
+        actor.hp -= 3;
+        this.triggerDamage(who, 'hero', 3, { selfInflicted: true });
+        this.log(`【祖科瑞拉特技】${actor.name} 耗尽 ${card.element.toUpperCase()} 能量，受到 3 点法力过载反噬！`, 'damage');
+      }
+    }
+
     if (who === 'enemy') {
       this.enemyRevealedCardIds.add(card.id);
       if (card.isActivatedAbility) {
@@ -1310,6 +1361,11 @@ export class SpectromancerEngine {
         // PC Celestia: "allows all allied creatures to attack the turn they are summoned."
         if (c.card.ability === 'celestia_swift_all') isSwift = true;
       });
+
+      // League Dimorph rule: all summoned creatures gain Swift
+      if (this.leagueRule && this.leagueRule.includes('所有生物在上场的回合内就能攻击')) {
+        isSwift = true;
+      }
 
       const initialAtk = inheritedAttack !== null
         ? inheritedAttack
@@ -3101,6 +3157,15 @@ export class SpectromancerEngine {
         this.log(`【${c.card.nameCn}】监测到跳轮，拥有者时间系能量 +1！`, 'heal');
       }
     });
+
+    // League Critana rule: pass turn grants +3 random mana
+    if (this.leagueRule && this.leagueRule.includes('能量+3')) {
+      const elems: ElementType[] = ['fire', 'water', 'air', 'earth', actor.specialElement];
+      const chosen = elems[Math.floor(Math.random() * elems.length)];
+      actor.mana[chosen] = (actor.mana[chosen] || 0) + 3;
+      sound.play('positiveeffect');
+      this.log(`【魁塔纳特技】${actor.name} 跳轮休整，随机 ${chosen.toUpperCase()} 能量 +3！`, 'heal');
+    }
     this.extraActionRemaining[who] = 0;
     this.extraSpellOnly[who] = false;
 
@@ -4594,10 +4659,48 @@ export class SpectromancerEngine {
   private async triggerAiTurn(): Promise<void> {
     if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return;
 
+    try {
+      let loopCount = 0;
+      // Loop allows AI to take extra actions if granted (e.g. Chrono Engine / Time Dragon)
+      while (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver && loopCount < 5) {
+        loopCount++;
+        const didPlay = await this.executeAiSingleDecision();
+        if (!didPlay) {
+          // If could not play or chose not to play, end action phase and enter combat
+          await this.passTurn('enemy');
+          break;
+        }
+
+        // If played a card, check if still in enemy action phase (e.g. extra action remaining)
+        if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
+          if (this.extraActionRemaining.enemy > 0) {
+            await this.delay(650);
+          } else {
+            // No extra action remaining, proceed to combat
+            await this.executeCombat('enemy');
+            break;
+          }
+        }
+      }
+
+      // Hard safety net: if still somehow stuck on enemy turn and not in combat, passTurn immediately
+      if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
+        await this.passTurn('enemy');
+      }
+    } catch (err) {
+      console.error('Safe fallback triggered in triggerAiTurn:', err);
+      if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
+        await this.passTurn('enemy');
+      }
+    }
+  }
+
+  private async executeAiSingleDecision(): Promise<boolean> {
+    if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return false;
+
     const playableCards = this.getEffectiveHand('enemy').filter((c) => this.canPlayCard('enemy', c));
     if (playableCards.length === 0) {
-      await this.passTurn('enemy');
-      return;
+      return false;
     }
 
     // Easy difficulty occasional hesitation
@@ -4607,8 +4710,7 @@ export class SpectromancerEngine {
       this.enemyBoard.some((c) => c !== null) &&
       this.enemy.hp > 15
     ) {
-      await this.passTurn('enemy');
-      return;
+      return false;
     }
 
     const emptySlots: number[] = [];
@@ -4877,8 +4979,7 @@ export class SpectromancerEngine {
     }
 
     if (candidates.length === 0) {
-      await this.passTurn('enemy');
-      return;
+      return false;
     }
 
     // Difficulty tuning
@@ -4912,8 +5013,7 @@ export class SpectromancerEngine {
         (c) => c.cost >= 6 && (c.attack || 0) >= 5 && (this.enemy.mana[c.element] || 0) === c.cost - 1
       );
       if (hasUnplayableBomb && candidates[0].score < 14 && playerActiveCount <= 2 && this.enemy.hp > 25) {
-        await this.passTurn('enemy');
-        return;
+        return false;
       }
 
       chosenAction = candidates[0];
@@ -4928,10 +5028,9 @@ export class SpectromancerEngine {
       if (this.aiRecentCardIds.length > 5) {
         this.aiRecentCardIds.shift();
       }
-      await this.playCard('enemy', chosenAction.card, chosenAction.targetSlot);
-    } else {
-      await this.passTurn('enemy');
+      return await this.playCard('enemy', chosenAction.card, chosenAction.targetSlot);
     }
+    return false;
   }
 
   public notify() {

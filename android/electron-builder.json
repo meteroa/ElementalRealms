@@ -1,0 +1,38 @@
+{
+  "appId": "com.elementalrealms.game",
+  "productName": "元素秘境 · 魔导对决",
+  "copyright": "Copyright © 2026 Elemental Realms",
+  "directories": {
+    "output": "../release_pc"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "public/**/*",
+    "package.json"
+  ],
+  "extraMetadata": {
+    "main": "electron/main.cjs"
+  },
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "public/icons/icon-512.png",
+    "artifactName": "${productName}_v${version}_setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "元素秘境 · 魔导对决"
+  }
+}

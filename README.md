@@ -77,24 +77,26 @@ ElementalRealmsAPK/
 - **包管理工具**：npm / pnpm
 - **Android 构建环境**（若需输出 APK）：JDK 17+ 与 Android Studio / Android SDK
 
-### 2. 本地开发与调试
+### 2. 一键快速启动与开发 (One-Click Launch)
+在项目根目录下直接双击运行脚本即可：
+* **`start_dev.bat`**：一键检测环境、安装依赖、启动 Vite 服务并自动唤起浏览器打开对局（端口 5174）。
+* **`start_preview.bat`**：一键执行 TypeScript 生产编译并在本地进行生产级服务预览。
+
+亦可使用命令行手动调试：
 ```bash
-# 进入工程主目录
 cd android
-
-# 安装项目依赖
 npm install
-
-# 启动本地开发服务器
 npm run dev
 ```
-启动后访问 `http://localhost:5174` 即可在浏览器中预览与调试。
 
-### 3. 生成生产构建
+### 3. PC 桌面端可执行程序打包 (.exe)
+项目已集成标准的 Electron PC 端打包工作流：
+* **`package_pc.bat`**：在根目录双击运行，将自动执行编译优化并打包生成 Windows 64位安装程序（NSIS 安装包及免安装便携版），产物输出至根目录 `release_pc/` 文件夹。
+* **命令行执行**：
 ```bash
-npm run build
+cd android
+npm run electron:build
 ```
-执行后将自动校验 TypeScript 类型并在 `android/dist/` 下生成高优化生产资源。
 
 ### 4. 编译输出 Android 安装包 (APK)
 ```bash

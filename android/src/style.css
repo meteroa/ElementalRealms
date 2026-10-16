@@ -1864,6 +1864,22 @@ body, html {
   transform: scale(1.02);
 }
 
+.combat-strip-item.btn-force-skip-enemy {
+  flex: 1.5;
+  background: linear-gradient(180deg, #632b10 0%, #3a1606 100%);
+  border-color: #f59e0b;
+  color: #fef3c7;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.4);
+  cursor: pointer;
+}
+
+.combat-strip-item.btn-force-skip-enemy:hover {
+  background: linear-gradient(180deg, #7c3513 0%, #4a1d08 100%);
+  border-color: #fbbf24;
+  box-shadow: 0 0 16px rgba(245, 158, 11, 0.7);
+  transform: scale(1.02);
+}
+
 .combat-strip-item:disabled {
   background: linear-gradient(180deg, #2b241d 0%, #151310 100%);
   border-color: #554429;

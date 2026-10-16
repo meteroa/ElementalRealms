@@ -4,7 +4,7 @@
     "engName": "Alteron",
     "cnName": "阿特朗",
     "className": "necromancer",
-    "classCn": "死灵法师",
+    "classCn": "幽冥死灵",
     "rule": "任一玩家使用一张卡牌后，他在下回合\r\n不能使用与此卡牌左右相邻系别的任何\r\n卡牌。",
     "face": "./faces/Face4.jpg"
   },
@@ -13,8 +13,8 @@
     "engName": "Amehet",
     "cnName": "阿姆哈特",
     "className": "sorcery",
-    "classCn": "巫术师",
-    "rule": "对战开始时你的场上拥有【火焰祭司】、\r\n【人鱼长老】和【精灵隐者】，阿姆哈特\r\n拥有【恶魔军需官】。",
+    "classCn": "秘奥法皇",
+    "rule": "对战开始时你的场上拥有【炽阳祭司】、\r\n【渊裔贤者】和【精灵隐者】，阿姆哈特\r\n拥有【炼狱后勤官】。",
     "face": "./faces/Face8.jpg"
   },
   {
@@ -22,7 +22,7 @@
     "engName": "Batalus",
     "cnName": "巴特拉斯",
     "className": "cleric",
-    "classCn": "战争牧师",
+    "classCn": "圣堂骑士",
     "rule": "每回合当前玩家的随机10张卡牌被禁用。",
     "face": "./faces/Face12.jpg"
   },
@@ -31,7 +31,7 @@
     "engName": "Critana",
     "cnName": "魁塔纳",
     "className": "mechanician",
-    "classCn": "机械师",
+    "classCn": "天工构装",
     "rule": "任一玩家跳轮时，他随机一个系的能量+3。",
     "face": "./faces/Face15.jpg"
   },
@@ -40,7 +40,7 @@
     "engName": "Dimorph",
     "cnName": "迪莫夫",
     "className": "dominator",
-    "classCn": "支配者",
+    "classCn": "深渊统御",
     "rule": "所有生物在上场的回合内就能攻击。",
     "face": "./faces/Face18.jpg"
   },
@@ -49,7 +49,7 @@
     "engName": "Dunstan",
     "cnName": "杜斯坦",
     "className": "chaosmaster",
-    "classCn": "混沌大师",
+    "classCn": "狂乱混沌",
     "rule": "当任一玩家使用费用不少于9的卡牌时，\r\n他回复5点生命。",
     "face": "./faces/Face22.jpg"
   },
@@ -58,7 +58,7 @@
     "engName": "Egbert",
     "cnName": "伊格波特",
     "className": "illusionist",
-    "classCn": "幻术师",
+    "classCn": "幻世星宫",
     "rule": "在任一玩家使用一张卡牌后，他的对手\r\n在下回合不能使用同一系的卡牌。",
     "face": "./faces/Face25.jpg"
   },
@@ -67,7 +67,7 @@
     "engName": "Estarh",
     "cnName": "伊斯塔",
     "className": "necromancer",
-    "classCn": "死灵法师",
+    "classCn": "幽冥死灵",
     "rule": "每回合当前玩家的所有卡牌都会被随机\r\n卡牌所替代。",
     "face": "./faces/Face30.jpg"
   },
@@ -76,8 +76,8 @@
     "engName": "Forwor",
     "cnName": "弗沃尔",
     "className": "sorcery",
-    "classCn": "巫术师",
-    "rule": "对战开始时，弗沃尔在场上拥有一个\r\n【蜂巢】。当你召唤一个生物时，一个\r\n【回响实体】出现在你的场上（X/1，\r\nX为你所召唤生物的攻击）。",
+    "classCn": "秘奥法皇",
+    "rule": "对战开始时，弗沃尔在场上拥有一个\r\n【天灵蜂皇蜂巢】。当你召唤一个生物时，一个\r\n【回响实体】出现在你的场上（X/1，\r\nX为你所召唤生物的攻击）。",
     "face": "./faces/Face35.jpg"
   },
   {
@@ -85,8 +85,8 @@
     "engName": "Futark",
     "cnName": "弗塔克",
     "className": "cleric",
-    "classCn": "战争牧师",
-    "rule": "在对战开始时两位玩家场上都拥有一个\r\n【尖牙石】。",
+    "classCn": "圣堂骑士",
+    "rule": "在对战开始时两位玩家场上都拥有一个\r\n【噬齿尖牙突进石】。",
     "face": "./faces/Face40.jpg"
   },
   {
@@ -94,7 +94,7 @@
     "engName": "Galador",
     "cnName": "加拉度",
     "className": "mechanician",
-    "classCn": "机械师",
+    "classCn": "天工构装",
     "rule": "对战双方的基础系能量成长率均为3。\r\n当一位玩家使用一张卡牌时，双方与\r\n此卡牌同系的能量降至0。",
     "face": "./faces/Face45.jpg"
   },
@@ -103,8 +103,8 @@
     "engName": "Grunvald",
     "cnName": "格朗拉德",
     "className": "dominator",
-    "classCn": "支配者",
-    "rule": "对战双方卡牌中均没有【火焰祭司】、\r\n【人鱼长老】或【精灵隐者】。",
+    "classCn": "深渊统御",
+    "rule": "对战双方卡牌中均没有【炽阳祭司】、\r\n【渊裔贤者】或【精灵隐者】。",
     "face": "./faces/Face50.jpg"
   },
   {
@@ -112,8 +112,8 @@
     "engName": "Istran",
     "cnName": "伊斯坦恩",
     "className": "chaosmaster",
-    "classCn": "混沌大师",
-    "rule": "对战开始时你场上拥有【吸血蝙蝠群】，\r\n伊斯坦恩拥有【巫师学徒】。",
+    "classCn": "狂乱混沌",
+    "rule": "对战开始时你场上拥有【蚀血蝠群黑雾】，\r\n伊斯坦恩拥有【秘典传习生】。",
     "face": "./faces/Face4.jpg"
   },
   {
@@ -121,7 +121,7 @@
     "engName": "Izenhart",
     "cnName": "伊森哈特",
     "className": "illusionist",
-    "classCn": "幻术师",
+    "classCn": "幻世星宫",
     "rule": "当任一玩家使用一张卡牌时，他的所有\r\n同系卡牌被随机卡牌所替代。",
     "face": "./faces/Face8.jpg"
   },
@@ -130,8 +130,8 @@
     "engName": "Kaltor",
     "cnName": "卡尔特",
     "className": "necromancer",
-    "classCn": "死灵法师",
-    "rule": "在对战开始时，双方场上均拥有\r\n【活性龙卷风】。",
+    "classCn": "幽冥死灵",
+    "rule": "在对战开始时，双方场上均拥有\r\n【赋生狂岚风暴】。",
     "face": "./faces/Face12.jpg"
   },
   {
@@ -139,8 +139,8 @@
     "engName": "Kassandra",
     "cnName": "卡山德拉",
     "className": "sorcery",
-    "classCn": "巫术师",
-    "rule": "在对战开始时，双方场上均拥有\r\n【魔力风暴】。",
+    "classCn": "秘奥法皇",
+    "rule": "在对战开始时，双方场上均拥有\r\n【失控魔流风暴】。",
     "face": "./faces/Face15.jpg"
   },
   {
@@ -148,7 +148,7 @@
     "engName": "Kobrin",
     "cnName": "卡布瑞恩",
     "className": "cleric",
-    "classCn": "战争牧师",
+    "classCn": "圣堂骑士",
     "rule": "每当任一玩家使用一张卡牌时，他的对手\r\n获得1点与此卡牌同系的能量。",
     "face": "./faces/Face18.jpg"
   },
@@ -157,7 +157,7 @@
     "engName": "Laerdana",
     "cnName": "拉尔丹娜",
     "className": "mechanician",
-    "classCn": "机械师",
+    "classCn": "天工构装",
     "rule": "任一玩家不能再次使用同一张卡牌，直到\r\n同系的所有卡牌都使用过为止。",
     "face": "./faces/Face22.jpg"
   },
@@ -166,7 +166,7 @@
     "engName": "Melidiadus",
     "cnName": "曼迪阿杜斯",
     "className": "dominator",
-    "classCn": "支配者",
+    "classCn": "深渊统御",
     "rule": "对战双方的各系能量都不会超过12点。",
     "face": "./faces/Face25.jpg"
   },
@@ -175,7 +175,7 @@
     "engName": "Merigar",
     "cnName": "莫里加",
     "className": "chaosmaster",
-    "classCn": "混沌大师",
+    "classCn": "狂乱混沌",
     "rule": "每一个玩家都有一个被锁定的空格，\r\n他不能在此空格上召唤生物。这一空格\r\n在回合结束的时候会随机移动。",
     "face": "./faces/Face30.jpg"
   },
@@ -184,7 +184,7 @@
     "engName": "Olgerd",
     "cnName": "奥尔加德",
     "className": "illusionist",
-    "classCn": "幻术师",
+    "classCn": "幻世星宫",
     "rule": "在对战开始时，双方的生命值均为40。",
     "face": "./faces/Face35.jpg"
   },
@@ -193,7 +193,7 @@
     "engName": "Radivil",
     "cnName": "拉德维尔",
     "className": "necromancer",
-    "classCn": "死灵法师",
+    "classCn": "幽冥死灵",
     "rule": "当任一玩家召唤一个生物时，此生物对\r\n场上所有的其它同系生物造成4点伤害。",
     "face": "./faces/Face40.jpg"
   },
@@ -202,7 +202,7 @@
     "engName": "StoneGor",
     "cnName": "斯通格尔",
     "className": "sorcery",
-    "classCn": "巫术师",
+    "classCn": "秘奥法皇",
     "rule": "双方以较高的基础系能量和较低的特殊系\r\n能量开始对战。",
     "face": "./faces/Face45.jpg"
   },
@@ -211,7 +211,7 @@
     "engName": "Tiberius",
     "cnName": "泰比利斯",
     "className": "cleric",
-    "classCn": "战争牧师",
+    "classCn": "圣堂骑士",
     "rule": "在每个玩家的回合开始时，他的随机一个\r\n生物受到4点伤害。",
     "face": "./faces/Face50.jpg"
   },
@@ -220,7 +220,7 @@
     "engName": "Umkazi",
     "cnName": "乌姆卡兹",
     "className": "mechanician",
-    "classCn": "机械师",
+    "classCn": "天工构装",
     "rule": "当任一玩家使用一张卡牌时，他的对手\r\n失去1点与此卡牌同系的能量。",
     "face": "./faces/Face4.jpg"
   },
@@ -229,8 +229,8 @@
     "engName": "Vatrax",
     "cnName": "维特拉克斯",
     "className": "dominator",
-    "classCn": "支配者",
-    "rule": "在对战开始时，维特拉克斯的场上拥有\r\n【淘气小恶魔】。",
+    "classCn": "深渊统御",
+    "rule": "在对战开始时，维特拉克斯的场上拥有\r\n【阴鸷顽劣小魔】。",
     "face": "./faces/Face8.jpg"
   },
   {
@@ -238,7 +238,7 @@
     "engName": "Zukrilla",
     "cnName": "祖科瑞拉",
     "className": "chaosmaster",
-    "classCn": "混沌大师",
+    "classCn": "狂乱混沌",
     "rule": "当任一玩家使用一张卡牌后耗费了此系\r\n所有能量时，他受到3点伤害。",
     "face": "./faces/Face12.jpg"
   }

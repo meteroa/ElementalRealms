@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite --port 5174",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 5174"
+    "preview": "vite preview --port 5174",
+    "electron:dev": "vite --port 5174",
+    "electron:build": "tsc && vite build && electron-builder --config electron-builder.json"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.2",

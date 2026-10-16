@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-16
+
+- **全 233 张卡牌与 15 大魔导流派古典奇幻史诗化命名重铸（Full 233 Cards & 15 Schools Classical Fantasy Epic Renaming）**：
+  - 保留四大基础自然元素（火、水、风、地）的前提下，全面将 15 大特色流派及其 233 张专属卡牌、法术及从者名称重铸为典雅大气的“古典奇幻/高阶魔导史诗风”（如“秘奥学派”、“幽冥挽歌”、“圣殿骑士团”、“天工机枢”、“深渊心智”、“狂乱混沌”、“幻世星宫”、“焦土魔契”、“原初灵契”、“永恒时序”、“潜影诡道”、“苍翠林语”、“巨神巨构”、“终焉血祀”、“猩红盛宴”）；
+  - 卡牌说明文本中所有引用其他卡牌的括号标签（如【灵契幻兔】、【远古秘金魔像】等）与主动技能元数据完成全链路级联替换，流派指引与大师赛战术建议文本同步焕新。
+
+- **英雄大师赛对手专属特技战规与开局阵容真实还原（Master League Opponent Traits & Roster True Restoration）**：
+  - 彻底修复大师赛榜单界面“下一场战斗说明”与实际进入对局后的战场规则不一致问题；
+  - 深度还原并接入 PC 原版大师赛各参赛选手的专属特技规则与开局站位阵容（如阿姆哈特多从者开局、弗沃尔天灵蜂皇蜂巢、富塔克突进石对峙、加拉多高基础能量、卡尔托赋生狂岚、卡珊德拉失控魔流、奥尔格德 40 血死斗、迪莫夫全军迅捷、杜斯坦高阶施法汲魂治愈、卡布瑞恩同系法术能量共鸣、乌姆卡兹法术能量剥夺、祖科瑞拉能量过载反噬、美利狄亚杜斯 12 能量封顶、泰比利斯随机神威惩击等），对战信息弹窗同步支持精确特技说明展示。
+
+- **AI 对手行动防卡死防护机制与 30 秒超时自动跳轮（AI Turn Freeze Prevention & 30s Watchdog Auto-Skip）**：
+  - 深入排查并彻底解决电脑对手在具备额外行动点数（如永恒时钟/岁月苍龙额外出牌）、或偶发选牌异常时未正常推进交战阶段导致游戏永久定格在敌方回合的根本缺陷；
+  - 引擎层重构 `triggerAiTurn` 决策执行循环，对额外行动、无效选牌与异常捕获实施全方位容灾兜底（Safe Fallback）；
+  - 界面与对局层引入 30 秒看门狗守护机制（Watchdog Timer）：单局中电脑对手思考超过 30 秒将触发自动跳轮交战；
+  - 操作栏在敌方行动阶段自适应提供“⏳ 跳过敌方”按钮，玩家可在任何异常情况下手动干预并强制推进游戏。
+
 ## [Unreleased] - 2026-10-15
 
 - **项目全景说明文档重撰与 .gitignore 本地忽略解耦（Rewrite Project README & Untrack .gitignore）**：

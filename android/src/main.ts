@@ -927,7 +927,78 @@ function buildScenarioEngineOptions(scenario: BattlefieldScenario) {
   };
 }
 
-// 联赛没有场景选择器：按联赛 id + 当前场次稳定地分配一个战场场景（含特殊造物场景），
+// 联赛：深度还原选手专属特技与开局阵容（对齐榜单界面说明与 PC 原版设定）
+function buildLeagueOpponentEngineOptions(curOpponent: any, _scenario: BattlefieldScenario) {
+  let playerHp = 60;
+  let enemyHp = 60;
+  let initialPlayerCreatures: Array<{ slot: number; cardId: string }> = [];
+  let initialEnemyCreatures: Array<{ slot: number; cardId: string }> = [];
+  let extraPlayerMana: Partial<Record<ElementType, number>> | undefined = undefined;
+  let extraEnemyMana: Partial<Record<ElementType, number>> | undefined = undefined;
+
+  const oppId = curOpponent?.id || 1;
+  switch (oppId) {
+    case 2: // Amehet: 玩家拥有【炽阳祭司】、【渊裔贤者】、【林间隐逸者】，阿姆哈特拥有【炼狱后勤官】
+      initialPlayerCreatures = [
+        { slot: 0, cardId: 'fire_priest_of_fire' },
+        { slot: 1, cardId: 'water_merfolk_elder' },
+        { slot: 2, cardId: 'earth_elf_hermit' },
+      ];
+      initialEnemyCreatures = [
+        { slot: 0, cardId: 'demon_quartermaster' },
+      ];
+      break;
+    case 9: // Forwor: 弗沃尔拥有【天灵蜂皇蜂巢】
+      initialEnemyCreatures = [{ slot: 0, cardId: 'gop_beehive' }];
+      break;
+    case 10: // Futark: 双方场上拥有【噬齿尖牙突进石】
+      initialPlayerCreatures = [{ slot: 2, cardId: 'gop_toothed_stone' }];
+      initialEnemyCreatures = [{ slot: 2, cardId: 'gop_toothed_stone' }];
+      break;
+    case 11: // Galador: 基础系能量成长率高，开局能量多
+      extraPlayerMana = { fire: 3, water: 3, air: 3, earth: 3 };
+      extraEnemyMana = { fire: 3, water: 3, air: 3, earth: 3 };
+      break;
+    case 13: // Istran: 玩家拥有【蚀血蝠群黑雾】，伊斯坦恩拥有【秘典传习生】
+      initialPlayerCreatures = [{ slot: 1, cardId: 'gop_vampiric_cloud' }];
+      initialEnemyCreatures = [{ slot: 1, cardId: 'gop_sorcerors_apprentice' }];
+      break;
+    case 15: // Kaltor: 双方场上拥有【赋生狂岚风暴】
+      initialPlayerCreatures = [{ slot: 2, cardId: 'gop_living_tornado' }];
+      initialEnemyCreatures = [{ slot: 2, cardId: 'gop_living_tornado' }];
+      break;
+    case 16: // Kassandra: 双方场上拥有【失控魔流风暴】
+      initialPlayerCreatures = [{ slot: 2, cardId: 'gop_mana_storm' }];
+      initialEnemyCreatures = [{ slot: 2, cardId: 'gop_mana_storm' }];
+      break;
+    case 21: // Olgerd: 双方生命均为 40
+      playerHp = 40;
+      enemyHp = 40;
+      break;
+    case 23: // StoneGor: 高基础能量开局
+      extraPlayerMana = { fire: 5, water: 5, air: 5, earth: 5 };
+      extraEnemyMana = { fire: 5, water: 5, air: 5, earth: 5 };
+      break;
+    case 26: // Vatrax: 维特拉克斯拥有【阴鸷顽劣小魔】
+      initialEnemyCreatures = [{ slot: 0, cardId: 'gop_niggling_imp' }];
+      break;
+    default:
+      break;
+  }
+
+  const ruleText = (curOpponent?.rule || '').replace(/\r?\n/g, ' ');
+  return {
+    playerHp,
+    enemyHp,
+    leagueRule: ruleText,
+    initialPlayerCreatures: resolveScenarioCreatures(initialPlayerCreatures),
+    initialEnemyCreatures: resolveScenarioCreatures(initialEnemyCreatures),
+    extraPlayerMana,
+    extraEnemyMana,
+  };
+}
+
+// 联赛战场环境场景分配（用于视觉背景与音效氛围）
 // 同一场次重进不会换场景。
 function getLeagueScenarioForCurrentMatch(): BattlefieldScenario {
   const matchNo = activeLeague?.currentMatch || 1;
@@ -1191,25 +1262,56 @@ let showCombatLogsModal = false;
 let showCardDetailModal = false;
 let detailedCard: CardDef | null = null;
 let detailedCreatureSlot: { creature: BoardCreature; side: 'player' | 'enemy' } | null = null;
+let aiTurnWatchdogTimer: any = null;
+
+function updateAiTurnWatchdog() {
+  if (currentView !== 'battle' || engine.gameOver || engine.activeTurn !== 'enemy' || engine.isLanGame) {
+    if (aiTurnWatchdogTimer) {
+      clearTimeout(aiTurnWatchdogTimer);
+      aiTurnWatchdogTimer = null;
+    }
+    return;
+  }
+
+  // If already running a watchdog timer for the current enemy turn, keep it going
+  if (aiTurnWatchdogTimer) return;
+
+  // Start 30s watchdog countdown
+  aiTurnWatchdogTimer = setTimeout(async () => {
+    aiTurnWatchdogTimer = null;
+    if (currentView === 'battle' && !engine.gameOver && engine.activeTurn === 'enemy' && !engine.isLanGame) {
+      console.warn('[AI Watchdog] AI turn timed out after 30s. Automatically forcing passTurn to prevent freeze.');
+      aiAnnouncedCard = null;
+      engine.log('⚠️ 【防卡死机制】电脑对手思考超过 30 秒，系统已自动跳过其出牌阶段并进入交战！', 'damage');
+      showToastNotice('⚠️ 电脑思考超时(30秒)，已自动强制跳轮！');
+      try {
+        await engine.passTurn('enemy');
+      } catch (err) {
+        console.error('[AI Watchdog] Error passing enemy turn:', err);
+      }
+      render();
+    }
+  }, 30000);
+}
 const APP_VERSION = 'v2.5.0 Mobile · HD';
 
 const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; artImg: string; desc: string }[] = [
   { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.webp', desc: '随机选择一个强大的法师流派' },
-  { id: 'sorcery', nameCn: '巫术', icon: '🔮', artImg: './cards/Disintegrate.webp', desc: '经典巫术大师，拥有控制与伤害法术，掌握冥想与心智震撼' },
-  { id: 'necromancer', nameCn: '死灵', icon: '💀', artImg: './cards/MasterLich.webp', desc: '召唤哀嚎女妖、吸血鬼与巫妖领主，吸取敌人生命转化为己用' },
-  { id: 'cleric', nameCn: '战争牧师', icon: '✨', artImg: './cards/ArchAngel.webp', desc: '召唤圣骑士、十字军与大天使，擅长神圣护盾与群体圣疗' },
-  { id: 'mechanician', nameCn: '机械师', icon: '⚙️', artImg: './cards/SteamTank.webp', desc: '部署矮人工匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
-  { id: 'dominator', nameCn: '支配者', icon: '👁️', artImg: './cards/MindStealer.webp', desc: '操控萨满与阻尼塔削减敌方能量，召唤远古女巫与窃心魔' },
-  { id: 'chaosmaster', nameCn: '混沌大师', icon: '🌀', artImg: './cards/InsanianLord.webp', desc: '操控混沌维和者、狂战士、混沌投石机与死棘，极具爆发力' },
-  { id: 'illusionist', nameCn: '幻术师', icon: '🎭', artImg: './cards/PhantomWarrior.webp', desc: '操纵镜面反射之墙、幻像勇士与幽幻刺客，虚实转换制敌' },
-  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', artImg: './cards/GreaterDemon.webp', desc: '役使劣魔、恶果魔与大恶魔，施放自爆与地狱烈焰' },
-  { id: 'beastmaster', nameCn: '驯兽师', icon: '🐺', artImg: './cards/AncientDragon.webp', desc: '统御魔法仓鼠、狼獾、死亡之隼与远古巨龙，掌控全系野性灵能' },
-  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', artImg: './cards/ChronoHunter.webp', desc: '操纵时空猎人、时间闪击者、时间停止与时间之龙，掌控额外行动回合' },
-  { id: 'goblin', nameCn: '地精幻术', icon: '👺', artImg: './cards/GoblinHero.webp', desc: '统御哥布林英雄、爆破者、鼠疫入侵与袭掠军，战术机动与牌库破坏' },
-  { id: 'forest', nameCn: '森林', icon: '🌳', artImg: './cards/MagicRabbit.webp', desc: '疯狂隐士的森林流派：每回合放置一只不断壮大的魔法兔子，并以兔子之力驱动森林猛兽与古木仪式' },
-  { id: 'golem', nameCn: '魔匠', icon: '🗿', artImg: './cards/Golem.webp', desc: '魔匠师开局即拥有一只不受魔法与技能伤害的【魔像】，阵亡后立刻满血归位，并以军备升级与操纵师永久强化它' },
-  { id: 'cult', nameCn: '邪教', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '膜拜系的狂热信徒与死士以自伤换取力量，狂怒纪念碑让全军每回合多打一次，掠夺者则替全军承受伤害并封锁魔法' },
-  { id: 'blood', nameCn: '鲜血', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '血族卡牌以「N 点鲜血系能量 + 2N 点生命」双重付费，食尸鬼靠敌方尸体成长，审判者与惩戒者把伤痛化为暴力' },
+  { id: 'sorcery', nameCn: '秘奥学派', icon: '🔮', artImg: './cards/Disintegrate.webp', desc: '奥术至高法学，执掌虚空裂解与秘法炎弹，精通心神冥想与灵能燃烬' },
+  { id: 'necromancer', nameCn: '幽冥挽歌', icon: '💀', artImg: './cards/MasterLich.webp', desc: '役使凄号女妖、始祖夜魇与永夜巫妖，吸取敌方生机转化为死寂幽能' },
+  { id: 'cleric', nameCn: '圣殿骑士团', icon: '✨', artImg: './cards/ArchAngel.webp', desc: '召唤圣光骑士、远征十字军与炽天使长，掌握崇圣护盾与天界裁决' },
+  { id: 'mechanician', nameCn: '天工机枢', icon: '⚙️', artImg: './cards/SteamTank.webp', desc: '部署符文铳士、飞翼机傀与重型撼地铁骑，构建无懈可击的构装防线' },
+  { id: 'dominator', nameCn: '深渊心智', icon: '👁️', artImg: './cards/MindStealer.webp', desc: '操控镇能方尖碑削减敌方能量，役使渊谷魔女、夺智游魂与渊古泰坦' },
+  { id: 'chaosmaster', nameCn: '狂乱混沌', icon: '🌀', artImg: './cards/InsanianLord.webp', desc: '引动狂乱狂澜、狂暴死棘与混沌裂石机，爆发极具破坏性的混沌洪流' },
+  { id: 'illusionist', nameCn: '幻世星宫', icon: '🎭', artImg: './cards/PhantomWarrior.webp', desc: '操纵秘银镜壁、虚影斗士与影刃刺客，虚实转换、诱敌入惘' },
+  { id: 'demonologist', nameCn: '焦土魔契', icon: '🔥', artImg: './cards/GreaterDemon.webp', desc: '役使焦土劣魔、罪孽恶果魔与毁灭魔尊，施放烈焰献祭与焦土炎狱' },
+  { id: 'beastmaster', nameCn: '原初灵契', icon: '🐺', artImg: './cards/AncientDragon.webp', desc: '统御灵巧地灵兽、狂暴骨獾、逐风冥隼与太古苍龙，执掌万灵荒野神力' },
+  { id: 'chronomancer', nameCn: '永恒时序', icon: '⏳', artImg: './cards/ChronoHunter.webp', desc: '驱使时序逐行者、刹那闪击者、永恒停滞与岁月苍龙，掌控额外出牌先机' },
+  { id: 'goblin', nameCn: '潜影诡道', icon: '👺', artImg: './cards/GoblinHero.webp', desc: '统御荒野霸主、诡雷工兵、腐鼠集群与疾影突骑，专精战术机动与牌库破坏' },
+  { id: 'forest', nameCn: '苍翠林语', icon: '🌳', artImg: './cards/MagicRabbit.webp', desc: '荒野古老的林语流派：每回合孕育灵契幻兔，以幻兔灵力催发万木礼赞与群兽突击' },
+  { id: 'golem', nameCn: '巨神巨构', icon: '🗿', artImg: './cards/Golem.webp', desc: '开局即拥有免疫魔法与特技的【远古秘金魔像】，阵亡立刻满血归位，辅以符文强化永久筑牢防线' },
+  { id: 'cult', nameCn: '终焉血祀', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '狂热信徒与舍身圣者以自伤换取毁灭之力，狂怒祭碑赋予全军双重连击，绝断掠行者强力封禁魔法' },
+  { id: 'blood', nameCn: '猩红盛宴', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '血族秘法以「能量 + 鲜血生命」双重付费换取超模数值，腐食腐鬼吞噬死者，猩红裁决官将伤痛转化为审判' },
 ];
 
 // 虹光法师已从可选职业中移除；虹光造物（火山、祭坛、行军石、魔法学院、至尊元素…）不是任何流派的牌：
@@ -5396,10 +5498,22 @@ function renderCombatScreen(): string {
             </button>
 
             <!-- 6. 结束回合 (大尺寸主操作键) -->
-            <button class="combat-strip-item btn-end-turn" id="btn-end-turn" ${engine.activeTurn !== 'player' || engine.isCombatPhase ? 'disabled' : ''} title="结束己方回合并开始交战">
-              <span class="strip-icon">⚔️</span>
-              <span class="strip-text">${engine.activeTurn === 'player' ? '结束回合' : '思考中'}</span>
-            </button>
+            ${engine.activeTurn === 'player' ? `
+              <button class="combat-strip-item btn-end-turn" id="btn-end-turn" ${engine.isCombatPhase ? 'disabled' : ''} title="结束己方回合并开始交战">
+                <span class="strip-icon">⚔️</span>
+                <span class="strip-text">结束回合</span>
+              </button>
+            ` : (engine.activeTurn === 'enemy' && !engine.isLanGame ? `
+              <button class="combat-strip-item btn-end-turn btn-force-skip-enemy" id="btn-force-skip-enemy" title="电脑正在思考...（超时30秒将自动跳轮，您亦可点击立即跳过）">
+                <span class="strip-icon">⏳</span>
+                <span class="strip-text">跳过敌方</span>
+              </button>
+            ` : `
+              <button class="combat-strip-item btn-end-turn" id="btn-end-turn" disabled title="正在结算或对方行动">
+                <span class="strip-icon">⚔️</span>
+                <span class="strip-text">思考中</span>
+              </button>
+            `)}
           `}
         </div>
 
@@ -5771,16 +5885,16 @@ function renderBattlefieldRulesModal(): string {
   let bodyHtml = '';
 
   if (currentBattleSource === 'league') {
-    const opp = (tournamentData as any[]).find((t: any) => t.name === engine.enemy.name);
-    const ruleText = engine.leagueRule || opp?.rule || '无特殊战规，遵循常规联赛决斗规则。';
+    const opp = (tournamentData as any[]).find((t: any) => t.cnName === engine.enemy.name || t.engName === engine.enemy.name || t.name === engine.enemy.name);
+    const ruleText = (engine.leagueRule || opp?.rule || '无特殊战规，遵循常规联赛决斗规则。').replace(/\r?\n/g, ' ');
     const oppClassObj = HERO_CLASSES.find(c => c.id === engine.enemy.className);
-    title = `英雄联赛 · 特殊战规 (${engine.enemy.name})`;
+    title = `英雄大师赛 · 专属特技战规 (${engine.enemy.name})`;
     bodyHtml = `
       <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:12px; color:#5c2c10; font-weight:900;">
         对手：${engine.enemy.name} · ${oppClassObj?.nameCn || engine.enemy.className} (第 ${activeLeague?.currentMatch || 1} 场)
       </div>
       <div style="background:rgba(142,114,58,0.18); border-left:4px solid #8e723a; padding:12px 16px; border-radius:6px; font-size:clamp(16px, 1.3vw, 20px); line-height:1.65; color:#221508; font-weight:800;">
-        ⚡ <strong>特殊规则：</strong>${ruleText}
+        ⚡ <strong>专属特技：</strong>${ruleText}
       </div>
     `;
   } else if (currentBattleSource === 'campaign') {
@@ -6292,24 +6406,24 @@ function renderLeagueOpponentAdviceModal(): string {
       tip: '起手优先抓取坚固阻挡随从与低费解场牌，只要撑过前 4 回合即胜券在握。',
     },
     forest: {
-      strengths: '每回合免费放置的【魔法兔子】会永久成长，暴怒海狸、复仇浣熊与森林仪式都以兔子攻击力结算收益。',
-      weaknesses: '兔子只有 10 点生命，一旦被清除，所有以 X 结算的卡牌收益骤降。',
-      tip: '优先用单体伤害法术秒杀【魔法兔子】，迫使其以 0 攻的【森林饿狼】或空转的森林仪式浪费资源。',
+      strengths: '每回合免费放置的【灵契幻兔】会永久成长，筑坝狂狸、狡黠林浣与万木礼赞都以幻兔攻击力结算收益。',
+      weaknesses: '幻兔只有 10 点生命，一旦被清除，所有以 X 结算的卡牌收益骤降。',
+      tip: '优先用单体伤害法术秒杀【灵契幻兔】，迫使其以 0 攻的【幽林饿狼】或空转的万木礼赞浪费资源。',
     },
     golem: {
-      strengths: '开局即有一只不受魔法与技能伤害的【魔像】，阵亡后会满血归位（代价仅 10 点生命），军备升级与操纵师可永久堆高它的攻击力。',
+      strengths: '开局即有一只不受魔法与技能伤害的【远古秘金魔像】，阵亡后会满血归位（代价仅 10 点生命），符文装甲强化与驭像工匠可永久堆高它的攻击力。',
       weaknesses: '魔像每次阵亡都要付出 10 点生命，反复阵亡会迅速掏空本体；其余卡牌多为辅助，本身威胁不高。',
-      tip: '用高攻生物反复击杀【魔像】逼迫其不断支付 10 点生命，并优先清掉【魔像掌控者】以阻止魔像每回合攻击两次。',
+      tip: '用高攻生物反复击杀【远古秘金魔像】逼迫其不断支付 10 点生命，并优先清掉【巨神总监】以阻止魔像每回合攻击两次。',
     },
     cult: {
-      strengths: '狂怒纪念碑让全军每回合多攻击一次，狂热死士攻击力每回合 +2 永续成长，掠夺者既替全军承伤又能挡住对手的取巧打法。',
-      weaknesses: '狂热死士每造成一次伤害就自损等量生命，纪念碑也随全军输出不断流失生命，整体靠自伤换强度极易自爆。',
-      tip: '用低伤害的小生物「喂」给【狂热死士】与【狂怒纪念碑】逼其自损；面对【掠夺者】时改用生物强攻而非魔法，并集火点掉纪念碑。',
+      strengths: '狂怒祭碑让全军每回合多攻击一次，舍身圣者攻击力每回合 +2 永续成长，绝断掠行者既替全军承伤又能挡住对手的取巧打法。',
+      weaknesses: '舍身圣者每造成一次伤害就自损等量生命，祭碑也随全军输出不断流失生命，整体靠自伤换强度极易自爆。',
+      tip: '用低伤害的小生物「喂」给【舍身圣者】与【狂怒祭碑】逼其自损；面对【绝断掠行者】时改用生物强攻而非魔法，并集火点掉祭碑。',
     },
     blood: {
-      strengths: '所有血族卡牌都是「能量 + 生命」双重付费，因此同费下数值远超常规：食尸鬼靠敌方尸体无限成长，审判者让对格生物承伤翻倍，惩戒者与血之秘术师把伤痛化为攻击力。',
-      weaknesses: '每次施法都要付出生命，本体极易被自己掏空；审判者、血之秘术师等核心都依赖对格或对方本体受创才有收益。',
-      tip: '保持本体高血量、用高攻生物反复压制【审判者】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
+      strengths: '所有血族卡牌都是「能量 + 生命」双重付费，因此同费下数值远超常规：腐食腐鬼靠敌方尸体无限成长，猩红裁决官让对格生物承伤翻倍，苦痛惩罚者与鲜血贤者把伤痛化为攻击力。',
+      weaknesses: '每次施法都要付出生命，本体极易被自己掏空；猩红裁决官、鲜血贤者等核心都依赖对格或对方本体受创才有收益。',
+      tip: '保持本体高血量、用高攻生物反复压制【猩红裁决官】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
     },
   };
 
@@ -6904,6 +7018,7 @@ export function render() {
   if (logScroll) {
     logScroll.scrollTop = logScroll.scrollHeight;
   }
+  updateAiTurnWatchdog();
 }
 
 function attachEventListeners() {
@@ -7953,6 +8068,29 @@ function attachEventListeners() {
     }
   });
 
+  document.getElementById('btn-force-skip-enemy')?.addEventListener('click', async () => {
+    if (isActionPending) return;
+    if (engine.activeTurn === 'enemy' && !engine.gameOver && !engine.isLanGame) {
+      sound.play('click');
+      isActionPending = true;
+      if (aiTurnWatchdogTimer) {
+        clearTimeout(aiTurnWatchdogTimer);
+        aiTurnWatchdogTimer = null;
+      }
+      aiAnnouncedCard = null;
+      engine.log('⚡ 【指挥官干预】已手动强制跳过电脑对手的回合！', 'heal');
+      showToastNotice('⚡ 已强制跳过电脑回合！');
+      try {
+        await engine.passTurn('enemy');
+      } catch (err) {
+        console.error('Error forcing skip:', err);
+      } finally {
+        isActionPending = false;
+        render();
+      }
+    }
+  });
+
   // Hand card clicks
   document.querySelectorAll('.combat-hand-card-item').forEach((el) => {
     const cardId = (el as HTMLElement).dataset.cardId!;
@@ -8837,9 +8975,8 @@ function attachEventListeners() {
     currentBattleSource = 'league';
     sound.playBgm(getCombatBgmForCurrentBattle());
     const curOpponent = getNextOpponentForLeague();
-    // 英雄联赛同样引入战场场景（含特殊造物场景）：
-    // 场景规则随引擎生效，对手专属规则作为附加 flavor 文案追加。
     const leagueScenario = getLeagueScenarioForCurrentMatch();
+    currentBattlefieldTheme = leagueScenario.theme || 'citadel';
     const pClass = activeLeague.standings.find((s) => s.isPlayer)?.className || 'cleric';
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: activeLeague.playerName,
@@ -8848,12 +8985,12 @@ function attachEventListeners() {
       enemyFace: curOpponent.face,
       enemyClass: curOpponent.className,
       difficulty: activeLeague.difficulty || '普通',
-      ...buildScenarioEngineOptions(leagueScenario),
+      ...buildLeagueOpponentEngineOptions(curOpponent, leagueScenario),
     });
     setupEngineCallbacks();
     currentView = 'battle';
     render();
-    showToastNotice(`🏆 联赛开战！【${curOpponent.cnName}】· 战场【${leagueScenario.name}】`);
+    showToastNotice(`🏆 联赛开战！对决【${curOpponent.cnName}】· 战场环境【${leagueScenario.name}】`);
   });
 
   document.getElementById('btn-league-advice')?.addEventListener('click', () => {
