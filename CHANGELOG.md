@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-17
+
+- **官方游戏艺术宣传海报纯净版焕新（Official Promotional Poster Cleanup & Pure Artwork）**：
+  - **去除商业化条幅**：全面剔除海报底部横跨画面的「AVAILABLE NOW | PS5 | XBOX | PC | EPIC FANTASY RPG | ELEMENTALREALMS.COM」发行信息条幅，完整保留古老石阶浮雕、魔能法阵与辉光流转，画面更纯粹、质感更古雅；
+  - **超高清无损更新**：更新根目录 `poster.jpg` 与 `poster.png`，与 `README.md` 置顶展示同步焕新。
+
 ## [Unreleased] - 2026-10-16
 
 - **官方游戏艺术宣传海报创制与 README 焕新（Official Promotional Poster & Documentation Overhaul）**：
