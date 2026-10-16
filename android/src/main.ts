@@ -4875,11 +4875,13 @@ function renderSingleDuelSetup(): string {
                 <button class="campaign-diff-btn" id="btn-duel-diff-next">▶</button>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:nowrap;">
-              <span class="single-duel-setting-label" style="white-space:nowrap;">🗺️ 场景:</span>
-              <div id="duel-scene-val-display" class="league-choice-val" style="min-width:85px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; background:rgba(0,0,0,0.3); border:1px solid #785a28; border-radius:6px; color:#ffd700; cursor:pointer;" title="点击展开场景图鉴选场">${curScenario.name}</div>
-              <button class="duel-stone-action-btn close" id="btn-duel-scene-grid" title="展开浏览所有战场场景与自定义场景" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px;">🗺️ 场景图鉴</button>
-              <button class="duel-stone-action-btn start" id="btn-duel-scene-ai-create" title="✨ AI 场景工坊" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px; color:#fef08a;">✨ AI工坊</button>
+            <div class="duel-scene-control-group">
+              <span class="single-duel-setting-label">🗺️ 场景:</span>
+              <div id="duel-scene-val-display" class="league-choice-val duel-scene-name-badge" title="点击展开场景图鉴选场">${curScenario.name}</div>
+              <div class="duel-scene-btn-group">
+                <button class="duel-stone-action-btn close" id="btn-duel-scene-grid" title="展开浏览所有战场场景与自定义场景">🗺️ 场景图鉴</button>
+                <button class="duel-stone-action-btn start" id="btn-duel-scene-ai-create" title="✨ AI 场景工坊">✨ AI工坊</button>
+              </div>
             </div>
           </div>
           <div class="single-duel-rule-desc">
@@ -4980,16 +4982,16 @@ function renderAiDuelSetupModal(): string {
         <div class="single-duel-title-banner" style="background: linear-gradient(180deg, #3b1d54 0%, #1c0e2b 100%); border-bottom: 2px solid #a855f7;">
           <div class="single-duel-title" style="color: #f3e8ff; display: flex; align-items: center; gap: 8px;">
             <span>🔮 AI 巅峰对决 · 神谕魔导师试炼</span>
-            <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.3); border: 1px solid #c084fc; color: #e9d5ff;">大模型心智驱动</span>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.3); border: 1px solid #c084fc; color: #e9d5ff; white-space: nowrap; flex-shrink: 0;">大模型心智驱动</span>
           </div>
           <button class="modal-close-btn" id="btn-close-ai-duel" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="返回主菜单">×</button>
         </div>
 
         <!-- AI SERVICE STATUS STRIP -->
-        <div style="background: ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.12)' : 'rgba(239, 68, 68, 0.14)'}; border: 1px solid ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.4)' : 'rgba(239, 68, 68, 0.4)'}; border-radius: 8px; padding: 6px 14px; margin: 10px 14px 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <div class="ai-duel-status-strip" style="background: ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.12)' : 'rgba(239, 68, 68, 0.14)'}; border: 1px solid ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.4)' : 'rgba(239, 68, 68, 0.4)'}; border-radius: 8px; padding: 6px 14px; margin: 8px 14px 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: ${aiCfg.enabled ? '#86efac' : '#fca5a5'}; font-weight: 700;">
             <span>${aiCfg.enabled ? '🟢' : '🔴'}</span>
-            <span>${aiCfg.enabled ? `大模型心智已激活 (${aiCfg.provider.toUpperCase()} · ${aiCfg.model})` : '大模型总开关当前处于关闭状态 (已切换为本地高速算法)'}</span>
+            <span>${aiCfg.enabled ? `大模型心智已激活 (${aiCfg.provider.toUpperCase()} · ${aiCfg.model})` : '大模型总开关当前处于关闭状态，无法开启对决'}</span>
           </div>
           <div style="display: flex; gap: 6px;">
             <button class="duel-stone-action-btn ${aiCfg.enabled ? 'close' : 'start'}" id="btn-ai-duel-quick-toggle-ai" style="padding: 2px 10px; height: 26px; font-size: 11.5px;">
@@ -5000,16 +5002,16 @@ function renderAiDuelSetupModal(): string {
 
         <!-- TOP CONTROLS: MATCH MODE & DIFFICULTY & SCENARIO -->
         <div class="single-duel-settings-panel" style="margin: 8px 14px 6px; padding: 10px 14px;">
-          <div class="single-duel-setting-row" style="flex-wrap: wrap; gap: 12px;">
+          <div class="single-duel-setting-row" style="gap: 12px; margin-bottom: 4px;">
             <!-- 1. 对战模式 -->
             <div style="display: flex; align-items: center; gap: 8px;">
               <span class="single-duel-setting-label">🎮 模式:</span>
               <div style="display: flex; gap: 4px;">
-                <button class="duel-stone-action-btn ${aiDuelMode === 'human_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-human" style="padding: 3px 10px; font-size: 12px; height: 30px;">
-                  ⚔️ 人机博弈 (挑战 AI)
+                <button class="duel-stone-action-btn ${aiDuelMode === 'human_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-human" style="padding: 3px 8px; font-size: 12px; height: 30px;">
+                  ⚔️ 人机博弈
                 </button>
-                <button class="duel-stone-action-btn ${aiDuelMode === 'ai_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-spectator" style="padding: 3px 10px; font-size: 12px; height: 30px; color: #fef08a;">
-                  👁️ 神谕观战 (双AI互弈)
+                <button class="duel-stone-action-btn ${aiDuelMode === 'ai_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-spectator" style="padding: 3px 8px; font-size: 12px; height: 30px; color: #fef08a;">
+                  👁️ 神谕观战
                 </button>
               </div>
             </div>
@@ -5023,13 +5025,17 @@ function renderAiDuelSetupModal(): string {
                 <button class="campaign-diff-btn" id="btn-ai-duel-diff-next">▶</button>
               </div>
             </div>
+          </div>
 
-            <!-- 3. 战场场景与场景工坊 -->
-            <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:nowrap;">
-              <span class="single-duel-setting-label" style="white-space:nowrap;">🗺️ 场景:</span>
-              <div id="ai-duel-scene-val" class="league-choice-val" style="min-width:85px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; background:rgba(0,0,0,0.3); border:1px solid #785a28; border-radius:6px; color:#ffd700; cursor:pointer;" title="点击展开场景图鉴选场">${curScenario.name}</div>
-              <button class="duel-stone-action-btn close" id="btn-ai-duel-scene-grid" title="展开浏览所有战场场景" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px;">🗺️ 场景图鉴</button>
-              <button class="duel-stone-action-btn start" id="btn-ai-duel-scene-ai-create" title="✨ AI 场景工坊" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px; color:#fef08a;">✨ AI工坊</button>
+          <!-- 3. 战场场景与场景工坊 -->
+          <div class="single-duel-setting-row" style="margin-bottom: 2px;">
+            <div class="duel-scene-control-group" style="width: 100%;">
+              <span class="single-duel-setting-label">🗺️ 场景:</span>
+              <div id="ai-duel-scene-val" class="league-choice-val duel-scene-name-badge" title="点击展开场景图鉴选场">${curScenario.name}</div>
+              <div class="duel-scene-btn-group">
+                <button class="duel-stone-action-btn close" id="btn-ai-duel-scene-grid" title="展开浏览所有战场场景">🗺️ 场景图鉴</button>
+                <button class="duel-stone-action-btn start" id="btn-ai-duel-scene-ai-create" title="✨ AI 场景工坊">✨ AI工坊</button>
+              </div>
             </div>
           </div>
 
@@ -5078,8 +5084,8 @@ function renderAiDuelSetupModal(): string {
           <!-- CENTER VS DUEL ACTION ZONE -->
           <div class="duel-vs-center-col">
             <div class="duel-vs-emblem" style="font-size: clamp(28px, 3.2vw, 44px); color: #c084fc; text-shadow: 0 0 15px rgba(192, 132, 252, 0.6);">VS</div>
-            <button class="campaign-pc-btn start-btn duel-center-start-btn" id="btn-start-ai-duel-action" style="background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%); border-color: #d8b4fe; box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);">
-              ${aiDuelMode === 'ai_vs_ai' ? '👁️ 开始神谕观战 ▶' : '⚡ 开启智脑对决 ▶'}
+            <button class="campaign-pc-btn start-btn duel-center-start-btn" id="btn-start-ai-duel-action" ${!aiCfg.enabled ? 'disabled style="background: linear-gradient(180deg, #4b5563 0%, #1f2937 100%) !important; border-color: #6b7280 !important; box-shadow: none !important; opacity: 0.6; cursor: not-allowed; color: #9ca3af !important;" title="大模型总开关当前处于关闭状态，无法开启对决。请先点击上方按钮开启大模型。"' : 'style="background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%); border-color: #d8b4fe; box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);"'}>
+              ${!aiCfg.enabled ? '🔒 需开启大模型 ▶' : (aiDuelMode === 'ai_vs_ai' ? '👁️ 开始神谕观战 ▶' : '⚡ 开启智脑对决 ▶')}
             </button>
           </div>
 
@@ -5218,26 +5224,26 @@ function renderScenarioGridPickerModal(): string {
 function renderAiScenarioModal(): string {
   return `
     <div class="modal-overlay" id="ai-scenario-modal-overlay">
-      <div class="stone-options-dialog" style="width:clamp(540px, 62vw, 840px); max-height:90vh; display:flex; flex-direction:column;">
+      <div class="stone-options-dialog ai-scenario-modal-dialog">
         <div class="options-header-banner" style="background: linear-gradient(90deg, #3b0764 0%, #6b21a8 50%, #3b0764 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
           <div class="options-title-text" style="color:#fef08a;">✨ AI 场景创世造物神殿</div>
           <button class="modal-close-btn" id="btn-close-ai-scenario" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
         </div>
 
-        <div style="flex:1; overflow-y:auto; padding:clamp(14px, 2vh, 22px); display:flex; flex-direction:column; gap:14px;">
-          <div style="font-size:13.5px; color:#3b1e06; line-height:1.5; font-weight:700;">
+        <div class="ai-scenario-modal-scroll" style="flex:1; min-height:0; overflow-y:auto; padding:clamp(12px, 1.8vh, 20px); display:flex; flex-direction:column; gap:12px;">
+          <div class="ai-scenario-intro-tip" style="font-size:13px; color:#3b1e06; line-height:1.45; font-weight:700;">
             描述您心中的奇幻战场法则（例如环境背景、元素亲和、开局预置随从或生命值），大模型将为您自动构筑并在单局对战中即刻生效游玩！
           </div>
 
           <!-- Prompt Input -->
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <span style="font-size:13px; font-weight:900; color:#4a2810;">构想描述 / 提示词：</span>
-            <textarea id="ai-scenario-prompt-input" rows="3" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.96); border:2px solid #8e723a; border-radius:8px; padding:10px; font-size:14.5px; font-weight:700; color:#180b02; resize:vertical;" placeholder="例如：极寒冰封王座之巅，寒风呼啸，双方开局各有一尊寒冰守卫护场，生命上限70，水系能量充沛...">${aiScenarioPromptInput}</textarea>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <span style="font-size:12.5px; font-weight:900; color:#4a2810;">构想描述 / 提示词：</span>
+            <textarea id="ai-scenario-prompt-input" rows="3" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.96); border:2px solid #8e723a; border-radius:8px; padding:8px 10px; font-size:13.5px; font-weight:700; color:#180b02; resize:vertical;" placeholder="例如：极寒冰封王座之巅，寒风呼啸，双方开局各有一尊寒冰守卫护场，生命上限70，水系能量充沛...">${aiScenarioPromptInput}</textarea>
           </div>
 
           <!-- Quick Presets -->
-          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-            <span style="font-size:13px; font-weight:900; color:#4a2810;">灵感预设：</span>
+          <div class="ai-scenario-presets-wrap" style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            <span style="font-size:12.5px; font-weight:900; color:#4a2810;">灵感预设：</span>
             <button class="btn-ai-scene-preset" data-preset="冰雪极寒雪原，暴风雪呼啸，水系能量+2，双方槽位2预置【寒冰守卫】，生命值70">❄️ 极地冰封王座</button>
             <button class="btn-ai-scene-preset" data-preset="烈焰地心熔炉深渊，岩浆翻滚，火系能量+2，双方槽位0预置【火焰祭司】，生命值50">🌋 远古地心锻炉</button>
             <button class="btn-ai-scene-preset" data-preset="天界狂雷雷霆之巅，电闪雷鸣，气系能量+3，双方槽位3预置【狮鹫】，双方生命值60">⚡ 苍穹狂雷圣峰</button>
@@ -5245,8 +5251,8 @@ function renderAiScenarioModal(): string {
           </div>
 
           <!-- Generate Action -->
-          <div style="display:flex; justify-content:center; margin-top:4px;">
-            <button class="campaign-pc-btn start-btn" id="btn-trigger-ai-scene-gen" style="padding:8px 32px; font-size:15px; font-weight:900;" ${aiScenarioLoading ? 'disabled' : ''}>
+          <div style="display:flex; justify-content:center; margin-top:2px;">
+            <button class="campaign-pc-btn start-btn" id="btn-trigger-ai-scene-gen" style="padding:8px 30px; font-size:14.5px; font-weight:900;" ${aiScenarioLoading ? 'disabled' : ''}>
               ${aiScenarioLoading ? '⚡ 正在构思奇幻战场法则与造物数据...' : '🔮 召唤 AI 构筑场景'}
             </button>
           </div>
@@ -6265,10 +6271,12 @@ function renderCombatScreen(): string {
                   <div class="combat-hero-name-plate">
                     <span class="combat-hero-hp enemy">${e.hp}</span>
                     <span class="combat-hero-name" title="${e.name}">${e.name}</span>
-                    ${engine.activeTurn === 'enemy' && !engine.gameOver ? `
-                      <span class="turn-timer-badge enemy" id="turn-timer-enemy" title="敌方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
-                    ` : ''}
-                    <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
+                    <div class="combat-hero-status-badges">
+                      ${engine.activeTurn === 'enemy' && !engine.gameOver ? `
+                        <span class="turn-timer-badge enemy" id="turn-timer-enemy" title="敌方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
+                      ` : ''}
+                      <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -6299,10 +6307,12 @@ function renderCombatScreen(): string {
                 <div class="combat-hero-name-plate">
                   <span class="combat-hero-hp player">${p.hp}</span>
                   <span class="combat-hero-name" title="${p.name}">${p.name}</span>
-                  ${engine.activeTurn === 'player' && !engine.gameOver ? `
-                    <span class="turn-timer-badge player" id="turn-timer-player" title="己方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
-                  ` : ''}
-                  <span class="combat-hero-class-tag player">${pSpecialName}</span>
+                  <div class="combat-hero-status-badges">
+                    ${engine.activeTurn === 'player' && !engine.gameOver ? `
+                      <span class="turn-timer-badge player" id="turn-timer-player" title="己方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
+                    ` : ''}
+                    <span class="combat-hero-class-tag player">${pSpecialName}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -7735,6 +7745,12 @@ function renderGameOverModal(): string {
 let activeBattleBgm: string = '';
 
 function startAiDuelBattle() {
+  if (!getAiConfig().enabled) {
+    sound.play('error');
+    showToastNotice('⚠️ 大模型总开关当前处于关闭状态，无法开启对决！请先开启大模型。');
+    return;
+  }
+
   currentBattleSource = 'ai_duel';
   resetBattleBanterSession();
   activeEnemyBanter = null;
