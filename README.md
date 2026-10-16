@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Elemental Realms Banner](./android/public/ui/Paper.png)
+<img src="./poster.jpg" alt="Elemental Realms Official Promotional Poster" width="460" style="border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,0.85); margin-bottom: 12px;" />
 
 **古典奇幻油画美学 · 六槽位深度博弈 · 真·大模型战术下棋 · 跨平台魔导对决卡牌游戏**
 

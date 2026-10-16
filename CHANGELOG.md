@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased] - 2026-10-16
 
+- **官方游戏艺术宣传海报创制与 README 焕新（Official Promotional Poster & Documentation Overhaul）**：
+  - **古典奇幻对决视觉海报**：结合元素秘境核心设定，在根目录生成高精油画游戏宣传海报（`poster.jpg` / `poster.png`），生动呈现两大魔导师统御火、水、风、土四系自然能量与虚空秘能的巅峰法阵对决；
+  - **文档全景重铸**：在 `README.md` 顶部置顶嵌入高清海报，全景阐述 3×2 六大游戏模式、真·大模型战术下棋决策、AI 场景造物工坊、实时动态费用与跨端构建工作流。
+
 - **战场场景图鉴网格高度扩充与专属纵向滚动条（Scenario Grid Modal Scrollbar & Height Expansion）**：
   - **卡片高度充裕与法则完整展示**：将场景卡片高度由原先挤压裁切的 40~50px 全面调高至 `min-height: 165px`，保证场景特色法则文字舒展完整展示，再也不会被卡片底框遮挡截断；
   - **专属鎏金竖向滚动条**：场景弹窗改用宽屏纵向滚动容器（`overflow-y: scroll`）并注入高对比鎏金立体滚动条，使全部 26 个场景以 3 列平滑顺畅滚动翻阅；
