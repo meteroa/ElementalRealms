@@ -1,0 +1,12 @@
+{
+  "name": "elemental-realms-workspace",
+  "private": true,
+  "description": "Elemental Realms - Monorepo root workspace scripts",
+  "scripts": {
+    "dev": "npm --prefix android run dev",
+    "build": "npm --prefix android run build",
+    "preview": "npm --prefix android run preview",
+    "electron:dev": "npm --prefix android run electron:dev",
+    "electron:build": "npm --prefix android run electron:build"
+  }
+}

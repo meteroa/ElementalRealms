@@ -1,3 +1,12 @@
+import {
+  getAiConfig,
+  saveAiConfig,
+  testAiConnection,
+  PROVIDER_PRESETS,
+  resetBattleBanterSession,
+  generateEnemyBanter,
+  generateAiBattlefieldScenario,
+} from './engine/ai_client';
 import './style.css';
 import { SpectromancerEngine } from './engine/game';
 import type { CardDef, BoardCreature, ElementType, HeroClass, CampaignLevel, NetworkUserProfile, NetworkMessage } from './types';
@@ -32,6 +41,7 @@ export function toRel(url: string | undefined): string {
 type ViewMode =
   | 'menu'
   | 'single_duel_setup'
+  | 'ai_duel_setup'
   | 'campaign'
   | 'battle'
   | 'league_setup'
@@ -50,7 +60,24 @@ let playerFaceIndex = 0; // Face1
 let playerClassIndex = 0; // 0 = 随机, 1..11 = classes
 let aiFaceIndex = 5; // Face6 (Archmage)
 let aiClassIndex = 0; // 0 = 随机
-let showClassGridPickerFor: 'player' | 'ai' | 'lan' | null = null;
+
+// Dedicated AI Duel Setup State
+let aiDuelMode: 'human_vs_ai' | 'ai_vs_ai' = 'human_vs_ai';
+let aiDuelAi1NameIdx = 0; // 阿姆哈特
+let aiDuelAi1FaceIdx = 0; // Face1
+let aiDuelAi1ClassIdx = 1; // Sorcery
+let aiDuelAi2NameIdx = 5; // 萨缪尔
+let aiDuelAi2FaceIdx = 5; // Face6
+let aiDuelAi2ClassIdx = 2; // Necromancer
+let aiDuelDifficultyIdx = 3; // 大师 (Master)
+let aiDuelScenarioIdx = 0;
+
+let showClassGridPickerFor: 'player' | 'ai' | 'lan' | 'ai_duel_1' | 'ai_duel_2' | null = null;
+let showScenarioGridPicker: boolean = false;
+let showAiScenarioModal: boolean = false;
+let aiScenarioLoading: boolean = false;
+let aiScenarioPreview: BattlefieldScenario | null = null;
+let aiScenarioPromptInput: string = '';
 let showHelpModal: boolean = false;
 let activeHelpTab: 'play' | 'combat' | 'deck' | 'classes' | 'modes' | 'cards' = 'play';
 let codexCardFilter: string = 'all';
@@ -598,6 +625,14 @@ function getScenarioRelicIds(scenario: BattlefieldScenario): string[] {
 const SINGLE_DUEL_DIFFICULTIES = ['容易', '普通', '困难', '大法师'];
 let singleDuelDifficultyIdx: number = 1; // Default '普通'
 
+export const MASTER_OPPONENT_NAMES = [
+  '阿姆哈特', '阿特朗', '弗沃尔', '迪莫夫', '杜斯坦', '魁塔纳',
+  '奥尔格德', '巴特拉斯', '伊格波特', '埃尔加', '富塔克', '欧拉夏',
+  '古斯塔夫', '弗拉德', '斯哈克', '卡尔托', '莫特斯', '卡珊德拉',
+  '加拉多', '大法师'
+];
+let singleDuelAiNameIdx: number = 0;
+
 // 可被选择的流派（不含「随机」占位与特殊战场造物）。
 function getSelectableClasses(): HeroClass[] {
   return HERO_CLASSES.filter((c) => c.id !== 'random').map((c) => c.id as HeroClass);
@@ -905,12 +940,43 @@ const BATTLEFIELD_SCENARIOS: BattlefieldScenario[] = [
   },
 ];
 
+const CUSTOM_SCENARIOS_STORAGE_KEY = 'custom_battle_scenarios';
+
+function getCustomScenarios(): BattlefieldScenario[] {
+  try {
+    const raw = localStorage.getItem(CUSTOM_SCENARIOS_STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return [];
+}
+
+function saveCustomScenario(sc: BattlefieldScenario): void {
+  const list = getCustomScenarios();
+  const idx = list.findIndex((s) => s.id === sc.id);
+  if (idx !== -1) {
+    list[idx] = sc;
+  } else {
+    list.unshift(sc);
+  }
+  localStorage.setItem(CUSTOM_SCENARIOS_STORAGE_KEY, JSON.stringify(list));
+}
+
+function deleteCustomScenario(id: string): void {
+  const list = getCustomScenarios().filter((s) => s.id !== id);
+  localStorage.setItem(CUSTOM_SCENARIOS_STORAGE_KEY, JSON.stringify(list));
+}
+
+function getAllScenarios(): BattlefieldScenario[] {
+  return [...BATTLEFIELD_SCENARIOS, ...getCustomScenarios()];
+}
+
 // 单局对战/联赛/局域网共用的场景装配。'random' 会先摇掉自身再抽取。
 function pickScenarioById(id: string): BattlefieldScenario {
-  const found = BATTLEFIELD_SCENARIOS.find((s) => s.id === id);
+  const allSc = getAllScenarios();
+  const found = allSc.find((s) => s.id === id);
   if (found && found.id !== 'random') return found;
-  const candidates = BATTLEFIELD_SCENARIOS.filter((s) => s.id !== 'random');
-  return candidates[Math.floor(Math.random() * candidates.length)] || BATTLEFIELD_SCENARIOS[0];
+  const candidates = allSc.filter((s) => s.id !== 'random');
+  return candidates[Math.floor(Math.random() * candidates.length)] || allSc[0];
 }
 
 // 场景 → 引擎构造参数。单局对战、英雄联赛与局域网共用同一条装配路径，
@@ -1256,62 +1322,166 @@ let editingDeck: CustomDeck = {
 let selectedBuilderSlotIdx = 0;
 let builderPoolFilter: ElementType = 'fire';
 let hoveredBuilderCard: CardDef | null = null;
-let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' = 'duel';
+let currentBattleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' | 'ai_duel' = 'duel';
 let showRulesModal = false;
 let showCombatLogsModal = false;
 let showCardDetailModal = false;
 let detailedCard: CardDef | null = null;
-let detailedCreatureSlot: { creature: BoardCreature; side: 'player' | 'enemy' } | null = null;
-let aiTurnWatchdogTimer: any = null;
+let activeEnemyBanter: string | null = null;
+let activeBanterSpeaker: string = '';
+let banterTimer: any = null;
+let banterPopClass = 'anim-pop';
 
-function updateAiTurnWatchdog() {
-  if (currentView !== 'battle' || engine.gameOver || engine.activeTurn !== 'enemy' || engine.isLanGame) {
-    if (aiTurnWatchdogTimer) {
-      clearTimeout(aiTurnWatchdogTimer);
-      aiTurnWatchdogTimer = null;
+function showEnemyBanter(banter: string, durationMs = 5000, speaker?: string) {
+  if (!banter || currentView !== 'battle') return;
+  if (banterTimer) {
+    clearTimeout(banterTimer);
+    banterTimer = null;
+  }
+  activeEnemyBanter = banter;
+  activeBanterSpeaker = speaker || '';
+  banterPopClass = 'anim-pop';
+  render();
+
+  // 350ms 后清除入场动效类，确保后续生命扣减、生物攻击等触发 render() 时不会重复弹跳闪烁！
+  setTimeout(() => {
+    banterPopClass = '';
+    const el = document.querySelector('.arcane-speech-scroll');
+    if (el) el.classList.remove('anim-pop');
+  }, 350);
+
+  banterTimer = setTimeout(() => {
+    if (activeEnemyBanter === banter) {
+      const el = document.querySelector('.arcane-speech-scroll');
+      if (el) {
+        el.classList.add('anim-fade-out');
+        setTimeout(() => {
+          if (activeEnemyBanter === banter) {
+            activeEnemyBanter = null;
+            banterTimer = null;
+            render();
+          }
+        }, 320);
+      } else {
+        activeEnemyBanter = null;
+        banterTimer = null;
+        render();
+      }
     }
+  }, durationMs);
+}
+
+let showAiApiKey = false;
+let detailedCreatureSlot: { creature: BoardCreature; side: 'player' | 'enemy' } | null = null;
+
+let turnTimerInterval: any = null;
+let currentTurnTimerWho: 'player' | 'enemy' | null = null;
+let currentTurnTimerRemaining: number = 30;
+
+function resetTurnTimer() {
+  if (turnTimerInterval) {
+    clearInterval(turnTimerInterval);
+    turnTimerInterval = null;
+  }
+  currentTurnTimerWho = null;
+  currentTurnTimerRemaining = 30;
+}
+
+function updateTurnTimer() {
+  if (currentView !== 'battle' || engine.gameOver) {
+    resetTurnTimer();
     return;
   }
 
-  // If already running a watchdog timer for the current enemy turn, keep it going
-  if (aiTurnWatchdogTimer) return;
-
-  // Start 30s watchdog countdown
-  aiTurnWatchdogTimer = setTimeout(async () => {
-    aiTurnWatchdogTimer = null;
-    if (currentView === 'battle' && !engine.gameOver && engine.activeTurn === 'enemy' && !engine.isLanGame) {
-      console.warn('[AI Watchdog] AI turn timed out after 30s. Automatically forcing passTurn to prevent freeze.');
-      aiAnnouncedCard = null;
-      engine.log('⚠️ 【防卡死机制】电脑对手思考超过 30 秒，系统已自动跳过其出牌阶段并进入交战！', 'damage');
-      showToastNotice('⚠️ 电脑思考超时(30秒)，已自动强制跳轮！');
-      try {
-        await engine.passTurn('enemy');
-      } catch (err) {
-        console.error('[AI Watchdog] Error passing enemy turn:', err);
-      }
-      render();
+  const activeWho = engine.activeTurn;
+  // If turn side switched, start a fresh 30s countdown
+  if (currentTurnTimerWho !== activeWho) {
+    if (turnTimerInterval) {
+      clearInterval(turnTimerInterval);
+      turnTimerInterval = null;
     }
-  }, 30000);
+    currentTurnTimerWho = activeWho;
+    currentTurnTimerRemaining = 30;
+
+    turnTimerInterval = setInterval(async () => {
+      if (currentView !== 'battle' || engine.gameOver || engine.activeTurn !== currentTurnTimerWho) {
+        resetTurnTimer();
+        return;
+      }
+
+      currentTurnTimerRemaining--;
+
+      // Direct DOM update (zero flicker!)
+      const badge = document.getElementById(`turn-timer-${currentTurnTimerWho}`);
+      if (badge) {
+        badge.textContent = `⏱️ ${currentTurnTimerRemaining}s`;
+        if (currentTurnTimerRemaining <= 10) {
+          badge.classList.add('urgent');
+        } else {
+          badge.classList.remove('urgent');
+        }
+      }
+
+      if (currentTurnTimerRemaining <= 0) {
+        resetTurnTimer();
+        if (engine.gameOver) return;
+
+        if (engine.activeTurn === 'player' && !engine.isPlayerAiControlled && !engine.isLanGame) {
+          console.warn('[Turn Timer] Player turn timed out after 30s. Automatically ending turn.');
+          sound.play('damage');
+          showToastNotice('⏱️ 回合思考超时 (30秒)，系统自动结束本回合！');
+          if (!isActionPending && !engine.gameOver) {
+            isActionPending = true;
+            aiAnnouncedCard = null;
+            try {
+              await engine.passTurn('player');
+            } catch (err) {
+              console.error('[Turn Timer] Error passing player turn:', err);
+            } finally {
+              isActionPending = false;
+            }
+            render();
+          }
+        } else if (engine.activeTurn === 'enemy' && !engine.isLanGame) {
+          console.warn('[Turn Timer] AI turn timed out after 30s. Automatically forcing passTurn.');
+          aiAnnouncedCard = null;
+          engine.log('⏳【裁判裁定】对手思考超时 (30秒)，系统自动推进战局进入交战！', 'damage');
+          showToastNotice('⏱️ 电脑对手思考超时 (30秒)，系统自动裁定跳轮！');
+          if (!isActionPending && !engine.gameOver) {
+            isActionPending = true;
+            try {
+              await engine.passTurn('enemy');
+            } catch (err) {
+              console.error('[Turn Timer] Error passing enemy turn:', err);
+            } finally {
+              isActionPending = false;
+            }
+            render();
+          }
+        }
+      }
+    }, 1000);
+  }
 }
 const APP_VERSION = 'v2.5.0 Mobile · HD';
 
 const HERO_CLASSES: { id: HeroClass | 'random'; nameCn: string; icon: string; artImg: string; desc: string }[] = [
   { id: 'random', nameCn: '随机', icon: '🎲', artImg: './cards/SupremeElemental.webp', desc: '随机选择一个强大的法师流派' },
-  { id: 'sorcery', nameCn: '秘奥学派', icon: '🔮', artImg: './cards/Disintegrate.webp', desc: '奥术至高法学，执掌虚空裂解与秘法炎弹，精通心神冥想与灵能燃烬' },
-  { id: 'necromancer', nameCn: '幽冥挽歌', icon: '💀', artImg: './cards/MasterLich.webp', desc: '役使凄号女妖、始祖夜魇与永夜巫妖，吸取敌方生机转化为死寂幽能' },
-  { id: 'cleric', nameCn: '圣殿骑士团', icon: '✨', artImg: './cards/ArchAngel.webp', desc: '召唤圣光骑士、远征十字军与炽天使长，掌握崇圣护盾与天界裁决' },
-  { id: 'mechanician', nameCn: '天工机枢', icon: '⚙️', artImg: './cards/SteamTank.webp', desc: '部署符文铳士、飞翼机傀与重型撼地铁骑，构建无懈可击的构装防线' },
-  { id: 'dominator', nameCn: '深渊心智', icon: '👁️', artImg: './cards/MindStealer.webp', desc: '操控镇能方尖碑削减敌方能量，役使渊谷魔女、夺智游魂与渊古泰坦' },
-  { id: 'chaosmaster', nameCn: '狂乱混沌', icon: '🌀', artImg: './cards/InsanianLord.webp', desc: '引动狂乱狂澜、狂暴死棘与混沌裂石机，爆发极具破坏性的混沌洪流' },
-  { id: 'illusionist', nameCn: '幻世星宫', icon: '🎭', artImg: './cards/PhantomWarrior.webp', desc: '操纵秘银镜壁、虚影斗士与影刃刺客，虚实转换、诱敌入惘' },
-  { id: 'demonologist', nameCn: '焦土魔契', icon: '🔥', artImg: './cards/GreaterDemon.webp', desc: '役使焦土劣魔、罪孽恶果魔与毁灭魔尊，施放烈焰献祭与焦土炎狱' },
-  { id: 'beastmaster', nameCn: '原初灵契', icon: '🐺', artImg: './cards/AncientDragon.webp', desc: '统御灵巧地灵兽、狂暴骨獾、逐风冥隼与太古苍龙，执掌万灵荒野神力' },
-  { id: 'chronomancer', nameCn: '永恒时序', icon: '⏳', artImg: './cards/ChronoHunter.webp', desc: '驱使时序逐行者、刹那闪击者、永恒停滞与岁月苍龙，掌控额外出牌先机' },
-  { id: 'goblin', nameCn: '潜影诡道', icon: '👺', artImg: './cards/GoblinHero.webp', desc: '统御荒野霸主、诡雷工兵、腐鼠集群与疾影突骑，专精战术机动与牌库破坏' },
-  { id: 'forest', nameCn: '苍翠林语', icon: '🌳', artImg: './cards/MagicRabbit.webp', desc: '荒野古老的林语流派：每回合孕育灵契幻兔，以幻兔灵力催发万木礼赞与群兽突击' },
-  { id: 'golem', nameCn: '巨神巨构', icon: '🗿', artImg: './cards/Golem.webp', desc: '开局即拥有免疫魔法与特技的【远古秘金魔像】，阵亡立刻满血归位，辅以符文强化永久筑牢防线' },
-  { id: 'cult', nameCn: '终焉血祀', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '狂热信徒与舍身圣者以自伤换取毁灭之力，狂怒祭碑赋予全军双重连击，绝断掠行者强力封禁魔法' },
-  { id: 'blood', nameCn: '猩红盛宴', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '血族秘法以「能量 + 鲜血生命」双重付费换取超模数值，腐食腐鬼吞噬死者，猩红裁决官将伤痛转化为审判' },
+  { id: 'sorcery', nameCn: '巫术法师', icon: '🔮', artImg: './cards/Disintegrate.webp', desc: '经典巫术法师，精通飞弹、裂解射线与冥想心能' },
+  { id: 'necromancer', nameCn: '死灵术士', icon: '💀', artImg: './cards/MasterLich.webp', desc: '召唤女妖、吸血鬼与巫妖，吸取敌人生机转化为死灵能量' },
+  { id: 'cleric', nameCn: '圣殿骑士', icon: '✨', artImg: './cards/ArchAngel.webp', desc: '召唤圣骑士、十字军与大天使，掌握神圣护盾与群体圣疗' },
+  { id: 'mechanician', nameCn: '机械工匠', icon: '⚙️', artImg: './cards/SteamTank.webp', desc: '部署矮人巧匠、火枪手、扑翼轰炸机与重型蒸汽坦克' },
+  { id: 'dominator', nameCn: '心灵支配', icon: '👁️', artImg: './cards/MindStealer.webp', desc: '操控萨满与减速塔压制敌方能量，役使支配女巫与窃心魔' },
+  { id: 'chaosmaster', nameCn: '混沌狂潮', icon: '🌀', artImg: './cards/InsanianLord.webp', desc: '驱使混沌狂战士、投石机与死棘刺客，爆发极强破坏力' },
+  { id: 'illusionist', nameCn: '幻术大师', icon: '🎭', artImg: './cards/PhantomWarrior.webp', desc: '操纵反射镜之墙、虚影勇士与幻影刺客，虚实莫测' },
+  { id: 'demonologist', nameCn: '恶魔学者', icon: '🔥', artImg: './cards/GreaterDemon.webp', desc: '役使劣魔、恶果魔与大恶魔，施放自爆献祭与地狱火' },
+  { id: 'beastmaster', nameCn: '荒野驯兽', icon: '🐺', artImg: './cards/AncientDragon.webp', desc: '统御魔法仓鼠、暴怒狼獾、凶猛战隼与远古巨龙' },
+  { id: 'chronomancer', nameCn: '时空术士', icon: '⏳', artImg: './cards/ChronoHunter.webp', desc: '驱使时空猎手、时间闪击者、时钟巨龙与时间停止，掌控额外回合' },
+  { id: 'goblin', nameCn: '哥布林军团', icon: '👺', artImg: './cards/GoblinHero.webp', desc: '统御哥布林英雄、爆破工兵、鼠群与强盗突骑，擅长偷牌与机动' },
+  { id: 'forest', nameCn: '密林德鲁伊', icon: '🌳', artImg: './cards/MagicRabbit.webp', desc: '荒野林语流派：每回合放置繁殖魔法兔子，以兔群之力召唤万木巨兽' },
+  { id: 'golem', nameCn: '钢铁魔像', icon: '🗿', artImg: './cards/Golem.webp', desc: '开局拥有免疫魔法与特技的【钢铁魔像】，阵亡立刻复活并可持续强化' },
+  { id: 'cult', nameCn: '狂热教徒', icon: '🕯️', artImg: './cards/Reaver.webp', desc: '狂热信徒以自伤换取狂暴力量，狂怒纪念碑赋予全军双重连击' },
+  { id: 'blood', nameCn: '鲜血贵族', icon: '🩸', artImg: './cards/VampireElder.webp', desc: '吸血鬼秘法以生命为代价换取超强战力，食尸鬼吞噬尸体，审判官以伤换伤' },
 ];
 
 // 虹光法师已从可选职业中移除；虹光造物（火山、祭坛、行军石、魔法学院、至尊元素…）不是任何流派的牌：
@@ -1569,6 +1739,7 @@ let engine = new SpectromancerEngine('sorcery');
 
 let selectedCard: CardDef | null = null;
 let inspectedCard: CardDef | null = null;
+let inspectedCardSide: 'player' | 'enemy' = 'player';
 let isActionPending = false;
 
 const app = document.getElementById('app')!;
@@ -4006,9 +4177,32 @@ async function playSpellVFX(
 }
 
 function setupEngineCallbacks() {
-  engine.onCardAnnouncement = async (_who, card) => {
+  engine.onCardAnnouncement = async (who, card) => {
+    if (showOptionsModal || showHelpModal || showRulesModal || showCombatLogsModal) {
+      return;
+    }
     aiAnnouncedCard = card;
     sound.play('showeff1');
+    if (who === 'enemy' && !engine.isLanGame) {
+      // 避免重复调用：若本回合大模型下棋决策已生成并展示了战意台词，坚决不发第二遍重复请求！
+      if (!activeEnemyBanter) {
+        const oppClassObj = HERO_CLASSES.find(c => c.id === engine.enemy.className);
+        generateEnemyBanter(
+          engine.enemy.name,
+          oppClassObj?.nameCn || '法师',
+          engine.enemy.hp,
+          engine.player.hp,
+          `打出【${card.nameCn}】`
+        ).then((banter) => {
+          if (banter && currentView === 'battle') {
+            engine.log(`💬【${engine.enemy.name}】：“${banter}”`, 'heal');
+            showEnemyBanter(banter, 5000);
+          }
+        }).catch((err) => {
+          console.warn('[AI Banter] Failed:', err);
+        });
+      }
+    }
     await new Promise<void>((resolve) => {
       let done = false;
       const t = setTimeout(() => {
@@ -4066,6 +4260,14 @@ function setupEngineCallbacks() {
   };
 
   engine.onStateChange = () => render();
+
+  engine.onAiBanter = (banter: string, who?: 'player' | 'enemy') => {
+    if (banter && currentView === 'battle') {
+      const speakerName = who === 'player' ? engine.player.name : engine.enemy.name;
+      engine.log(`💬【${speakerName}】：“${banter}”`, 'heal');
+      showEnemyBanter(banter, 4500, speakerName);
+    }
+  };
 
   engine.onDamageEffect = (side, slot, amount) => {
     let targetEl: HTMLElement | null = null;
@@ -4142,6 +4344,33 @@ function setupEngineCallbacks() {
       }, 420);
     }
   };
+
+  // Trigger opening banter if AI is enabled
+  if (!engine.isLanGame) {
+    resetBattleBanterSession();
+    if (banterTimer) {
+      clearTimeout(banterTimer);
+      banterTimer = null;
+    }
+    activeEnemyBanter = null;
+    const oppClassObj = HERO_CLASSES.find(c => c.id === engine.enemy.className);
+    setTimeout(() => {
+      if (currentView === 'battle' && !engine.gameOver) {
+        generateEnemyBanter(
+          engine.enemy.name,
+          oppClassObj?.nameCn || '法师',
+          engine.enemy.hp,
+          engine.player.hp,
+          '对决开局挑衅'
+        ).then((banter) => {
+          if (banter && currentView === 'battle') {
+            engine.log(`💬【${engine.enemy.name}】：“${banter}”`, 'heal');
+            showEnemyBanter(banter, 4500);
+          }
+        }).catch(() => {});
+      }
+    }, 1200);
+  }
 }
 
 setupEngineCallbacks();
@@ -4268,6 +4497,19 @@ function renderMainMenu(): string {
               <div class="mode-card-desc">同一 Wi-Fi 或热点下 4 位房间码即时双人对决</div>
             </div>
             <div class="mode-card-arrow">▶</div>
+          </div>
+
+          <!-- 6. AI Peak Showdown (大模型巅峰对决) -->
+          <div class="mobile-mode-card ai-duel" id="btn-menu-ai-duel">
+            <div class="mode-card-badge purple">大模型AI</div>
+            <div class="mode-card-icon-wrap" style="background:linear-gradient(135deg, rgba(168, 85, 247, 0.25) 0%, rgba(0, 0, 0, 0.6) 100%); border-color:rgba(192, 132, 252, 0.6);">
+              <span class="mode-card-icon">🔮</span>
+            </div>
+            <div class="mode-card-body">
+              <div class="mode-card-title" style="color:#f3e8ff;">AI 巅峰对决</div>
+              <div class="mode-card-desc">大模型心智博弈 · 支持玩家对决与双AI上帝观战</div>
+            </div>
+            <div class="mode-card-arrow" style="color:#d8b4fe;">▶</div>
           </div>
         </div>
       </div>
@@ -4530,13 +4772,88 @@ function renderLanDisconnectModal(): string {
   `;
 }
 
+function updateSingleDuelInPlace() {
+  const overlay = document.getElementById('single-duel-overlay');
+  if (!overlay) return;
+
+  // 1. 难度就地刷新
+  const diffEl = overlay.querySelector('.league-choice-val.diff');
+  if (diffEl) diffEl.textContent = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
+
+  // 2. 场景与造物法则就地刷新
+  const allSc = getAllScenarios();
+  const curScenario = pickScenarioById(allSc[singleDuelScenarioIdx]?.id || 'sanctuary');
+  const sceneNameEl = overlay.querySelector('#duel-scene-val-display') || overlay.querySelector('#btn-duel-scene-prev + .league-choice-val');
+  if (sceneNameEl) sceneNameEl.textContent = curScenario.name;
+  const ruleEl = overlay.querySelector('.single-duel-rule-desc');
+  if (ruleEl) ruleEl.innerHTML = `⚡ <strong>场景法则：</strong>${curScenario.rule}`;
+
+  const relicContainer = overlay.querySelector('.single-duel-relics-container');
+  const relicIds = getScenarioRelicIds(curScenario);
+  if (relicContainer) {
+    if (!relicIds.length) {
+      relicContainer.innerHTML = '';
+      (relicContainer as HTMLElement).style.display = 'none';
+    } else {
+      const relics = relicIds
+        .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+        .filter((c): c is CardDef => !!c);
+      (relicContainer as HTMLElement).style.display = 'flex';
+      relicContainer.innerHTML = `
+        <span style="font-size:11px; color:#fbbf24; font-weight:800;">🌈 预置造物（双方阵线）:</span>
+        ${relics.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}｜${c.desc}" style="width:30px; height:42px; object-fit:contain; border-radius:5px; background:rgba(255,255,255,0.07); cursor:help;" />`).join('')}
+      `;
+    }
+  }
+
+  // 3. 玩家头像与流派就地刷新
+  const pFaceUrl = `./faces/Face${playerFaceIndex + 1}.jpg`;
+  const pImg = overlay.querySelector('#btn-player-face-prev + .duel-avatar-wrap .duel-avatar-img') as HTMLImageElement;
+  if (pImg) pImg.src = pFaceUrl;
+  const pFaceInd = overlay.querySelector('#btn-player-face-prev + .duel-avatar-wrap .duel-face-indicator');
+  if (pFaceInd) pFaceInd.textContent = `头像 ${playerFaceIndex + 1}/${TOTAL_FACES}`;
+
+  const pClassObj = HERO_CLASSES[playerClassIndex];
+  const pClassBadge = overlay.querySelector('#btn-player-class-pick');
+  if (pClassBadge) {
+    pClassBadge.innerHTML = `<img src="${toRel(pClassObj.artImg)}" class="duel-class-inline-img" alt="${pClassObj.nameCn}" /> ${pClassObj.nameCn}`;
+  }
+  const pClassDesc = overlay.querySelector('.duel-combatant-card:first-child .duel-class-desc');
+  if (pClassDesc) pClassDesc.textContent = pClassObj.desc;
+
+  // 4. AI 尊名、头像与流派就地刷新
+  const aiChosenName = MASTER_OPPONENT_NAMES[singleDuelAiNameIdx % MASTER_OPPONENT_NAMES.length];
+  const aiNameEl = overlay.querySelector('#duel-ai-name-val');
+  if (aiNameEl) aiNameEl.textContent = aiChosenName;
+
+  const aiFaceUrl = `./faces/Face${aiFaceIndex + 1}.jpg`;
+  const aiImg = overlay.querySelector('#btn-ai-face-prev + .duel-avatar-wrap .duel-avatar-img') as HTMLImageElement;
+  if (aiImg) aiImg.src = aiFaceUrl;
+  const aiFaceInd = overlay.querySelector('#btn-ai-face-prev + .duel-avatar-wrap .duel-face-indicator');
+  if (aiFaceInd) aiFaceInd.textContent = `头像 ${aiFaceIndex + 1}/${TOTAL_FACES}`;
+
+  const aiClassObj = HERO_CLASSES[aiClassIndex];
+  const aiClassBadge = overlay.querySelector('#btn-ai-class-pick');
+  if (aiClassBadge) {
+    aiClassBadge.innerHTML = `<img src="${toRel(aiClassObj.artImg)}" class="duel-class-inline-img" alt="${aiClassObj.nameCn}" /> ${aiClassObj.nameCn}`;
+  }
+  const aiClassDesc = overlay.querySelector('.duel-combatant-card:last-child .duel-class-desc');
+  if (aiClassDesc) aiClassDesc.textContent = aiClassObj.desc;
+}
+
 function renderSingleDuelSetup(): string {
   const pClassObj = HERO_CLASSES[playerClassIndex];
   const aiClassObj = HERO_CLASSES[aiClassIndex];
 
   const pFaceUrl = `./faces/Face${playerFaceIndex + 1}.jpg`;
   const aiFaceUrl = `./faces/Face${aiFaceIndex + 1}.jpg`;
-  const curScenario = BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx];
+  const allSc = getAllScenarios();
+  const curScenario = allSc[singleDuelScenarioIdx] || allSc[0];
+  const curAiName = MASTER_OPPONENT_NAMES[singleDuelAiNameIdx % MASTER_OPPONENT_NAMES.length];
+  const relicIds = getScenarioRelicIds(curScenario);
+  const relics = relicIds
+    .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+    .filter((c): c is CardDef => !!c);
 
   return `
     <div class="main-menu-view" style="filter: brightness(0.4) blur(4px);"></div>
@@ -4558,29 +4875,20 @@ function renderSingleDuelSetup(): string {
                 <button class="campaign-diff-btn" id="btn-duel-diff-next">▶</button>
               </div>
             </div>
-            <div style="display:flex; align-items:center; gap:6px; flex:1; justify-content:flex-end;">
-              <span class="single-duel-setting-label">🗺️ 战场场景:</span>
-              <div class="league-choice-stepper" style="margin:0;">
-                <button class="campaign-diff-btn" id="btn-duel-scene-prev">◀</button>
-                <span class="league-choice-val" style="min-width:120px; text-align:center;">${curScenario.name}</span>
-                <button class="campaign-diff-btn" id="btn-duel-scene-next">▶</button>
-              </div>
+            <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:nowrap;">
+              <span class="single-duel-setting-label" style="white-space:nowrap;">🗺️ 场景:</span>
+              <div id="duel-scene-val-display" class="league-choice-val" style="min-width:85px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; background:rgba(0,0,0,0.3); border:1px solid #785a28; border-radius:6px; color:#ffd700; cursor:pointer;" title="点击展开场景图鉴选场">${curScenario.name}</div>
+              <button class="duel-stone-action-btn close" id="btn-duel-scene-grid" title="展开浏览所有战场场景与自定义场景" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px;">🗺️ 场景图鉴</button>
+              <button class="duel-stone-action-btn start" id="btn-duel-scene-ai-create" title="✨ AI 场景工坊" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px; color:#fef08a;">✨ AI工坊</button>
             </div>
           </div>
           <div class="single-duel-rule-desc">
             ⚡ <strong>场景法则：</strong>${curScenario.rule}
           </div>
-          ${(() => {
-            const relicIds = getScenarioRelicIds(curScenario);
-            if (!relicIds.length) return '';
-            const relics = relicIds
-              .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
-              .filter((c): c is CardDef => !!c);
-            return `<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 10px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:8px;">
-              <span style="font-size:11px; color:#fbbf24; font-weight:800;">🌈 预置造物（双方阵线）:</span>
-              ${relics.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}｜${c.desc}" style="width:30px; height:42px; object-fit:contain; border-radius:5px; background:rgba(255,255,255,0.07); cursor:help;" />`).join('')}
-            </div>`;
-          })()}
+          <div class="single-duel-relics-container" style="display: ${relicIds.length ? 'flex' : 'none'}; align-items:center; gap:8px; flex-wrap:wrap; padding:6px 10px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:8px;">
+            <span style="font-size:11px; color:#fbbf24; font-weight:800;">🌈 预置造物（双方阵线）:</span>
+            ${relics.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}｜${c.desc}" style="width:30px; height:42px; object-fit:contain; border-radius:5px; background:rgba(255,255,255,0.07); cursor:help;" />`).join('')}
+          </div>
         </div>
 
         <div class="duel-combatants-row">
@@ -4615,9 +4923,13 @@ function renderSingleDuelSetup(): string {
             </button>
           </div>
 
-          <!-- AI (大法师) -->
+          <!-- AI (电脑魔导师) -->
           <div class="duel-combatant-card">
-            <div class="duel-name-plate">大法师</div>
+            <div class="duel-name-plate ai-name-plate-interactive" style="display:flex; align-items:center; justify-content:center; gap:6px;">
+              <button class="duel-mini-arrow" id="btn-ai-name-prev" title="上一个魔导师尊名">◀</button>
+              <span id="duel-ai-name-val" style="min-width:76px; text-align:center; font-weight:800; color:#ffd700; cursor:pointer;" title="点击切换对手魔导师尊名">${curAiName}</span>
+              <button class="duel-mini-arrow" id="btn-ai-name-next" title="下一个魔导师尊名">▶</button>
+            </div>
             <div class="duel-avatar-picker">
               <button class="duel-arrow-btn" id="btn-ai-face-prev" title="上一个头像">◀</button>
               <div class="duel-avatar-wrap">
@@ -4643,9 +4955,181 @@ function renderSingleDuelSetup(): string {
   `;
 }
 
-function renderClassGridPickerModal(target: 'player' | 'ai' | 'lan'): string {
-  const currentIdx = target === 'player' ? playerClassIndex : (target === 'ai' ? aiClassIndex : lanPlayerClassIdx);
-  const targetLabel = target === 'player' ? '玩家' : (target === 'ai' ? '电脑对手' : '局域网对决');
+function renderAiDuelSetupModal(): string {
+  const allSc = getAllScenarios();
+  const curScenario = allSc[aiDuelScenarioIdx] || allSc[0];
+  const relicIds = getScenarioRelicIds(curScenario);
+  const relics = relicIds
+    .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+    .filter((c): c is CardDef => !!c);
+
+  const ai1Name = MASTER_OPPONENT_NAMES[aiDuelAi1NameIdx % MASTER_OPPONENT_NAMES.length];
+  const ai2Name = MASTER_OPPONENT_NAMES[aiDuelAi2NameIdx % MASTER_OPPONENT_NAMES.length];
+  const aiCfg = getAiConfig();
+
+  const pClassObj = HERO_CLASSES[aiDuelMode === 'human_vs_ai' ? playerClassIndex : aiDuelAi1ClassIdx] || HERO_CLASSES[1];
+  const eClassObj = HERO_CLASSES[aiDuelAi2ClassIdx] || HERO_CLASSES[2];
+
+  const leftFaceUrl = aiDuelMode === 'human_vs_ai' ? `./faces/Face${playerFaceIndex + 1}.jpg` : `./faces/Face${aiDuelAi1FaceIdx + 1}.jpg`;
+  const rightFaceUrl = `./faces/Face${aiDuelAi2FaceIdx + 1}.jpg`;
+
+  return `
+    <div class="main-menu-view" style="filter: brightness(0.35) blur(6px);"></div>
+    <div class="single-duel-overlay" id="ai-duel-overlay">
+      <div class="single-duel-frame" style="border: 2px solid rgba(192, 132, 252, 0.7); box-shadow: 0 0 35px rgba(168, 85, 247, 0.35), 0 20px 60px rgba(0,0,0,0.9);">
+        <div class="single-duel-title-banner" style="background: linear-gradient(180deg, #3b1d54 0%, #1c0e2b 100%); border-bottom: 2px solid #a855f7;">
+          <div class="single-duel-title" style="color: #f3e8ff; display: flex; align-items: center; gap: 8px;">
+            <span>🔮 AI 巅峰对决 · 神谕魔导师试炼</span>
+            <span style="font-size: 11px; padding: 2px 8px; border-radius: 4px; background: rgba(168,85,247,0.3); border: 1px solid #c084fc; color: #e9d5ff;">大模型心智驱动</span>
+          </div>
+          <button class="modal-close-btn" id="btn-close-ai-duel" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="返回主菜单">×</button>
+        </div>
+
+        <!-- AI SERVICE STATUS STRIP -->
+        <div style="background: ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.12)' : 'rgba(239, 68, 68, 0.14)'}; border: 1px solid ${aiCfg.enabled ? 'rgba(74, 222, 128, 0.4)' : 'rgba(239, 68, 68, 0.4)'}; border-radius: 8px; padding: 6px 14px; margin: 10px 14px 4px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: ${aiCfg.enabled ? '#86efac' : '#fca5a5'}; font-weight: 700;">
+            <span>${aiCfg.enabled ? '🟢' : '🔴'}</span>
+            <span>${aiCfg.enabled ? `大模型心智已激活 (${aiCfg.provider.toUpperCase()} · ${aiCfg.model})` : '大模型总开关当前处于关闭状态 (已切换为本地高速算法)'}</span>
+          </div>
+          <div style="display: flex; gap: 6px;">
+            <button class="duel-stone-action-btn ${aiCfg.enabled ? 'close' : 'start'}" id="btn-ai-duel-quick-toggle-ai" style="padding: 2px 10px; height: 26px; font-size: 11.5px;">
+              ${aiCfg.enabled ? '⚙ 模型与模式设置' : '⚡ 开启大模型'}
+            </button>
+          </div>
+        </div>
+
+        <!-- TOP CONTROLS: MATCH MODE & DIFFICULTY & SCENARIO -->
+        <div class="single-duel-settings-panel" style="margin: 8px 14px 6px; padding: 10px 14px;">
+          <div class="single-duel-setting-row" style="flex-wrap: wrap; gap: 12px;">
+            <!-- 1. 对战模式 -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="single-duel-setting-label">🎮 模式:</span>
+              <div style="display: flex; gap: 4px;">
+                <button class="duel-stone-action-btn ${aiDuelMode === 'human_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-human" style="padding: 3px 10px; font-size: 12px; height: 30px;">
+                  ⚔️ 人机博弈 (挑战 AI)
+                </button>
+                <button class="duel-stone-action-btn ${aiDuelMode === 'ai_vs_ai' ? 'start' : 'close'}" id="btn-ai-duel-mode-spectator" style="padding: 3px 10px; font-size: 12px; height: 30px; color: #fef08a;">
+                  👁️ 神谕观战 (双AI互弈)
+                </button>
+              </div>
+            </div>
+
+            <!-- 2. AI 智力与算力 -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <span class="single-duel-setting-label">⚡ AI智力:</span>
+              <div class="league-choice-stepper" style="margin:0;">
+                <button class="campaign-diff-btn" id="btn-ai-duel-diff-prev">◀</button>
+                <span class="league-choice-val diff" id="ai-duel-diff-val" style="min-width:64px; text-align:center;">${SINGLE_DUEL_DIFFICULTIES[aiDuelDifficultyIdx]}</span>
+                <button class="campaign-diff-btn" id="btn-ai-duel-diff-next">▶</button>
+              </div>
+            </div>
+
+            <!-- 3. 战场场景与场景工坊 -->
+            <div style="display:flex; align-items:center; gap:8px; flex:1; justify-content:flex-end; flex-wrap:nowrap;">
+              <span class="single-duel-setting-label" style="white-space:nowrap;">🗺️ 场景:</span>
+              <div id="ai-duel-scene-val" class="league-choice-val" style="min-width:85px; max-width:130px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:3px 8px; background:rgba(0,0,0,0.3); border:1px solid #785a28; border-radius:6px; color:#ffd700; cursor:pointer;" title="点击展开场景图鉴选场">${curScenario.name}</div>
+              <button class="duel-stone-action-btn close" id="btn-ai-duel-scene-grid" title="展开浏览所有战场场景" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px;">🗺️ 场景图鉴</button>
+              <button class="duel-stone-action-btn start" id="btn-ai-duel-scene-ai-create" title="✨ AI 场景工坊" style="white-space:nowrap !important; flex-shrink:0; padding:2px 10px; height:28px; font-size:12.5px; color:#fef08a;">✨ AI工坊</button>
+            </div>
+          </div>
+
+          <div class="single-duel-rule-desc" style="margin-top: 6px;">
+            ⚡ <strong>场景法则：</strong>${curScenario.rule}
+          </div>
+          <div class="single-duel-relics-container" style="display: ${relicIds.length ? 'flex' : 'none'}; align-items:center; gap:8px; flex-wrap:wrap; padding:4px 8px; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.25); border-radius:6px; margin-top:4px;">
+            <span style="font-size:11px; color:#fbbf24; font-weight:800;">🌈 阵线造物:</span>
+            ${relics.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}｜${c.desc}" style="width:26px; height:36px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.07);" />`).join('')}
+          </div>
+        </div>
+
+        <!-- COMBATANTS ROW -->
+        <div class="duel-combatants-row" style="margin: 4px 14px 12px;">
+          <!-- LEFT COMBATANT: PLAYER OR AI MASTER 1 -->
+          <div class="duel-combatant-card" style="border-color: rgba(96, 165, 250, 0.5);">
+            <div class="duel-name-plate" style="color: #93c5fd; display:flex; align-items:center; justify-content:center; gap:6px;">
+              ${aiDuelMode === 'human_vs_ai' ? `
+                <span>玩家 (挑战者)</span>
+              ` : `
+                <button class="duel-mini-arrow" id="btn-ai-duel-p1-name-prev">◀</button>
+                <span style="min-width:76px; text-align:center; font-weight:800; color:#93c5fd;">${ai1Name}</span>
+                <button class="duel-mini-arrow" id="btn-ai-duel-p1-name-next">▶</button>
+              `}
+            </div>
+            <div class="duel-avatar-picker">
+              <button class="duel-arrow-btn" id="btn-ai-duel-p1-face-prev">◀</button>
+              <div class="duel-avatar-wrap">
+                <img src="${leftFaceUrl}" class="duel-avatar-img" alt="Left Face" id="img-ai-duel-p1-face" />
+                <div class="duel-face-indicator">头像 ${(aiDuelMode === 'human_vs_ai' ? playerFaceIndex : aiDuelAi1FaceIdx) + 1}/${TOTAL_FACES}</div>
+              </div>
+              <button class="duel-arrow-btn" id="btn-ai-duel-p1-face-next">▶</button>
+            </div>
+            <div class="duel-class-picker">
+              <span class="duel-class-label">流派:</span>
+              <button class="duel-mini-arrow" id="btn-ai-duel-p1-class-prev">◀</button>
+              <div class="duel-class-badge" id="btn-ai-duel-p1-class-pick">
+                <img src="${toRel(pClassObj.artImg)}" class="duel-class-inline-img" alt="${pClassObj.nameCn}" /> ${pClassObj.nameCn}
+              </div>
+              <button class="duel-mini-arrow" id="btn-ai-duel-p1-class-next">▶</button>
+              <button class="duel-wrench-btn" id="btn-ai-duel-p1-class-grid" title="打开职业列表">⚙</button>
+            </div>
+            <div class="duel-class-desc">${pClassObj.desc}</div>
+          </div>
+
+          <!-- CENTER VS DUEL ACTION ZONE -->
+          <div class="duel-vs-center-col">
+            <div class="duel-vs-emblem" style="font-size: clamp(28px, 3.2vw, 44px); color: #c084fc; text-shadow: 0 0 15px rgba(192, 132, 252, 0.6);">VS</div>
+            <button class="campaign-pc-btn start-btn duel-center-start-btn" id="btn-start-ai-duel-action" style="background: linear-gradient(180deg, #9333ea 0%, #6b21a8 100%); border-color: #d8b4fe; box-shadow: 0 0 20px rgba(147, 51, 234, 0.5);">
+              ${aiDuelMode === 'ai_vs_ai' ? '👁️ 开始神谕观战 ▶' : '⚡ 开启智脑对决 ▶'}
+            </button>
+          </div>
+
+          <!-- RIGHT COMBATANT: AI MASTER 2 -->
+          <div class="duel-combatant-card" style="border-color: rgba(248, 113, 113, 0.5);">
+            <div class="duel-name-plate" style="color: #fca5a5; display:flex; align-items:center; justify-content:center; gap:6px;">
+              <button class="duel-mini-arrow" id="btn-ai-duel-p2-name-prev">◀</button>
+              <span style="min-width:76px; text-align:center; font-weight:800; color:#fca5a5;">${ai2Name}</span>
+              <button class="duel-mini-arrow" id="btn-ai-duel-p2-name-next">▶</button>
+            </div>
+            <div class="duel-avatar-picker">
+              <button class="duel-arrow-btn" id="btn-ai-duel-p2-face-prev">◀</button>
+              <div class="duel-avatar-wrap">
+                <img src="${rightFaceUrl}" class="duel-avatar-img" alt="Right Face" id="img-ai-duel-p2-face" />
+                <div class="duel-face-indicator">头像 ${aiDuelAi2FaceIdx + 1}/${TOTAL_FACES}</div>
+              </div>
+              <button class="duel-arrow-btn" id="btn-ai-duel-p2-face-next">▶</button>
+            </div>
+            <div class="duel-class-picker">
+              <span class="duel-class-label">流派:</span>
+              <button class="duel-mini-arrow" id="btn-ai-duel-p2-class-prev">◀</button>
+              <div class="duel-class-badge" id="btn-ai-duel-p2-class-pick">
+                <img src="${toRel(eClassObj.artImg)}" class="duel-class-inline-img" alt="${eClassObj.nameCn}" /> ${eClassObj.nameCn}
+              </div>
+              <button class="duel-mini-arrow" id="btn-ai-duel-p2-class-next">▶</button>
+              <button class="duel-wrench-btn" id="btn-ai-duel-p2-class-grid" title="打开职业列表">⚙</button>
+            </div>
+            <div class="duel-class-desc">${eClassObj.desc}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderClassGridPickerModal(target: 'player' | 'ai' | 'lan' | 'ai_duel_1' | 'ai_duel_2'): string {
+  const currentIdx = target === 'player'
+    ? playerClassIndex
+    : (target === 'ai'
+      ? aiClassIndex
+      : (target === 'lan'
+        ? lanPlayerClassIdx
+        : (target === 'ai_duel_1' ? (aiDuelMode === 'human_vs_ai' ? playerClassIndex : aiDuelAi1ClassIdx) : aiDuelAi2ClassIdx)));
+  const targetLabel = target === 'player'
+    ? '玩家'
+    : (target === 'ai'
+      ? '电脑对手'
+      : (target === 'lan'
+        ? '局域网对决'
+        : (target === 'ai_duel_1' ? (aiDuelMode === 'human_vs_ai' ? '玩家 (挑战者)' : 'AI 蓝方魔导') : 'AI 红方魔导')));
   return `
     <div class="class-grid-modal-overlay" id="class-grid-overlay">
       <div class="class-grid-card">
@@ -4663,6 +5147,124 @@ function renderClassGridPickerModal(target: 'player' | 'ai' | 'lan'): string {
               <div style="font-size:10px; color:#cbd5e1; text-align:center; line-height:1.3;">${cls.desc.substring(0, 22)}...</div>
             </div>
           `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderScenarioGridPickerModal(): string {
+  const allSc = getAllScenarios();
+  const currentSelectedIdx = currentView === 'ai_duel_setup' ? aiDuelScenarioIdx : singleDuelScenarioIdx;
+
+  return `
+    <div class="class-grid-modal-overlay" id="scenario-grid-overlay">
+      <div class="class-grid-card scenario-grid-modal-dialog" style="width:min(1080px, 94vw); height:min(88vh, 860px); max-height:90vh; display:flex; flex-direction:column; padding:18px 22px; box-sizing:border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid rgba(198,155,63,0.35); padding-bottom:12px; margin-bottom:4px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <h3 style="color:#ffd700; font-size:20px; font-weight:900; margin:0; text-shadow:0 1px 4px #000;">🗺️ 战场场景与法则总览 (${allSc.length}个)</h3>
+            <button class="duel-stone-action-btn start" id="btn-open-ai-creator-from-grid" style="padding:5px 16px; font-size:13.5px; color:#fef08a; display:inline-flex; align-items:center; gap:5px; box-shadow:0 2px 8px rgba(0,0,0,0.5);">
+              <span>✨</span>
+              <span>AI 场景造物</span>
+            </button>
+          </div>
+          <button class="modal-close-btn" id="btn-close-scenario-grid" style="position:static; width:32px; height:32px; font-size:20px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <div class="scenario-grid-scroll-container" style="min-height:0; flex:1; overflow-y:scroll; overflow-x:hidden; display:grid; grid-template-columns:repeat(auto-fill, minmax(290px, 1fr)); gap:14px; padding:12px 6px 20px 2px; align-content:start;">
+          ${allSc.map((sc, idx) => {
+            const isCur = idx === currentSelectedIdx;
+            const bgUrl = battlefieldBgs[sc.theme] || battlefieldBgs.citadel;
+            const isCustom = sc.id.startsWith('custom_');
+            return `
+              <div class="scenario-grid-item ${isCur ? 'active' : ''} ${isCustom ? 'custom-scenario' : ''}" data-scenario-idx="${idx}" style="cursor:pointer; position:relative; background:linear-gradient(180deg, rgba(32,24,18,0.96) 0%, rgba(16,12,9,0.98) 100%); border:2px solid ${isCur ? '#ffd700' : (isCustom ? '#f59e0b' : '#6b4e33')}; border-radius:12px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 6px 16px rgba(0,0,0,0.65); min-height:165px; box-sizing:border-box; flex-shrink:0;">
+                <div style="height:56px; min-height:56px; background:url('${bgUrl}') center/cover no-repeat; position:relative; display:flex; align-items:center; padding:8px 12px; flex-shrink:0;">
+                  <div style="position:absolute; inset:0; background:linear-gradient(0deg, rgba(16,12,9,0.92) 0%, rgba(0,0,0,0.3) 100%);"></div>
+                  <div style="position:relative; z-index:2; display:flex; justify-content:space-between; align-items:center; width:100%;">
+                    <div style="display:flex; align-items:center; gap:6px; min-width:0; padding-right:8px;">
+                      <span style="font-weight:900; font-size:15.5px; color:#ffd700; text-shadow:0 1px 4px #000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${sc.name}</span>
+                      ${isCustom ? `<span style="font-size:10px; background:linear-gradient(135deg, #b45309 0%, #78350f 100%); color:#fef3c7; border:1px solid #f59e0b; padding:1px 6px; border-radius:4px; font-weight:900; flex-shrink:0;">玩家自创</span>` : ''}
+                    </div>
+                    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+                      <span style="font-size:12px; font-weight:900; background:rgba(0,0,0,0.7); color:#fef08a; padding:3px 8px; border-radius:5px; border:1px solid #ca8a04; box-shadow:0 1px 3px rgba(0,0,0,0.5);">${sc.playerHp} HP</span>
+                      ${isCustom ? `
+                        <button class="btn-delete-custom-scenario top-delete-btn" data-scenario-id="${sc.id}" style="background:#dc2626; border:1.5px solid #f87171; color:#fff; font-size:12px; padding:3px 8px; border-radius:5px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; box-shadow:0 2px 6px rgba(220,38,38,0.6);" title="快速删除此自创场景">🗑️</button>
+                      ` : ''}
+                    </div>
+                  </div>
+                </div>
+                <div style="padding:10px 12px 12px 12px; flex:1; display:flex; flex-direction:column; justify-content:space-between; gap:10px;">
+                  <div style="font-size:13px; color:#e2e8f0; line-height:1.55; word-break:break-word;">${sc.rule}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center; padding-top:8px; border-top:1px solid rgba(198,155,63,0.2); margin-top:auto;">
+                    <span style="font-size:12px; color:#d97706; font-weight:800;">🏛️ 主题: ${getThemeName(sc.theme)}</span>
+                    ${isCustom ? `
+                      <button class="btn-delete-custom-scenario" data-scenario-id="${sc.id}" style="background:linear-gradient(135deg, #dc2626 0%, #991b1b 100%); border:1.5px solid #ef4444; color:#ffffff; font-size:12.5px; font-weight:900; padding:4px 14px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:4px; box-shadow:0 2px 8px rgba(220,38,38,0.55); z-index:5;" title="永久删除此自创场景">
+                        <span style="font-size:13px;">🗑️</span>
+                        <span>删除场景</span>
+                      </button>
+                    ` : `<span style="font-size:11.5px; color:#78716c; font-style:italic;">内置秘境</span>`}
+                  </div>
+                </div>
+                ${isCur ? `<div style="position:absolute; top:6px; right:6px; background:linear-gradient(135deg, #16a34a 0%, #15803d 100%); color:#fff; font-size:10.5px; font-weight:900; padding:2px 8px; border-radius:5px; z-index:4; box-shadow:0 2px 6px rgba(0,0,0,0.6); border:1px solid #4ade80;">当前选用</div>` : ''}
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAiScenarioModal(): string {
+  return `
+    <div class="modal-overlay" id="ai-scenario-modal-overlay">
+      <div class="stone-options-dialog" style="width:clamp(540px, 62vw, 840px); max-height:90vh; display:flex; flex-direction:column;">
+        <div class="options-header-banner" style="background: linear-gradient(90deg, #3b0764 0%, #6b21a8 50%, #3b0764 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 20px; flex-shrink:0;">
+          <div class="options-title-text" style="color:#fef08a;">✨ AI 场景创世造物神殿</div>
+          <button class="modal-close-btn" id="btn-close-ai-scenario" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;">×</button>
+        </div>
+
+        <div style="flex:1; overflow-y:auto; padding:clamp(14px, 2vh, 22px); display:flex; flex-direction:column; gap:14px;">
+          <div style="font-size:13.5px; color:#3b1e06; line-height:1.5; font-weight:700;">
+            描述您心中的奇幻战场法则（例如环境背景、元素亲和、开局预置随从或生命值），大模型将为您自动构筑并在单局对战中即刻生效游玩！
+          </div>
+
+          <!-- Prompt Input -->
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:13px; font-weight:900; color:#4a2810;">构想描述 / 提示词：</span>
+            <textarea id="ai-scenario-prompt-input" rows="3" style="width:100%; box-sizing:border-box; background:rgba(255,255,255,0.96); border:2px solid #8e723a; border-radius:8px; padding:10px; font-size:14.5px; font-weight:700; color:#180b02; resize:vertical;" placeholder="例如：极寒冰封王座之巅，寒风呼啸，双方开局各有一尊寒冰守卫护场，生命上限70，水系能量充沛...">${aiScenarioPromptInput}</textarea>
+          </div>
+
+          <!-- Quick Presets -->
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <span style="font-size:13px; font-weight:900; color:#4a2810;">灵感预设：</span>
+            <button class="btn-ai-scene-preset" data-preset="冰雪极寒雪原，暴风雪呼啸，水系能量+2，双方槽位2预置【寒冰守卫】，生命值70">❄️ 极地冰封王座</button>
+            <button class="btn-ai-scene-preset" data-preset="烈焰地心熔炉深渊，岩浆翻滚，火系能量+2，双方槽位0预置【火焰祭司】，生命值50">🌋 远古地心锻炉</button>
+            <button class="btn-ai-scene-preset" data-preset="天界狂雷雷霆之巅，电闪雷鸣，气系能量+3，双方槽位3预置【狮鹫】，双方生命值60">⚡ 苍穹狂雷圣峰</button>
+            <button class="btn-ai-scene-preset" data-preset="古老死者墓园，死气弥漫，暗影能量充沛，生命值55，开局预置亡灵随从">💀 幽冥凋零墓园</button>
+          </div>
+
+          <!-- Generate Action -->
+          <div style="display:flex; justify-content:center; margin-top:4px;">
+            <button class="campaign-pc-btn start-btn" id="btn-trigger-ai-scene-gen" style="padding:8px 32px; font-size:15px; font-weight:900;" ${aiScenarioLoading ? 'disabled' : ''}>
+              ${aiScenarioLoading ? '⚡ 正在构思奇幻战场法则与造物数据...' : '🔮 召唤 AI 构筑场景'}
+            </button>
+          </div>
+
+          <!-- Preview Card (if generated) -->
+          ${aiScenarioPreview ? `
+            <div style="border:2px solid #ca8a04; border-radius:10px; padding:12px; background:linear-gradient(180deg, #2e1065 0%, #1e1b4b 100%); display:flex; flex-direction:column; gap:8px; margin-top:6px; box-shadow:0 6px 18px rgba(0,0,0,0.7);">
+              <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(254,240,138,0.3); padding-bottom:6px;">
+                <span style="font-size:17px; font-weight:900; color:#fde047;">${aiScenarioPreview.name}</span>
+                <span style="font-size:12px; background:#431407; color:#fdba74; padding:2px 8px; border-radius:4px; font-weight:900;">${getThemeName(aiScenarioPreview.theme)} · 双方 ${aiScenarioPreview.playerHp} HP</span>
+              </div>
+              <div style="font-size:13.5px; color:#f1f5f9; line-height:1.5;">${aiScenarioPreview.rule}</div>
+              <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:6px;">
+                <button class="duel-stone-action-btn start" id="btn-save-ai-scene" style="padding:6px 20px; font-size:14px;">💾 保存并选用此场景</button>
+                <button class="duel-stone-action-btn close" id="btn-discard-ai-scene" style="padding:6px 14px; font-size:13px;">放弃</button>
+              </div>
+            </div>
+          ` : ''}
         </div>
       </div>
     </div>
@@ -5176,6 +5778,18 @@ function renderCampaignHubModal(): string {
   `;
 }
 
+function updateCampaignSetupInPlace() {
+  const overlay = document.getElementById('campaign-new-char-overlay');
+  if (!overlay) return;
+  const chosenClass = HERO_CLASSES[campaignPlayerClassIdx] || HERO_CLASSES[0];
+  const faceImg = overlay.querySelector('#campaign-avatar-face-img') as HTMLImageElement;
+  if (faceImg) faceImg.src = `./faces/Face${campaignPlayerFaceId}.jpg`;
+  const classVal = overlay.querySelector('#campaign-choice-class-val');
+  if (classVal) classVal.textContent = chosenClass.nameCn;
+  const diffVal = overlay.querySelector('#campaign-choice-diff-val');
+  if (diffVal) diffVal.textContent = campaignDifficulties[campaignPlayerDifficultyIdx];
+}
+
 function renderCampaignSetupModal(): string {
   const chosenClass = HERO_CLASSES[campaignPlayerClassIdx] || HERO_CLASSES[0];
   return `
@@ -5193,7 +5807,7 @@ function renderCampaignSetupModal(): string {
           <div class="league-avatar-picker-col">
             <button class="league-arrow-btn" id="btn-campaign-face-prev">◀</button>
             <div class="league-avatar-portrait-wrap">
-              <img src="./faces/Face${campaignPlayerFaceId}.jpg" class="league-avatar-img" alt="头像" />
+              <img src="./faces/Face${campaignPlayerFaceId}.jpg" class="league-avatar-img" id="campaign-avatar-face-img" alt="头像" />
             </div>
             <button class="league-arrow-btn" id="btn-campaign-face-next">▶</button>
           </div>
@@ -5208,7 +5822,7 @@ function renderCampaignSetupModal(): string {
               <span class="league-field-label">职业流派:</span>
               <div class="league-choice-stepper">
                 <button class="campaign-diff-btn" id="btn-campaign-class-prev">◀</button>
-                <span class="league-choice-val">${chosenClass.nameCn}</span>
+                <span class="league-choice-val" id="campaign-choice-class-val">${chosenClass.nameCn}</span>
                 <button class="campaign-diff-btn" id="btn-campaign-class-next">▶</button>
               </div>
             </div>
@@ -5217,7 +5831,7 @@ function renderCampaignSetupModal(): string {
               <span class="league-field-label">战役难度:</span>
               <div class="league-choice-stepper">
                 <button class="campaign-diff-btn" id="btn-campaign-setup-diff-prev">◀</button>
-                <span class="league-choice-val diff">${campaignDifficulties[campaignPlayerDifficultyIdx]}</span>
+                <span class="league-choice-val diff" id="campaign-choice-diff-val">${campaignDifficulties[campaignPlayerDifficultyIdx]}</span>
                 <button class="campaign-diff-btn" id="btn-campaign-setup-diff-next">▶</button>
               </div>
             </div>
@@ -5322,6 +5936,17 @@ function renderOptionsModal(): string {
             </div>
           </div>
 
+          <!-- Display / Fullscreen Setting -->
+          <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:14px 20px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
+            <div>
+              <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🖥️ 画面显示与全屏模式</div>
+              <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">支持一键切换无边框沉浸全屏对决（亦可在对战中随时按 <kbd style="background:#fef3c7; border:1px solid #d4b378; padding:1px 6px; border-radius:4px; font-weight:700;">F11</kbd> 或 <kbd style="background:#fef3c7; border:1px solid #d4b378; padding:1px 6px; border-radius:4px; font-weight:700;">Alt+Enter</kbd> 切换）</div>
+            </div>
+            <button class="duel-stone-action-btn ${document.fullscreenElement ? 'start' : 'close'}" id="btn-toggle-fullscreen" style="padding:8px 20px; font-size:clamp(13px, 1.1vw, 15px); min-width:130px; height:42px;">
+              ${document.fullscreenElement ? '⛶ 退出全屏' : '⛶ 进入全屏'}
+            </button>
+          </div>
+
           <!-- Battlefield Background Theme -->
           <div style="background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:12px; box-shadow:0 2px 6px rgba(0,0,0,0.06);">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
@@ -5352,6 +5977,105 @@ function renderOptionsModal(): string {
               <button class="duel-stone-action-btn ${!randomBattlefieldEnabled && currentBattlefieldTheme === 'shrine' ? 'start' : 'close'}" id="btn-theme-shrine" style="height:40px; font-size:clamp(12px, 1vw, 14px); padding:4px;">✨ 苍穹神坛</button>
             </div>
           </div>
+
+          <!-- 🤖 AI 大模型对战与战意传音设置 -->
+          ${(() => {
+            const aiCfg = getAiConfig();
+            return `
+              <div style="background:#ffffff; border:1.5px solid #d4b378; border-radius:10px; padding:16px 20px; display:flex; flex-direction:column; gap:14px; box-shadow:0 2px 6px rgba(0,0,0,0.06);" id="options-ai-wrapper">
+                <!-- 开关 1: AI 总开关 (开启后激活 AI 巅峰对决与大模型心智) -->
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-size:clamp(16px, 1.35vw, 19.5px); font-weight:900; color:#381e05;">🔮 开启大模型 AI 心智 (总开关)</div>
+                    <div style="font-size:clamp(12.5px, 1vw, 14px); color:#786047; margin-top:3px;">
+                      启用云端或本地大模型。开启后，主界面<strong>「AI 巅峰对决」</strong>即刻激活畅玩，并可为下方常规模式注入 AI 心智！
+                    </div>
+                  </div>
+                  <div class="slide-toggle-track ${aiCfg.enabled ? 'active' : ''}" id="btn-toggle-ai-enabled" role="switch" aria-checked="${aiCfg.enabled}" title="切换 AI 总开关">
+                    <div class="slide-toggle-knob"></div>
+                  </div>
+                </div>
+
+                <div id="options-ai-details-panel" style="display:${aiCfg.enabled ? 'flex' : 'none'}; flex-direction:column; gap:14px; padding-top:14px; border-top:1px dashed rgba(212, 179, 120, 0.6);">
+                  <!-- 开关 2: 常规 PVE 模式应用范围 -->
+                  <div style="background:#fff7ed; border:1px solid #fed7aa; border-radius:8px; padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-size:13.5px; font-weight:800; color:#9a3412;">🎯 开关二：AI 心智应用于哪些常规模式？</div>
+                    <div style="font-size:12px; color:#7c2d12; line-height:1.45;">
+                      选择在哪些常规游戏中由大模型掌控电脑对手（含出牌思考与战意传音）。未勾选的模式将保持毫秒级本地原生算法，0 网络开销：<br>
+                      <em>（💡 提示：主界面的「AI 巅峰对决」无需配置，开启总开关后始终全力启用大模型）</em>
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap:10px; margin-top:4px;">
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#431407; cursor:pointer;">
+                        <input type="checkbox" id="chk-ai-mode-duel" ${aiCfg.applyModes?.duel !== false ? 'checked' : ''} style="width:17px; height:17px; accent-color:#ea580c; cursor:pointer;" />
+                        ⚔️ 单人对战模式
+                      </label>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#431407; cursor:pointer;">
+                        <input type="checkbox" id="chk-ai-mode-league" ${aiCfg.applyModes?.league !== false ? 'checked' : ''} style="width:17px; height:17px; accent-color:#ea580c; cursor:pointer;" />
+                        🏆 英雄联赛模式
+                      </label>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#431407; cursor:pointer;">
+                        <input type="checkbox" id="chk-ai-mode-campaign" ${aiCfg.applyModes?.campaign !== false ? 'checked' : ''} style="width:17px; height:17px; accent-color:#ea580c; cursor:pointer;" />
+                        🗺️ 战役剧情模式
+                      </label>
+                      <label style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700; color:#431407; cursor:pointer;">
+                        <input type="checkbox" id="chk-ai-mode-custom-deck" ${aiCfg.applyModes?.custom_deck !== false ? 'checked' : ''} style="width:17px; height:17px; accent-color:#ea580c; cursor:pointer;" />
+                        🎴 自组卡组实测
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- 大模型服务商与参数配置 -->
+                  <div style="font-size:13px; font-weight:800; color:#5c3d1e;">⚙️ 模型接口与密钥配置：</div>
+                  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
+                    ${(['deepseek', 'siliconflow', 'ollama', 'custom'] as const).map(p => `
+                      <button class="duel-stone-action-btn ${aiCfg.provider === p ? 'start' : 'close'}" id="btn-ai-provider-${p}" style="height:38px; font-size:12.5px; padding:2px 8px;">
+                        ${p === 'deepseek' ? 'DeepSeek (推荐)' : (p === 'siliconflow' ? '硅基流动' : (p === 'ollama' ? '本地 Ollama' : '自定义'))}
+                      </button>
+                    `).join('')}
+                  </div>
+
+                  <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <label style="font-size:13px; font-weight:800; color:#5c3d1e;">API Key (密钥)：</label>
+                      <button id="btn-toggle-reveal-apikey" style="background:none; border:none; color:#854d0e; font-size:12px; font-weight:700; cursor:pointer;">
+                        ${showAiApiKey ? '🙈 隐藏' : '👁️ 显示'}
+                      </button>
+                    </div>
+                    <input type="${showAiApiKey ? 'text' : 'password'}" id="input-ai-apikey" value="${aiCfg.apiKey}" placeholder="${aiCfg.provider === 'ollama' ? '本地 Ollama 免填 API Key' : '请输入 sk-...'}" style="width:100%; height:38px; padding:0 12px; border:1.5px solid #d4b378; border-radius:8px; font-size:13.5px; background:#fffbf0; color:#381e05; box-sizing:border-box;" />
+                  </div>
+
+                  <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap:10px;">
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                      <label style="font-size:12.5px; font-weight:800; color:#5c3d1e;">接口地址 (Base URL)：</label>
+                      <input type="text" id="input-ai-baseurl" value="${aiCfg.baseUrl}" placeholder="https://api.deepseek.com/v1" style="width:100%; height:36px; padding:0 10px; border:1.5px solid #d4b378; border-radius:8px; font-size:12px; background:#fffbf0; color:#381e05; box-sizing:border-box;" />
+                    </div>
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                      <label style="font-size:12.5px; font-weight:800; color:#5c3d1e;">模型标识 (Model)：</label>
+                      <input type="text" id="input-ai-model" value="${aiCfg.model}" placeholder="deepseek-chat" style="width:100%; height:36px; padding:0 10px; border:1.5px solid #d4b378; border-radius:8px; font-size:12px; background:#fffbf0; color:#381e05; box-sizing:border-box;" />
+                    </div>
+                  </div>
+
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:4px; flex-wrap:wrap; gap:8px;">
+                    <div style="display:flex; gap:8px;">
+                      <button class="duel-stone-action-btn start" id="btn-test-ai-connection" style="height:36px; padding:0 16px; font-size:13px; font-weight:800;">
+                        ⚡ 测试连通性
+                      </button>
+                      <button class="duel-stone-action-btn close" id="btn-view-ai-combat-logs" style="height:36px; padding:0 14px; font-size:12.5px; font-weight:700;" title="查看对战时大模型的完整请求发送与响应结果">
+                        📄 对战 AI 记录
+                      </button>
+                    </div>
+                    <span id="ai-test-result" style="font-size:12.5px; font-weight:800; color:#854d0e;">
+                      💡 实战请求与响应已实时同步至 tools/battle_ai_records.txt
+                    </span>
+                  </div>
+                </div>
+
+                <div id="options-ai-disabled-hint" style="display:${aiCfg.enabled ? 'none' : 'block'}; font-size:12.5px; color:#854d0e; background:#fef3c7; border:1px solid #fde68a; padding:8px 12px; border-radius:6px; line-height:1.45;">
+                  💡 当前处于<strong>普通离线模式</strong>：由本地高效决策引擎毫秒级驱动，0 网络请求，0 费用消耗。随时可点击右上角总开关开启大模型心智与「AI 巅峰对决」！
+                </div>
+              </div>
+            `;
+          })()}
 
           ${currentView === 'battle' ? `
             <div style="border-top:1.5px dashed rgba(198,155,63,0.4); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
@@ -5503,15 +6227,15 @@ function renderCombatScreen(): string {
                 <span class="strip-icon">⚔️</span>
                 <span class="strip-text">结束回合</span>
               </button>
-            ` : (engine.activeTurn === 'enemy' && !engine.isLanGame ? `
-              <button class="combat-strip-item btn-end-turn btn-force-skip-enemy" id="btn-force-skip-enemy" title="电脑正在思考...（超时30秒将自动跳轮，您亦可点击立即跳过）">
+            ` : (engine.activeTurn === 'enemy' ? `
+              <button class="combat-strip-item btn-end-turn" disabled title="敌方魔导师正在运筹帷幄与思索对策...">
                 <span class="strip-icon">⏳</span>
-                <span class="strip-text">跳过敌方</span>
+                <span class="strip-text">敌方行动</span>
               </button>
             ` : `
-              <button class="combat-strip-item btn-end-turn" id="btn-end-turn" disabled title="正在结算或对方行动">
+              <button class="combat-strip-item btn-end-turn" disabled title="正在结算交战">
                 <span class="strip-icon">⚔️</span>
-                <span class="strip-text">思考中</span>
+                <span class="strip-text">交战结算</span>
               </button>
             `)}
           `}
@@ -5522,7 +6246,15 @@ function renderCombatScreen(): string {
           <!-- Top: Heroes Stack -->
           <div class="combat-heroes-stack">
             <!-- Opponent Hero Card: Sinister Demonic Theme with Full Width Mana Bar -->
-            <div class="combat-hero-row opponent ${engine.activeTurn === 'enemy' ? 'turn-active' : 'turn-inactive'}">
+            <div class="combat-hero-row opponent ${engine.activeTurn === 'enemy' ? 'turn-active' : 'turn-inactive'}" style="position: relative;">
+              ${activeEnemyBanter ? `
+                <div class="arcane-speech-scroll comic-dialogue-bubble ${banterPopClass}" title="${activeBanterSpeaker ? `${activeBanterSpeaker}的战意传音` : 'AI 魔导师战意传音'}">
+                  <div class="arcane-speech-tail comic-bubble-tail"></div>
+                  <div class="arcane-speech-body">
+                    <span class="arcane-speech-text">“${activeEnemyBanter}”</span>
+                  </div>
+                </div>
+              ` : ''}
               <div class="combat-hero-top-row">
                 <div class="combat-hero-portrait-wrap">
                   <img src="${toRel(e.face)}" class="combat-hero-avatar combat-hero-portrait-frame top" alt="${e.name}" />
@@ -5533,6 +6265,9 @@ function renderCombatScreen(): string {
                   <div class="combat-hero-name-plate">
                     <span class="combat-hero-hp enemy">${e.hp}</span>
                     <span class="combat-hero-name" title="${e.name}">${e.name}</span>
+                    ${engine.activeTurn === 'enemy' && !engine.gameOver ? `
+                      <span class="turn-timer-badge enemy" id="turn-timer-enemy" title="敌方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
+                    ` : ''}
                     <span class="combat-hero-class-tag enemy">${eSpecialName}</span>
                   </div>
                 </div>
@@ -5564,6 +6299,9 @@ function renderCombatScreen(): string {
                 <div class="combat-hero-name-plate">
                   <span class="combat-hero-hp player">${p.hp}</span>
                   <span class="combat-hero-name" title="${p.name}">${p.name}</span>
+                  ${engine.activeTurn === 'player' && !engine.gameOver ? `
+                    <span class="turn-timer-badge player" id="turn-timer-player" title="己方思考倒计时">⏱️ ${currentTurnTimerRemaining}s</span>
+                  ` : ''}
                   <span class="combat-hero-class-tag player">${pSpecialName}</span>
                 </div>
               </div>
@@ -5574,14 +6312,20 @@ function renderCombatScreen(): string {
           <div class="combat-double-parchment-container">
             <!-- 1. Upper: Card Inspection Parchment -->
             <div class="combat-inspect-parchment" id="combat-inspect-parchment" style="cursor: pointer;" title="轻触展开全屏卡牌详情">
-              ${previewCard ? `
+              ${previewCard ? (() => {
+                const previewSide = inspectedCard ? inspectedCardSide : (selectedCard ? 'player' : (showOpponentHand ? 'enemy' : 'player'));
+                const previewEffCost = engine ? engine.getCardEffectiveCost(previewSide, previewCard) : previewCard.cost;
+                const costDisplayHtml = previewEffCost !== previewCard.cost
+                  ? `${previewEffCost}费 <span class="cost-mod-sub">(原${previewCard.cost}费)</span>`
+                  : `${previewEffCost}费`;
+                return `
                 <div class="parchment-card-top-row">
                   <img src="${toRel(previewCard.imgBigUrl || previewCard.imgUrl)}" class="parchment-card-art ${previewCard.type === 'spell' ? 'spell-art' : ''}" alt="${previewCard.nameCn}" />
                   <div class="parchment-card-meta">
-                    <div class="parchment-card-title">${previewCard.nameCn} (${previewCard.cost}费) <span style="font-size: 10px; opacity: 0.6; float: right;">⤢</span></div>
+                    <div class="parchment-card-title">${previewCard.nameCn} (${costDisplayHtml}) <span style="font-size: 10px; opacity: 0.6; float: right;">⤢</span></div>
                     <div class="parchment-card-sub" style="${previewCard.isActivatedAbility ? 'color: #8b3a00; font-weight: bold;' : ''}">
                       ${previewCard.isActivatedAbility
-                        ? (previewCard.desc.includes('\n') ? previewCard.desc.split('\n')[0] : `【${previewCard.nameCn}】的主动技能，费用 ${previewCard.cost}`)
+                        ? (previewCard.desc.includes('\n') ? previewCard.desc.split('\n')[0] : `【${previewCard.nameCn}】的主动技能，费用 ${previewEffCost}`)
                         : `${previewCard.className ? (HERO_CLASSES.find(c => c.id === previewCard.className)?.nameCn || '特殊') : (elemNames[previewCard.element] || '特殊')} · ${previewCard.type === 'creature' ? '生物' : '法术'} · ${previewCard.name}`}
                     </div>
                     ${previewCard.type === 'creature' ? `
@@ -5597,7 +6341,8 @@ function renderCombatScreen(): string {
                     ? previewCard.desc.split('\n').slice(1).join('\n')
                     : previewCard.desc}
                 </div>
-              ` : `
+                `;
+              })() : `
                 <div class="parchment-empty-tip">
                   轻触任意手牌或在场生物<br/>检视详尽技能说明与战术属性
                 </div>
@@ -5751,10 +6496,13 @@ function renderCombatScreen(): string {
                         const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
 
                         if (isRevealed) {
+                          const effCost = engine.getCardEffectiveCost('enemy', card);
+                          const isCostModified = effCost !== card.cost;
+                          const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
                           return `
                             <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
                               <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
-                              <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
+                              <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
                               ${lifeCostBadge(card)}
                               ${card.type === 'creature' ? `
                                 <div class="card-stats-badges">
@@ -5775,12 +6523,15 @@ function renderCombatScreen(): string {
                           `;
                         }
                       } else {
-                        const canAfford = p.mana[card.element] >= card.cost && (!card.lifeCost || p.hp > card.lifeCost);
+                        const effCost = engine.getCardEffectiveCost('player', card);
+                        const isCostModified = effCost !== card.cost;
+                        const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
+                        const canAfford = p.mana[card.element] >= effCost && (!card.lifeCost || p.hp > card.lifeCost);
                         const isSelected = selectedCard?.id === card.id;
                         return `
                           <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
                             <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
-                            <div class="card-cost-gem elem-${card.element}">${card.cost}</div>
+                            <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
                             ${lifeCostBadge(card)}
                             ${card.type === 'creature' ? `
                               <div class="card-stats-badges">
@@ -5831,7 +6582,11 @@ function renderCardDetailModal(): string {
   if (!detailedCard) return '';
   const card = detailedCard;
   const creature = detailedCreatureSlot?.creature;
-  const side = detailedCreatureSlot?.side;
+  const side = detailedCreatureSlot?.side || inspectedCardSide || 'player';
+  const effCost = (currentView === 'battle' && engine) ? engine.getCardEffectiveCost(side, card) : card.cost;
+  const costDiffText = effCost !== card.cost
+    ? `${effCost}费 (原${card.cost}费 ${effCost > card.cost ? `🔺+${effCost - card.cost}` : `🔻-${card.cost - effCost}`})`
+    : `${card.cost}费`;
   const elemNames: Record<string, string> = { fire: '火系', water: '水系', air: '气系', earth: '土系', special: '巫术', death: '死灵', holy: '圣职', mechanics: '机械', control: '支配', chaos: '混沌', illusion: '幻术', beast: '驯兽', chrono: '时空', goblin: '地精', forest: '森林', golem: '魔匠', cult: '邪教', blood: '鲜血', spectromancer: '战场造物' };
   const elemBadge = card.className ? (HERO_CLASSES.find(c => c.id === card.className)?.nameCn || '专属') : (elemNames[card.element] || '基础');
 
@@ -5840,7 +6595,7 @@ function renderCardDetailModal(): string {
       <div class="stone-options-dialog" style="width:min(440px, 92vw); max-height:88vh; display:flex; flex-direction:column; padding:0; overflow:hidden; border-radius:12px; box-shadow:0 12px 36px rgba(0,0,0,0.85);">
         <div class="options-header-banner" style="background: linear-gradient(90deg, #2b1d0c 0%, #4a3418 50%, #2b1d0c 100%); display:flex; justify-content:space-between; align-items:center; padding:10px 16px; flex-shrink:0;">
           <div class="options-title-text" style="color:#ffd700; font-size:16px; font-weight:900;">
-            ${card.nameCn} <span style="font-size:13px; color:#e2c079;">(${card.cost}费)</span>
+            ${card.nameCn} <span style="font-size:13px; color:#e2c079;">(${costDiffText})</span>
           </div>
           <button class="modal-close-btn" id="btn-close-card-detail" style="position:static; width:30px; height:30px; font-size:20px; cursor:pointer;" title="关闭">×</button>
         </div>
@@ -5934,6 +6689,17 @@ function renderBattlefieldRulesModal(): string {
       <div style="font-size:clamp(16px, 1.3vw, 20px); line-height:1.7; color:#26180c; font-weight:700;">
         <p style="margin:0 0 10px 0;"><strong>对决机制：</strong>双方使用各自的 20 张专属构筑牌组（火、水、气、土及专属流派各 4 张）。</p>
         <p style="margin:0;"><strong>能量增长：</strong>每回合自动增长各系元素能量，通过合理布局生物攻防与法术轰杀，消灭对方英雄获胜。</p>
+      </div>
+    `;
+  } else if (currentBattleSource === 'ai_duel') {
+    title = '🔮 AI 巅峰对决 · 神谕大模型战规';
+    const ruleText = engine.leagueRule || '大模型神级魔导对弈：双方具备极高策略算力与实时对白心智。';
+    bodyHtml = `
+      <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:12px; color:#581c87; font-weight:900;">
+        ${engine.isPlayerAiControlled ? `👁️ 神谕上帝观战：【${engine.player.name}】VS【${engine.enemy.name}】` : `🔮 玩家对决：【玩家】VS【${engine.enemy.name}】`} (难度: ${engine.difficulty})
+      </div>
+      <div style="background:rgba(147,51,234,0.12); border-left:4px solid #a855f7; padding:12px 16px; border-radius:6px; font-size:clamp(16px, 1.3vw, 20px); line-height:1.65; color:#3b0764; font-weight:800;">
+        ⚡ <strong>场景法则：</strong>${ruleText}
       </div>
     `;
   } else {
@@ -6183,6 +6949,20 @@ function renderCampaignMapScreen(): string {
 // ==========================================
 // RENDER MODE 2: LEAGUE OF HEROES (Images 2 & 3)
 // ==========================================
+function updateLeagueSetupInPlace() {
+  const overlay = document.getElementById('league-new-char-overlay');
+  if (!overlay) return;
+  const chosenClass = HERO_CLASSES[leaguePlayerClassIdx] || HERO_CLASSES[3];
+  const faceImg = overlay.querySelector('#league-avatar-face-img') as HTMLImageElement;
+  if (faceImg) faceImg.src = `./faces/Face${leaguePlayerFaceId}.jpg`;
+  const classVal = overlay.querySelector('#league-choice-class-val');
+  if (classVal) classVal.textContent = chosenClass.nameCn;
+  const diffVal = overlay.querySelector('#league-choice-diff-val');
+  if (diffVal) diffVal.textContent = leagueDifficulties[leagueDifficultyIdx];
+  const cVal = overlay.querySelector('#league-contestants-count-val');
+  if (cVal) cVal.textContent = `${leagueContestantCountChoices[leagueContestantCountIdx]} 人 (含玩家)`;
+}
+
 function renderLeagueSetupModal(): string {
   const chosenClass = HERO_CLASSES[leaguePlayerClassIdx] || HERO_CLASSES[3];
   return `
@@ -6200,7 +6980,7 @@ function renderLeagueSetupModal(): string {
           <div class="league-avatar-picker-col">
             <button class="league-arrow-btn" id="btn-league-face-prev">◀</button>
             <div class="league-avatar-portrait-wrap">
-              <img src="./faces/Face${leaguePlayerFaceId}.jpg" class="league-avatar-img" alt="头像" />
+              <img src="./faces/Face${leaguePlayerFaceId}.jpg" class="league-avatar-img" id="league-avatar-face-img" alt="头像" />
             </div>
             <button class="league-arrow-btn" id="btn-league-face-next">▶</button>
           </div>
@@ -6215,7 +6995,7 @@ function renderLeagueSetupModal(): string {
               <span class="league-field-label">职业:</span>
               <div class="league-choice-stepper">
                 <button class="campaign-diff-btn" id="btn-league-class-prev">◀</button>
-                <span class="league-choice-val">${chosenClass.nameCn}</span>
+                <span class="league-choice-val" id="league-choice-class-val">${chosenClass.nameCn}</span>
                 <button class="campaign-diff-btn" id="btn-league-class-next">▶</button>
               </div>
             </div>
@@ -6224,7 +7004,7 @@ function renderLeagueSetupModal(): string {
               <span class="league-field-label">难度:</span>
               <div class="league-choice-stepper">
                 <button class="campaign-diff-btn" id="btn-league-diff-prev">◀</button>
-                <span class="league-choice-val diff">${leagueDifficulties[leagueDifficultyIdx]}</span>
+                <span class="league-choice-val diff" id="league-choice-diff-val">${leagueDifficulties[leagueDifficultyIdx]}</span>
                 <button class="campaign-diff-btn" id="btn-league-diff-next">▶</button>
               </div>
             </div>
@@ -6406,24 +7186,24 @@ function renderLeagueOpponentAdviceModal(): string {
       tip: '起手优先抓取坚固阻挡随从与低费解场牌，只要撑过前 4 回合即胜券在握。',
     },
     forest: {
-      strengths: '每回合免费放置的【灵契幻兔】会永久成长，筑坝狂狸、狡黠林浣与万木礼赞都以幻兔攻击力结算收益。',
+      strengths: '每回合免费放置的【魔法兔子】会永久成长，暴怒海狸、复仇浣熊与森林仪式都以兔子攻击力结算收益。',
       weaknesses: '幻兔只有 10 点生命，一旦被清除，所有以 X 结算的卡牌收益骤降。',
-      tip: '优先用单体伤害法术秒杀【灵契幻兔】，迫使其以 0 攻的【幽林饿狼】或空转的万木礼赞浪费资源。',
+      tip: '优先用单体伤害法术秒杀【魔法兔子】，迫使其以 0 攻的【森林狼】或空转的森林仪式浪费资源。',
     },
     golem: {
-      strengths: '开局即有一只不受魔法与技能伤害的【远古秘金魔像】，阵亡后会满血归位（代价仅 10 点生命），符文装甲强化与驭像工匠可永久堆高它的攻击力。',
+      strengths: '开局即有一只不受魔法与技能伤害的【钢铁魔像】，阵亡后会满血归位（代价仅 10 点生命），军备升级与魔像驯导者可永久堆高它的攻击力。',
       weaknesses: '魔像每次阵亡都要付出 10 点生命，反复阵亡会迅速掏空本体；其余卡牌多为辅助，本身威胁不高。',
-      tip: '用高攻生物反复击杀【远古秘金魔像】逼迫其不断支付 10 点生命，并优先清掉【巨神总监】以阻止魔像每回合攻击两次。',
+      tip: '用高攻生物反复击杀【钢铁魔像】逼迫其不断支付 10 点生命，并优先清掉【魔像教官】以阻止魔像每回合攻击两次。',
     },
     cult: {
-      strengths: '狂怒祭碑让全军每回合多攻击一次，舍身圣者攻击力每回合 +2 永续成长，绝断掠行者既替全军承伤又能挡住对手的取巧打法。',
+      strengths: '狂怒纪念碑让全军每回合多攻击一次，狂热者攻击力每回合 +2 永续成长，掠夺者既替全军承伤又能挡住对手的取巧打法。',
       weaknesses: '舍身圣者每造成一次伤害就自损等量生命，祭碑也随全军输出不断流失生命，整体靠自伤换强度极易自爆。',
-      tip: '用低伤害的小生物「喂」给【舍身圣者】与【狂怒祭碑】逼其自损；面对【绝断掠行者】时改用生物强攻而非魔法，并集火点掉祭碑。',
+      tip: '用低伤害的小生物「喂」给【狂热者】与【狂怒纪念碑】逼其自损；面对【掠夺者】时改用生物强攻而非魔法，并集火点掉纪念碑。',
     },
     blood: {
       strengths: '所有血族卡牌都是「能量 + 生命」双重付费，因此同费下数值远超常规：腐食腐鬼靠敌方尸体无限成长，猩红裁决官让对格生物承伤翻倍，苦痛惩罚者与鲜血贤者把伤痛化为攻击力。',
       weaknesses: '每次施法都要付出生命，本体极易被自己掏空；猩红裁决官、鲜血贤者等核心都依赖对格或对方本体受创才有收益。',
-      tip: '保持本体高血量、用高攻生物反复压制【猩红裁决官】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
+      tip: '保持本体高血量、用高攻生物反复压制【鲜血审判官】；对手生命低于 20 时其血族卡牌几乎无法使用，此时全力抢血即可。',
     },
   };
 
@@ -6862,32 +7642,43 @@ function renderCustomDeckBuilderScreen(): string {
 }
 
 function renderGameOverModal(): string {
+  const isSpectator = currentBattleSource === 'ai_duel' && aiDuelMode === 'ai_vs_ai';
+  const winnerName = engine.winner === 'player' ? engine.player.name : engine.enemy.name;
   const isWin = engine.winner === 'player';
+
+  const modalTitle = isSpectator ? `【${winnerName}】登顶获胜` : (isWin ? '决 战 胜 利' : '战 局 败 北');
+  const modalSubtitle = isSpectator ? '✦ AI 巅峰神谕推演终局 ✦' : (isWin ? '✦ VICTORY ACHIEVED ✦' : '✦ DEFEAT IN BATTLE ✦');
 
   return `
     <div class="modal-overlay" id="game-over-modal-overlay">
-      <div class="battle-result-stone-dialog ${isWin ? 'win' : 'defeat'}">
+      <div class="battle-result-stone-dialog ${isWin || isSpectator ? 'win' : 'defeat'}">
         <div class="battle-result-crest-wrap">
-          <div class="battle-result-crest">${isWin ? '🏆' : '💀'}</div>
-          <div class="battle-result-title-banner ${isWin ? 'win' : 'defeat'}">
-            <h2 class="battle-result-title">${isWin ? '决 战 胜 利' : '战 局 败 北'}</h2>
-            <div class="battle-result-subtitle">${isWin ? '✦ VICTORY ACHIEVED ✦' : '✦ DEFEAT IN BATTLE ✦'}</div>
+          <div class="battle-result-crest">${isWin || isSpectator ? '🏆' : '💀'}</div>
+          <div class="battle-result-title-banner ${isWin || isSpectator ? 'win' : 'defeat'}">
+            <h2 class="battle-result-title">${modalTitle}</h2>
+            <div class="battle-result-subtitle">${modalSubtitle}</div>
           </div>
         </div>
 
         <div class="battle-result-body">
           <p class="battle-result-desc">
-            ${isWin
-              ? (currentBattleSource === 'campaign'
-                  ? `恭喜大捷！第 <strong>${selectedCampaignLevelId}</strong> 关对手已被击败，大地图新战线现已向您敞开！`
-                  : (currentBattleSource === 'league'
-                      ? `联赛凯歌高奏！您在第 <strong>${activeLeague?.currentMatch || 1}</strong> 轮对决中力克强敌，积分大幅飙升！`
-                      : (currentBattleSource === 'lan'
-                          ? `局域网联机凯歌！您在与 <strong>${engine.enemy.name}</strong> 的高能智斗中运筹帷幄，赢得了整场对决的无上荣耀！`
-                          : '您精心构筑的卡组经受住了实战考验，以完美的元素统合之力瓦解了敌军！')))
-              : (currentBattleSource === 'lan'
-                  ? `在与 <strong>${engine.enemy.name}</strong> 的奥术交锋中棋差一着……胜败乃法师常事，重整旗鼓再来一局！`
-                  : '英雄生命力耗尽，战场符文暗淡……但真正的魔导师在沉寂中洞察生机，总结克敌之道，再次问鼎巅峰！')}
+            ${isSpectator
+              ? `两大高阶 AI 魔导师经过 <strong>${engine.turnCount}</strong> 回合的算力风暴与博弈推演，最终由 <strong>【${winnerName}】</strong> 技高一筹斩获胜局！`
+              : (isWin
+                  ? (currentBattleSource === 'campaign'
+                      ? `恭喜大捷！第 <strong>${selectedCampaignLevelId}</strong> 关对手已被击败，大地图新战线现已向您敞开！`
+                      : (currentBattleSource === 'league'
+                          ? `联赛凯歌高奏！您在第 <strong>${activeLeague?.currentMatch || 1}</strong> 轮对决中力克强敌，积分大幅飙升！`
+                          : (currentBattleSource === 'lan'
+                              ? `局域网联机凯歌！您在与 <strong>${engine.enemy.name}</strong> 的高能智斗中运筹帷幄，赢得了整场对决的无上荣耀！`
+                              : (currentBattleSource === 'ai_duel'
+                                  ? `您在与大模型魔导师 <strong>${engine.enemy.name}</strong> 的巅峰智斗中运筹帷幄，成功以人类智慧战胜了高阶 AI 心智！`
+                                  : '您精心构筑的卡组经受住了实战考验，以完美的元素统合之力瓦解了敌军！'))))
+                  : (currentBattleSource === 'lan'
+                      ? `在与 <strong>${engine.enemy.name}</strong> 的奥术交锋中棋差一着……胜败乃法师常事，重整旗鼓再来一局！`
+                      : (currentBattleSource === 'ai_duel'
+                          ? `大模型魔导师 <strong>${engine.enemy.name}</strong> 施展了超凡算力压制，棋差一着……胜败乃常事，总结克敌之道，再次问鼎巅峰！`
+                          : '英雄生命力耗尽，战场符文暗淡……但真正的魔导师在沉寂中洞察生机，总结克敌之道，再次问鼎巅峰！')))}
           </p>
           <div class="battle-result-stats-pill">
             <span>战局博弈: <strong>${engine.turnCount}</strong> 回合</span>
@@ -6914,6 +7705,12 @@ function renderGameOverModal(): string {
               <span>返回自组卡牌</span>
             </button>
           ` : ''}
+          ${currentBattleSource === 'ai_duel' ? `
+            <button class="battle-result-btn next" id="btn-ai-duel-result-return">
+              <span class="btn-icon">🔮</span>
+              <span>返回巅峰设置</span>
+            </button>
+          ` : ''}
           ${currentBattleSource === 'lan' ? `
             <button class="battle-result-btn next" id="btn-lan-result-return">
               <span class="btn-icon">🌐</span>
@@ -6922,7 +7719,7 @@ function renderGameOverModal(): string {
           ` : `
             <button class="battle-result-btn restart" id="btn-restart">
               <span class="btn-icon">🔄</span>
-              <span>${isWin ? '再次对战' : '整军再战'}</span>
+              <span>${isSpectator ? '再次推演' : (isWin ? '再次对战' : '整军再战')}</span>
             </button>
           `}
           <button class="battle-result-btn menu" id="btn-return-menu">
@@ -6936,6 +7733,70 @@ function renderGameOverModal(): string {
 }
 
 let activeBattleBgm: string = '';
+
+function startAiDuelBattle() {
+  currentBattleSource = 'ai_duel';
+  resetBattleBanterSession();
+  activeEnemyBanter = null;
+
+  const chosenDiff = SINGLE_DUEL_DIFFICULTIES[aiDuelDifficultyIdx];
+  const allSc = getAllScenarios();
+  const scenario = pickScenarioById(allSc[aiDuelScenarioIdx]?.id || 'sanctuary');
+
+  currentBattlefieldTheme = scenario.theme;
+  sound.playBgm(getCombatBgmForCurrentBattle());
+
+  const availableClasses = getSelectableClasses();
+  const isSpectator = aiDuelMode === 'ai_vs_ai';
+
+  const pClassId = HERO_CLASSES[isSpectator ? aiDuelAi1ClassIdx : playerClassIndex].id;
+  let pClass: HeroClass = pClassId === 'random'
+    ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
+    : (pClassId as HeroClass);
+
+  const eClassId = HERO_CLASSES[aiDuelAi2ClassIdx].id;
+  let eClass: HeroClass = eClassId === 'random'
+    ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
+    : (eClassId as HeroClass);
+
+  const pName = isSpectator ? MASTER_OPPONENT_NAMES[aiDuelAi1NameIdx % MASTER_OPPONENT_NAMES.length] : '玩家';
+  const pFace = isSpectator ? `./faces/Face${aiDuelAi1FaceIdx + 1}.jpg` : `./faces/Face${playerFaceIndex + 1}.jpg`;
+  const eName = MASTER_OPPONENT_NAMES[aiDuelAi2NameIdx % MASTER_OPPONENT_NAMES.length];
+  const eFace = `./faces/Face${aiDuelAi2FaceIdx + 1}.jpg`;
+
+  engine = new SpectromancerEngine(pClass, undefined, {
+    playerName: pName,
+    playerFace: pFace,
+    enemyName: eName,
+    enemyFace: eFace,
+    enemyClass: eClass,
+    difficulty: chosenDiff,
+    battleSource: 'ai_duel',
+    isPlayerAiControlled: isSpectator,
+    ...buildScenarioEngineOptions(scenario),
+  });
+
+  setupEngineCallbacks();
+  selectedCard = null;
+  inspectedCard = null;
+  showHelpModal = false;
+  showOptionsModal = false;
+  currentView = 'battle';
+  render();
+
+  showToastNotice(isSpectator
+    ? `🔮 神谕上帝观战开启！【${pName}】VS【${eName}】(${scenario.name} · ${chosenDiff})`
+    : `🔮 AI 巅峰对决开启！挑战【${eName}】(${scenario.name} · ${chosenDiff})`
+  );
+
+  if (isSpectator && engine.activeTurn === 'player') {
+    setTimeout(() => {
+      if (currentView === 'battle' && engine.activeTurn === 'player' && engine.isPlayerAiControlled) {
+        engine.triggerAiTurn('player');
+      }
+    }, 1000);
+  }
+}
 
 function getCombatBgmForCurrentBattle(): string {
   if (activeBattleBgm) {
@@ -6977,6 +7838,8 @@ export function render() {
     if (showLanLobbyModal) app.innerHTML += renderLanLobbyModal();
   } else if (currentView === 'single_duel_setup') {
     app.innerHTML = renderSingleDuelSetup();
+  } else if (currentView === 'ai_duel_setup') {
+    app.innerHTML = renderAiDuelSetupModal();
   } else if (currentView === 'campaign') {
     app.innerHTML = renderCampaignMapScreen();
     if (showCampaignHubModal) app.innerHTML += renderCampaignHubModal();
@@ -7011,6 +7874,8 @@ export function render() {
   if (lanVsMatchData) app.innerHTML += renderLanVsOverlay();
   if (showLanDisconnectModal) app.innerHTML += renderLanDisconnectModal();
   if (showClassGridPickerFor) app.innerHTML += renderClassGridPickerModal(showClassGridPickerFor);
+  if (showScenarioGridPicker) app.innerHTML += renderScenarioGridPickerModal();
+  if (showAiScenarioModal) app.innerHTML += renderAiScenarioModal();
 
   attachEventListeners();
 
@@ -7018,7 +7883,7 @@ export function render() {
   if (logScroll) {
     logScroll.scrollTop = logScroll.scrollHeight;
   }
-  updateAiTurnWatchdog();
+  updateTurnTimer();
 }
 
 function attachEventListeners() {
@@ -7034,6 +7899,12 @@ function attachEventListeners() {
   document.getElementById('btn-menu-lan')?.addEventListener('click', () => {
     sound.play('click');
     showLanLobbyModal = true;
+    render();
+  });
+
+  document.getElementById('btn-menu-ai-duel')?.addEventListener('click', () => {
+    sound.play('click');
+    currentView = 'ai_duel_setup';
     render();
   });
 
@@ -7500,28 +8371,28 @@ function attachEventListeners() {
   document.getElementById('btn-player-face-prev')?.addEventListener('click', () => {
     sound.play('click');
     playerFaceIndex = (playerFaceIndex - 1 + TOTAL_FACES) % TOTAL_FACES;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-player-face-next')?.addEventListener('click', () => {
     sound.play('click');
     playerFaceIndex = (playerFaceIndex + 1) % TOTAL_FACES;
-    render();
+    updateSingleDuelInPlace();
   });
 
   document.getElementById('btn-player-class-prev')?.addEventListener('click', () => {
     sound.play('click');
     playerClassIndex = (playerClassIndex - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-player-class-next')?.addEventListener('click', () => {
     sound.play('click');
     playerClassIndex = (playerClassIndex + 1) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-player-class-pick')?.addEventListener('click', () => {
     sound.play('click');
     playerClassIndex = (playerClassIndex + 1) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-player-class-grid')?.addEventListener('click', () => {
     sound.play('click');
@@ -7529,31 +8400,49 @@ function attachEventListeners() {
     render();
   });
 
+  document.getElementById('btn-ai-name-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelAiNameIdx = (singleDuelAiNameIdx - 1 + MASTER_OPPONENT_NAMES.length) % MASTER_OPPONENT_NAMES.length;
+    updateSingleDuelInPlace();
+  });
+  document.getElementById('btn-ai-name-next')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelAiNameIdx = (singleDuelAiNameIdx + 1) % MASTER_OPPONENT_NAMES.length;
+    updateSingleDuelInPlace();
+  });
+  document.getElementById('duel-ai-name-val')?.addEventListener('click', () => {
+    sound.play('click');
+    singleDuelAiNameIdx = (singleDuelAiNameIdx + 1) % MASTER_OPPONENT_NAMES.length;
+    updateSingleDuelInPlace();
+  });
+
   document.getElementById('btn-ai-face-prev')?.addEventListener('click', () => {
     sound.play('click');
     aiFaceIndex = (aiFaceIndex - 1 + TOTAL_FACES) % TOTAL_FACES;
-    render();
+    singleDuelAiNameIdx = aiFaceIndex % MASTER_OPPONENT_NAMES.length;
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-ai-face-next')?.addEventListener('click', () => {
     sound.play('click');
     aiFaceIndex = (aiFaceIndex + 1) % TOTAL_FACES;
-    render();
+    singleDuelAiNameIdx = aiFaceIndex % MASTER_OPPONENT_NAMES.length;
+    updateSingleDuelInPlace();
   });
 
   document.getElementById('btn-ai-class-prev')?.addEventListener('click', () => {
     sound.play('click');
     aiClassIndex = (aiClassIndex - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-ai-class-next')?.addEventListener('click', () => {
     sound.play('click');
     aiClassIndex = (aiClassIndex + 1) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-ai-class-pick')?.addEventListener('click', () => {
     sound.play('click');
     aiClassIndex = (aiClassIndex + 1) % HERO_CLASSES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-ai-class-grid')?.addEventListener('click', () => {
     sound.play('click');
@@ -7587,6 +8476,11 @@ function attachEventListeners() {
       } else if (target === 'lan') {
         lanPlayerClassIdx = clsIdx;
         saveLanProfilePreferences();
+      } else if (target === 'ai_duel_1') {
+        if (aiDuelMode === 'human_vs_ai') playerClassIndex = clsIdx;
+        else aiDuelAi1ClassIdx = clsIdx;
+      } else if (target === 'ai_duel_2') {
+        aiDuelAi2ClassIdx = clsIdx;
       }
       showClassGridPickerFor = null;
       render();
@@ -7596,33 +8490,158 @@ function attachEventListeners() {
   document.getElementById('btn-duel-diff-prev')?.addEventListener('click', () => {
     sound.play('click');
     singleDuelDifficultyIdx = (singleDuelDifficultyIdx - 1 + SINGLE_DUEL_DIFFICULTIES.length) % SINGLE_DUEL_DIFFICULTIES.length;
-    render();
+    updateSingleDuelInPlace();
   });
   document.getElementById('btn-duel-diff-next')?.addEventListener('click', () => {
     sound.play('click');
     singleDuelDifficultyIdx = (singleDuelDifficultyIdx + 1) % SINGLE_DUEL_DIFFICULTIES.length;
+    updateSingleDuelInPlace();
+  });
+
+  document.getElementById('duel-scene-val-display')?.addEventListener('click', () => {
+    sound.play('click');
+    showScenarioGridPicker = true;
     render();
   });
 
-  document.getElementById('btn-duel-scene-prev')?.addEventListener('click', () => {
+  document.getElementById('btn-duel-scene-grid')?.addEventListener('click', () => {
     sound.play('click');
-    singleDuelScenarioIdx = (singleDuelScenarioIdx - 1 + BATTLEFIELD_SCENARIOS.length) % BATTLEFIELD_SCENARIOS.length;
+    showScenarioGridPicker = true;
     render();
   });
-  document.getElementById('btn-duel-scene-next')?.addEventListener('click', () => {
+  document.getElementById('btn-duel-scene-ai-create')?.addEventListener('click', () => {
     sound.play('click');
-    singleDuelScenarioIdx = (singleDuelScenarioIdx + 1) % BATTLEFIELD_SCENARIOS.length;
+    showAiScenarioModal = true;
+    render();
+  });
+
+  // ===================================
+  // SCENARIO GRID PICKER & AI SCENARIO ACTIONS
+  // ===================================
+  document.getElementById('scenario-grid-overlay')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).id === 'scenario-grid-overlay') {
+      sound.play('click');
+      showScenarioGridPicker = false;
+      render();
+    }
+  });
+  document.getElementById('btn-close-scenario-grid')?.addEventListener('click', () => {
+    sound.play('click');
+    showScenarioGridPicker = false;
+    render();
+  });
+  document.getElementById('btn-open-ai-creator-from-grid')?.addEventListener('click', () => {
+    sound.play('click');
+    showScenarioGridPicker = false;
+    showAiScenarioModal = true;
+    render();
+  });
+  document.querySelectorAll('.scenario-grid-item').forEach((item) => {
+    item.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.btn-delete-custom-scenario')) return;
+      sound.play('click');
+      const idx = parseInt(item.getAttribute('data-scenario-idx') || '0', 10);
+      if (currentView === 'ai_duel_setup') {
+        aiDuelScenarioIdx = idx;
+      } else {
+        singleDuelScenarioIdx = idx;
+      }
+      showScenarioGridPicker = false;
+      render();
+    });
+  });
+  document.querySelectorAll('.btn-delete-custom-scenario').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const scId = btn.getAttribute('data-scenario-id');
+      if (scId) {
+        if (!confirm('确定要永久删除此自创秘境场景吗？')) return;
+        sound.play('click');
+        deleteCustomScenario(scId);
+        showToastNotice('🗑️ 已成功删除自创场景！');
+        const allSc = getAllScenarios();
+        if (singleDuelScenarioIdx >= allSc.length) singleDuelScenarioIdx = 0;
+        if (aiDuelScenarioIdx >= allSc.length) aiDuelScenarioIdx = 0;
+        render();
+      }
+    });
+  });
+
+  document.getElementById('btn-close-ai-scenario')?.addEventListener('click', () => {
+    sound.play('click');
+    showAiScenarioModal = false;
+    aiScenarioPreview = null;
+    render();
+  });
+  document.querySelectorAll('.btn-ai-scene-preset').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      sound.play('click');
+      const preset = btn.getAttribute('data-preset') || '';
+      aiScenarioPromptInput = preset;
+      const textarea = document.getElementById('ai-scenario-prompt-input') as HTMLTextAreaElement;
+      if (textarea) textarea.value = preset;
+    });
+  });
+  document.getElementById('btn-trigger-ai-scene-gen')?.addEventListener('click', async () => {
+    sound.play('btn1');
+    const textarea = document.getElementById('ai-scenario-prompt-input') as HTMLTextAreaElement;
+    const promptText = textarea ? textarea.value.trim() : aiScenarioPromptInput;
+    if (!promptText) {
+      alert('请输入场景构想描述或选择上方灵感预设！');
+      return;
+    }
+    aiScenarioPromptInput = promptText;
+    aiScenarioLoading = true;
+    render();
+
+    try {
+      const generated = await generateAiBattlefieldScenario(promptText);
+      aiScenarioLoading = false;
+      if (generated) {
+        aiScenarioPreview = generated as BattlefieldScenario;
+      }
+      render();
+    } catch (err: any) {
+      aiScenarioLoading = false;
+      alert(`AI 场景生成失败: ${err?.message || '未知错误'}`);
+      render();
+    }
+  });
+  document.getElementById('btn-save-ai-scene')?.addEventListener('click', () => {
+    sound.play('btn1');
+    if (aiScenarioPreview) {
+      saveCustomScenario(aiScenarioPreview);
+      const allSc = getAllScenarios();
+      const newIdx = allSc.findIndex((s) => s.id === aiScenarioPreview?.id);
+      if (newIdx !== -1) {
+        if (currentView === 'ai_duel_setup') {
+          aiDuelScenarioIdx = newIdx;
+        } else {
+          singleDuelScenarioIdx = newIdx;
+        }
+      }
+      aiScenarioPreview = null;
+      showAiScenarioModal = false;
+      render();
+    }
+  });
+  document.getElementById('btn-discard-ai-scene')?.addEventListener('click', () => {
+    sound.play('click');
+    aiScenarioPreview = null;
     render();
   });
 
   document.getElementById('btn-start-duel')?.addEventListener('click', () => {
     sound.play('click');
     currentBattleSource = 'duel';
+    resetBattleBanterSession();
+    activeEnemyBanter = null;
 
     const chosenDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
 
     // Determine Scenario
-    const scenario = pickScenarioById(BATTLEFIELD_SCENARIOS[singleDuelScenarioIdx].id);
+    const allSc = getAllScenarios();
+    const scenario = pickScenarioById(allSc[singleDuelScenarioIdx]?.id || 'sanctuary');
 
     currentBattlefieldTheme = scenario.theme;
     sound.playBgm(getCombatBgmForCurrentBattle());
@@ -7637,10 +8656,12 @@ function attachEventListeners() {
       ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
       : (HERO_CLASSES[aiClassIndex].id as HeroClass);
 
+    const aiChosenName = MASTER_OPPONENT_NAMES[singleDuelAiNameIdx % MASTER_OPPONENT_NAMES.length] || '大法师';
+
     engine = new SpectromancerEngine(pClass, undefined, {
       playerName: '玩家',
       playerFace: `./faces/Face${playerFaceIndex + 1}.jpg`,
-      enemyName: '大法师',
+      enemyName: aiChosenName,
       enemyFace: `./faces/Face${aiFaceIndex + 1}.jpg`,
       enemyClass: eClass,
       difficulty: chosenDiff,
@@ -7655,6 +8676,170 @@ function attachEventListeners() {
     currentView = 'battle';
     render();
     showToastNotice(`⚔️ 对战开启！【${scenario.name}】(${chosenDiff}难度)`);
+  });
+
+  // ===================================
+  // AI PEAK SHOWDOWN SETUP ACTIONS
+  // ===================================
+  document.getElementById('btn-close-ai-duel')?.addEventListener('click', () => {
+    sound.play('click');
+    currentView = 'menu';
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-quick-toggle-ai')?.addEventListener('click', () => {
+    sound.play('click');
+    showOptionsModal = true;
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-mode-human')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelMode = 'human_vs_ai';
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-mode-spectator')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelMode = 'ai_vs_ai';
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-diff-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelDifficultyIdx = (aiDuelDifficultyIdx - 1 + SINGLE_DUEL_DIFFICULTIES.length) % SINGLE_DUEL_DIFFICULTIES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-diff-next')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelDifficultyIdx = (aiDuelDifficultyIdx + 1) % SINGLE_DUEL_DIFFICULTIES.length;
+    render();
+  });
+
+  document.getElementById('ai-duel-scene-val')?.addEventListener('click', () => {
+    sound.play('click');
+    showScenarioGridPicker = true;
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-scene-grid')?.addEventListener('click', () => {
+    sound.play('click');
+    showScenarioGridPicker = true;
+    render();
+  });
+  document.getElementById('btn-ai-duel-scene-ai-create')?.addEventListener('click', () => {
+    sound.play('click');
+    showAiScenarioModal = true;
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-p1-face-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    if (aiDuelMode === 'human_vs_ai') {
+      playerFaceIndex = (playerFaceIndex - 1 + TOTAL_FACES) % TOTAL_FACES;
+    } else {
+      aiDuelAi1FaceIdx = (aiDuelAi1FaceIdx - 1 + TOTAL_FACES) % TOTAL_FACES;
+    }
+    render();
+  });
+  document.getElementById('btn-ai-duel-p1-face-next')?.addEventListener('click', () => {
+    sound.play('click');
+    if (aiDuelMode === 'human_vs_ai') {
+      playerFaceIndex = (playerFaceIndex + 1) % TOTAL_FACES;
+    } else {
+      aiDuelAi1FaceIdx = (aiDuelAi1FaceIdx + 1) % TOTAL_FACES;
+    }
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-p1-class-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    if (aiDuelMode === 'human_vs_ai') {
+      playerClassIndex = (playerClassIndex - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
+    } else {
+      aiDuelAi1ClassIdx = (aiDuelAi1ClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
+    }
+    render();
+  });
+  document.getElementById('btn-ai-duel-p1-class-next')?.addEventListener('click', () => {
+    sound.play('click');
+    if (aiDuelMode === 'human_vs_ai') {
+      playerClassIndex = (playerClassIndex + 1) % HERO_CLASSES.length;
+    } else {
+      aiDuelAi1ClassIdx = (aiDuelAi1ClassIdx + 1) % HERO_CLASSES.length;
+    }
+    render();
+  });
+  document.getElementById('btn-ai-duel-p1-class-pick')?.addEventListener('click', () => {
+    sound.play('click');
+    if (aiDuelMode === 'human_vs_ai') {
+      playerClassIndex = (playerClassIndex + 1) % HERO_CLASSES.length;
+    } else {
+      aiDuelAi1ClassIdx = (aiDuelAi1ClassIdx + 1) % HERO_CLASSES.length;
+    }
+    render();
+  });
+  document.getElementById('btn-ai-duel-p1-class-grid')?.addEventListener('click', () => {
+    sound.play('click');
+    showClassGridPickerFor = 'ai_duel_1';
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-p1-name-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi1NameIdx = (aiDuelAi1NameIdx - 1 + MASTER_OPPONENT_NAMES.length) % MASTER_OPPONENT_NAMES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p1-name-next')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi1NameIdx = (aiDuelAi1NameIdx + 1) % MASTER_OPPONENT_NAMES.length;
+    render();
+  });
+
+  document.getElementById('btn-ai-duel-p2-name-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2NameIdx = (aiDuelAi2NameIdx - 1 + MASTER_OPPONENT_NAMES.length) % MASTER_OPPONENT_NAMES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-name-next')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2NameIdx = (aiDuelAi2NameIdx + 1) % MASTER_OPPONENT_NAMES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-face-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2FaceIdx = (aiDuelAi2FaceIdx - 1 + TOTAL_FACES) % TOTAL_FACES;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-face-next')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2FaceIdx = (aiDuelAi2FaceIdx + 1) % TOTAL_FACES;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-class-prev')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2ClassIdx = (aiDuelAi2ClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-class-next')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2ClassIdx = (aiDuelAi2ClassIdx + 1) % HERO_CLASSES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-class-pick')?.addEventListener('click', () => {
+    sound.play('click');
+    aiDuelAi2ClassIdx = (aiDuelAi2ClassIdx + 1) % HERO_CLASSES.length;
+    render();
+  });
+  document.getElementById('btn-ai-duel-p2-class-grid')?.addEventListener('click', () => {
+    sound.play('click');
+    showClassGridPickerFor = 'ai_duel_2';
+    render();
+  });
+
+  document.getElementById('btn-start-ai-duel-action')?.addEventListener('click', () => {
+    sound.play('click');
+    startAiDuelBattle();
   });
 
   // ===================================
@@ -7674,6 +8859,8 @@ function attachEventListeners() {
       if (lvl) {
         sound.play('click');
         currentBattleSource = 'campaign';
+        resetBattleBanterSession();
+        activeEnemyBanter = null;
         selectedCampaignLevelId = lvlId;
         const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
         engine = new SpectromancerEngine('sorcery', lvl, {
@@ -7954,6 +9141,26 @@ function attachEventListeners() {
     }
   });
 
+  document.getElementById('btn-toggle-fullscreen')?.addEventListener('click', () => {
+    sound.play('click');
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  });
+
+  const updateFsBtnState = () => {
+    const btn = document.getElementById('btn-toggle-fullscreen');
+    if (btn) {
+      const isFs = Boolean(document.fullscreenElement);
+      btn.className = `duel-stone-action-btn ${isFs ? 'start' : 'close'}`;
+      btn.textContent = isFs ? '⛶ 退出全屏' : '⛶ 进入全屏';
+    }
+  };
+  document.removeEventListener('fullscreenchange', updateFsBtnState);
+  document.addEventListener('fullscreenchange', updateFsBtnState);
+
   const allBattlefieldThemes = ['citadel', 'sky', 'volcano', 'forest', 'abyss', 'tundra', 'desert', 'shrine'] as const;
 
   const updateThemeButtons = () => {
@@ -7997,6 +9204,154 @@ function attachEventListeners() {
     });
   });
 
+
+  
+
+  // AI Brain Settings Listeners (Direct DOM update, zero flicker!)
+  document.getElementById('btn-toggle-ai-enabled')?.addEventListener('click', () => {
+    sound.play('click');
+    const cfg = getAiConfig();
+    cfg.enabled = !cfg.enabled;
+    saveAiConfig(cfg);
+    const track = document.getElementById('btn-toggle-ai-enabled');
+    const panel = document.getElementById('options-ai-details-panel');
+    const hint = document.getElementById('options-ai-disabled-hint');
+    if (track) {
+      track.classList.toggle('active', cfg.enabled);
+      track.setAttribute('aria-checked', String(cfg.enabled));
+    }
+    if (panel) panel.style.display = cfg.enabled ? 'flex' : 'none';
+    if (hint) hint.style.display = cfg.enabled ? 'none' : 'block';
+  });
+
+  (['duel', 'league', 'campaign', 'custom-deck'] as const).forEach((m) => {
+    const key = m === 'custom-deck' ? 'custom_deck' : m;
+    document.getElementById(`chk-ai-mode-${m}`)?.addEventListener('change', (e) => {
+      sound.play('click');
+      const cfg = getAiConfig();
+      if (!cfg.applyModes) {
+        cfg.applyModes = { duel: true, league: true, campaign: true, custom_deck: true };
+      }
+      cfg.applyModes[key] = (e.target as HTMLInputElement).checked;
+      saveAiConfig(cfg);
+    });
+  });
+
+  (['deepseek', 'siliconflow', 'ollama', 'custom'] as const).forEach((p) => {
+    document.getElementById(`btn-ai-provider-${p}`)?.addEventListener('click', () => {
+      sound.play('click');
+      const cfg = getAiConfig();
+      cfg.provider = p;
+      const preset = PROVIDER_PRESETS[p];
+      if (preset && p !== 'custom') {
+        cfg.baseUrl = preset.baseUrl;
+        cfg.model = preset.model;
+      }
+      saveAiConfig(cfg);
+      (['deepseek', 'siliconflow', 'ollama', 'custom'] as const).forEach((otherP) => {
+        const btn = document.getElementById(`btn-ai-provider-${otherP}`);
+        if (btn) btn.className = `duel-stone-action-btn ${otherP === p ? 'start' : 'close'}`;
+      });
+      const inputBaseUrl = document.getElementById('input-ai-baseurl') as HTMLInputElement | null;
+      const inputModel = document.getElementById('input-ai-model') as HTMLInputElement | null;
+      const inputApiKey = document.getElementById('input-ai-apikey') as HTMLInputElement | null;
+      if (inputBaseUrl) inputBaseUrl.value = cfg.baseUrl;
+      if (inputModel) inputModel.value = cfg.model;
+      if (inputApiKey && p === 'ollama') inputApiKey.placeholder = '本地 Ollama 免填 API Key';
+      const resultSpan = document.getElementById('ai-test-result');
+      if (resultSpan) {
+        resultSpan.textContent = '💡 已切换配置，随时可点击测试连通性';
+        resultSpan.style.color = '#854d0e';
+      }
+    });
+  });
+
+  document.getElementById('input-ai-apikey')?.addEventListener('input', (e) => {
+    const cfg = getAiConfig();
+    cfg.apiKey = (e.target as HTMLInputElement).value.trim();
+    saveAiConfig(cfg);
+  });
+
+  document.getElementById('btn-toggle-reveal-apikey')?.addEventListener('click', () => {
+    sound.play('click');
+    showAiApiKey = !showAiApiKey;
+    const input = document.getElementById('input-ai-apikey') as HTMLInputElement | null;
+    const btn = document.getElementById('btn-toggle-reveal-apikey');
+    if (input) input.type = showAiApiKey ? 'text' : 'password';
+    if (btn) btn.textContent = showAiApiKey ? '🙈 隐藏' : '👁️ 显示';
+  });
+
+  document.getElementById('input-ai-baseurl')?.addEventListener('input', (e) => {
+    const cfg = getAiConfig();
+    cfg.baseUrl = (e.target as HTMLInputElement).value.trim();
+    saveAiConfig(cfg);
+  });
+
+  document.getElementById('input-ai-model')?.addEventListener('input', (e) => {
+    const cfg = getAiConfig();
+    cfg.model = (e.target as HTMLInputElement).value.trim();
+    saveAiConfig(cfg);
+  });
+
+  document.getElementById('btn-test-ai-connection')?.addEventListener('click', async () => {
+    sound.play('click');
+    const cfg = getAiConfig();
+    const btn = document.getElementById('btn-test-ai-connection') as HTMLButtonElement | null;
+    const resultSpan = document.getElementById('ai-test-result');
+    if (btn) {
+      btn.disabled = true;
+      btn.textContent = '⏳ 测试中...';
+    }
+    if (resultSpan) {
+      resultSpan.textContent = '⏳ 正在向模型发送握手测试...';
+      resultSpan.style.color = '#854d0e';
+    }
+
+    const res = await testAiConnection(cfg);
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⚡ 测试连通性';
+    }
+    if (res.success) {
+      const track = document.getElementById('btn-toggle-ai-enabled');
+      const panel = document.getElementById('options-ai-details-panel');
+      const hint = document.getElementById('options-ai-disabled-hint');
+      if (track) {
+        track.classList.add('active');
+        track.setAttribute('aria-checked', 'true');
+      }
+      if (panel) panel.style.display = 'flex';
+      if (hint) hint.style.display = 'none';
+
+      if (resultSpan) {
+        resultSpan.textContent = `✅ 连通成功 (${res.latencyMs || 0}ms)！已自动启用魔导对白`;
+        resultSpan.style.color = '#16a34a';
+      }
+      showToastNotice('✅ AI 模型连通成功！已自动开启战局对白');
+    } else {
+      if (resultSpan) {
+        resultSpan.textContent = `❌ 失败: ${res.message || '网络连接错误'}`;
+        resultSpan.style.color = '#dc2626';
+      }
+    }
+  });
+
+  document.getElementById('btn-view-ai-combat-logs')?.addEventListener('click', () => {
+    sound.play('click');
+    const logs = (window as any).__exportCombatAiLogs ? (window as any).__exportCombatAiLogs() : '';
+    if (!logs || logs === '暂无对战 AI 记录') {
+      showToastNotice('ℹ️ 暂无对战记录。开启 AI 并在对战中出牌后，或运行 tools/test_combat_api.js 即可生成！');
+      return;
+    }
+    const blob = new Blob([logs], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'battle_ai_records.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToastNotice('📄 已导出最新对战大模型请求与响应！文件亦实时写入 tools/battle_ai_records.txt');
+  });
 
   document.getElementById('btn-combat-surrender')?.addEventListener('click', () => {
     sound.play('click');
@@ -8068,29 +9423,6 @@ function attachEventListeners() {
     }
   });
 
-  document.getElementById('btn-force-skip-enemy')?.addEventListener('click', async () => {
-    if (isActionPending) return;
-    if (engine.activeTurn === 'enemy' && !engine.gameOver && !engine.isLanGame) {
-      sound.play('click');
-      isActionPending = true;
-      if (aiTurnWatchdogTimer) {
-        clearTimeout(aiTurnWatchdogTimer);
-        aiTurnWatchdogTimer = null;
-      }
-      aiAnnouncedCard = null;
-      engine.log('⚡ 【指挥官干预】已手动强制跳过电脑对手的回合！', 'heal');
-      showToastNotice('⚡ 已强制跳过电脑回合！');
-      try {
-        await engine.passTurn('enemy');
-      } catch (err) {
-        console.error('Error forcing skip:', err);
-      } finally {
-        isActionPending = false;
-        render();
-      }
-    }
-  });
-
   // Hand card clicks
   document.querySelectorAll('.combat-hand-card-item').forEach((el) => {
     const cardId = (el as HTMLElement).dataset.cardId!;
@@ -8104,6 +9436,7 @@ function attachEventListeners() {
         : engine.getEffectiveHand('player').find((x) => x.id === cardId);
       if (c) {
         inspectedCard = c;
+        inspectedCardSide = isOpponent ? 'enemy' : 'player';
         detailedCard = c;
         detailedCreatureSlot = null;
         showCardDetailModal = true;
@@ -8121,12 +9454,14 @@ function attachEventListeners() {
             : (engine.enemyRevealedCardIds.has(oppCard.id) || (oppCard.isActivatedAbility && engine.enemyRevealedCardIds.has(oppCard.id.replace('ability_', ''))));
           if (isRevealed) {
             inspectedCard = oppCard;
+            inspectedCardSide = 'enemy';
           } else {
             inspectedCard = {
               ...oppCard,
               nameCn: `未明示卡牌 (${oppCard.cost}费)`,
               desc: `【未明示敌方手牌】敌方本系手牌尚未打出或揭示。每当敌方施放或召唤该卡牌时，该卡牌将被记录并显现。`,
             };
+            inspectedCardSide = 'enemy';
           }
           render();
         }
@@ -8137,6 +9472,7 @@ function attachEventListeners() {
       if (!card) return;
 
       inspectedCard = card;
+      inspectedCardSide = 'player';
 
       if (selectedCard?.id === card.id) {
         // If clicking selected spell that requires no target, cast it immediately!
@@ -8199,6 +9535,7 @@ function attachEventListeners() {
       if (occ) {
         sound.play('click');
         inspectedCard = occ.card;
+        inspectedCardSide = side as 'player' | 'enemy';
         detailedCard = occ.card;
         detailedCreatureSlot = { creature: occ, side: side as 'player' | 'enemy' };
         showCardDetailModal = true;
@@ -8213,6 +9550,7 @@ function attachEventListeners() {
       if (!selectedCard && occupied) {
         sound.play('click');
         inspectedCard = occupied.card;
+        inspectedCardSide = side as 'player' | 'enemy';
         render();
         return;
       }
@@ -8220,6 +9558,7 @@ function attachEventListeners() {
       if (!selectedCard || engine.isCombatPhase || isActionPending) {
         if (occupied) {
           inspectedCard = occupied.card;
+          inspectedCardSide = side as 'player' | 'enemy';
           render();
         }
         return;
@@ -8788,37 +10127,37 @@ function attachEventListeners() {
   document.getElementById('btn-campaign-face-prev')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerFaceId = ((campaignPlayerFaceId - 2 + TOTAL_FACES) % TOTAL_FACES) + 1;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-face-next')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerFaceId = (campaignPlayerFaceId % TOTAL_FACES) + 1;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-class-prev')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerClassIdx = (campaignPlayerClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-class-next')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerClassIdx = (campaignPlayerClassIdx + 1) % HERO_CLASSES.length;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-setup-diff-prev')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerDifficultyIdx = (campaignPlayerDifficultyIdx - 1 + campaignDifficulties.length) % campaignDifficulties.length;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-setup-diff-next')?.addEventListener('click', () => {
     sound.play('click');
     campaignPlayerDifficultyIdx = (campaignPlayerDifficultyIdx + 1) % campaignDifficulties.length;
-    render();
+    updateCampaignSetupInPlace();
   });
 
   document.getElementById('btn-campaign-create-char')?.addEventListener('click', () => {
@@ -8894,12 +10233,12 @@ function attachEventListeners() {
   document.getElementById('btn-league-face-prev')?.addEventListener('click', () => {
     sound.play('click');
     leaguePlayerFaceId = ((leaguePlayerFaceId - 2 + TOTAL_FACES) % TOTAL_FACES) + 1;
-    render();
+    updateLeagueSetupInPlace();
   });
   document.getElementById('btn-league-face-next')?.addEventListener('click', () => {
     sound.play('click');
     leaguePlayerFaceId = (leaguePlayerFaceId % TOTAL_FACES) + 1;
-    render();
+    updateLeagueSetupInPlace();
   });
 
   document.getElementById('league-name-input')?.addEventListener('input', (e) => {
@@ -8909,34 +10248,34 @@ function attachEventListeners() {
   document.getElementById('btn-league-class-prev')?.addEventListener('click', () => {
     sound.play('click');
     leaguePlayerClassIdx = leaguePlayerClassIdx <= 1 ? HERO_CLASSES.length - 1 : leaguePlayerClassIdx - 1;
-    render();
+    updateLeagueSetupInPlace();
   });
   document.getElementById('btn-league-class-next')?.addEventListener('click', () => {
     sound.play('click');
     leaguePlayerClassIdx = leaguePlayerClassIdx >= HERO_CLASSES.length - 1 ? 1 : leaguePlayerClassIdx + 1;
-    render();
+    updateLeagueSetupInPlace();
   });
 
   document.getElementById('btn-league-diff-prev')?.addEventListener('click', () => {
     sound.play('click');
     leagueDifficultyIdx = (leagueDifficultyIdx - 1 + leagueDifficulties.length) % leagueDifficulties.length;
-    render();
+    updateLeagueSetupInPlace();
   });
   document.getElementById('btn-league-diff-next')?.addEventListener('click', () => {
     sound.play('click');
     leagueDifficultyIdx = (leagueDifficultyIdx + 1) % leagueDifficulties.length;
-    render();
+    updateLeagueSetupInPlace();
   });
 
   document.getElementById('btn-league-contestants-prev')?.addEventListener('click', () => {
     sound.play('click');
     leagueContestantCountIdx = (leagueContestantCountIdx - 1 + leagueContestantCountChoices.length) % leagueContestantCountChoices.length;
-    render();
+    updateLeagueSetupInPlace();
   });
   document.getElementById('btn-league-contestants-next')?.addEventListener('click', () => {
     sound.play('click');
     leagueContestantCountIdx = (leagueContestantCountIdx + 1) % leagueContestantCountChoices.length;
-    render();
+    updateLeagueSetupInPlace();
   });
 
   document.getElementById('btn-league-close-setup')?.addEventListener('click', () => {
@@ -9442,10 +10781,21 @@ function attachEventListeners() {
     render();
   });
 
+  document.getElementById('btn-ai-duel-result-return')?.addEventListener('click', () => {
+    sound.play('click');
+    sound.playBgm('menu1');
+    currentView = 'ai_duel_setup';
+    render();
+  });
+
   // Game over buttons
   document.getElementById('btn-restart')?.addEventListener('click', () => {
     sound.play('click');
     activeBattleBgm = '';
+    if (currentBattleSource === 'ai_duel') {
+      startAiDuelBattle();
+      return;
+    }
     engine.reset(engine.player.className as HeroClass, engine.currentCampaign || undefined);
     setupEngineCallbacks();
     selectedCard = null;

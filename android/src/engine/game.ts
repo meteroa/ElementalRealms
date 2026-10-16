@@ -1,6 +1,7 @@
 import type { CardDef, BoardCreature, PlayerState, ElementType, HeroClass, BattleLogEntry, CampaignLevel, NetworkGameStateSnapshot } from '../types';
 import cardsData from '../data/cards.json';
 import { sound } from './sound';
+import { decideAiTurnAction, isAiEnabledForBattle } from './ai_client';
 
 export interface ReplayStep {
   turn: number;
@@ -44,7 +45,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'InactiveHellbot',
     imgUrl: './cards/InactiveHellbot.webp',
     imgBigUrl: './cards/InactiveHellbotBig.webp',
-    desc: '支付 4 点机械系能量，使【休眠深渊机铠】变身为【烈狱机铠】(3/28)。',
+    desc: '支付 4 点机械系能量，使【沉睡地狱战甲】变身为【地狱战甲】(3/28)。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -55,7 +56,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'NaturalHealing',
     imgUrl: './cards/NaturalHealing.webp',
     imgBigUrl: './cards/NaturalHealingBig.webp',
-    desc: '【灵巧地灵兽】的主动技能，费用 3\n【灵巧地灵兽】使己方所有生物回复18点生命。',
+    desc: '【魔法仓鼠】的主动技能，费用 3\n【魔法仓鼠】使己方所有生物回复18点生命。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -66,7 +67,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'Poison',
     imgUrl: './cards/Poison.webp',
     imgBigUrl: './cards/PoisonBig.webp',
-    desc: '【幽影剧毒蝎】的主动技能，费用 2\n【幽影剧毒蝎】对目标敌方生物造成14点伤害。',
+    desc: '【巨毒蝎】的主动技能，费用 2\n【巨毒蝎】对目标敌方生物造成14点伤害。',
     requiresTarget: true,
     targetType: 'enemy_creature',
   },
@@ -77,7 +78,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'Enrage',
     imgUrl: './cards/Enrage.webp',
     imgBigUrl: './cards/EnrageBig.webp',
-    desc: '【狂暴骨獾】的主动技能，费用 2\n【狂暴骨獾】完全回复至满生命，攻击力永久+2。',
+    desc: '【暴怒狼獾】的主动技能，费用 2\n【暴怒狼獾】完全回复至满生命，攻击力永久+2。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -88,7 +89,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'PumpEnergy',
     imgUrl: './cards/PumpEnergy.webp',
     imgBigUrl: './cards/PumpEnergyBig.webp',
-    desc: '【灵泉巨兽】的主动技能，费用 1\n使拥有者的火系、水系、气系和土系能量各+1。',
+    desc: '【能量巨兽】的主动技能，费用 1\n使拥有者的火系、水系、气系和土系能量各+1。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -99,7 +100,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'MoveFalcon',
     imgUrl: './cards/MoveFalcon.webp',
     imgBigUrl: './cards/MoveFalconBig.webp',
-    desc: '【逐风冥隼】的主动技能，费用 1\n【逐风冥隼】穿梭至目标空格处，并且对对方所有生物造成4点伤害。',
+    desc: '【死亡之隼】的主动技能，费用 1\n【死亡之隼】穿梭至目标空格处，并且对对方所有生物造成4点伤害。',
     requiresTarget: true,
     targetType: 'empty_friendly_slot',
   },
@@ -110,7 +111,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'Trumpet',
     imgUrl: './cards/Trumpet.webp',
     imgBigUrl: './cards/TrumpetBig.webp',
-    desc: '【圣洁巨象】的主动技能，费用 0\n使拥有者的原初系能量+1。',
+    desc: '【神圣白象】的主动技能，费用 0\n使拥有者的原初系能量+1。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -132,7 +133,7 @@ export const BEAST_ACTIVATED_ABILITIES: Record<string, BeastAbilityMeta> = {
     image: 'BreatheFire',
     imgUrl: './cards/BreatheFire.webp',
     imgBigUrl: './cards/BreatheFireBig.webp',
-    desc: '【太古苍龙】的主动技能，费用 3\n【太古苍龙】对对方本体和对方所有生物各造成10点伤害。',
+    desc: '【远古巨龙】的主动技能，费用 3\n【远古巨龙】对对方本体和对方所有生物各造成10点伤害。',
     requiresTarget: false,
     targetType: 'none',
   },
@@ -178,6 +179,7 @@ export class SpectromancerEngine {
 
   // Animation & Visual Feedback Callbacks
   public onStateChange?: () => void;
+  public onAiBanter?: (banter: string, who?: 'player' | 'enemy') => void;
   public onDamageEffect?: (side: 'player' | 'enemy', slot: number | 'hero', amount: number) => void;
   public onHealEffect?: (side: 'player' | 'enemy', slot: number | 'hero', amount: number) => void;
   public onAttackLunge?: (side: 'player' | 'enemy', slot: number) => void;
@@ -204,6 +206,8 @@ export class SpectromancerEngine {
   public leagueRule?: string;
   public campaignLevel?: CampaignLevel;
   public difficulty: string = '普通';
+  public battleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' | 'ai_duel' = 'duel';
+  public isPlayerAiControlled: boolean = false;
   private aiRecentCardIds: string[] = [];
 
   constructor(
@@ -227,12 +231,16 @@ export class SpectromancerEngine {
       isLanGame?: boolean;
       isHost?: boolean;
       isGuest?: boolean;
+      battleSource?: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' | 'ai_duel';
+      isPlayerAiControlled?: boolean;
     }
   ) {
     this.currentCampaign = campaign || null;
     this.isLanGame = !!customConfig?.isLanGame;
     this.isHost = !!customConfig?.isHost;
     this.isGuest = !!customConfig?.isGuest;
+    this.battleSource = customConfig?.battleSource || (campaign ? 'campaign' : (this.isLanGame ? 'lan' : 'duel'));
+    this.isPlayerAiControlled = !!customConfig?.isPlayerAiControlled;
 
     const enemyClassPool: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
@@ -927,9 +935,9 @@ export class SpectromancerEngine {
         this.log(`【${creature.card.nameCn}】鼠群撕咬全场敌军造成 6 点伤害，牺牲了 3 点 ${chosen.toUpperCase()} 能量！`, 'damage');
       }
 
-      // Chrono Engine: grants extra card play action
+      // Chrono Engine: grants extra card play action (balanced: max 1 extra action per turn)
       if (creature.card.ability === 'chrono_engine') {
-        this.extraActionRemaining[who] = (this.extraActionRemaining[who] || 0) + 1;
+        this.extraActionRemaining[who] = Math.min(1, (this.extraActionRemaining[who] || 0) + 1);
         sound.play('positiveeffect');
         this.log(`【${creature.card.nameCn}】时空引擎运转，赋予拥有者本回合额外一个出牌阶段！`, 'heal');
       }
@@ -995,6 +1003,31 @@ export class SpectromancerEngine {
   public getEffectiveHand(who: 'player' | 'enemy'): CardDef[] {
     const actor = who === 'player' ? this.player : this.enemy;
     return actor.hand.map((c) => this.getEffectiveCard(who, c));
+  }
+
+  // Returns the live, effective mana cost of a card accounting for board auras, taxes (Everraining Land, Baffler Roost), and discounts
+  public getCardEffectiveCost(who: 'player' | 'enemy', card: CardDef): number {
+    const effective = this.getEffectiveCard(who, card);
+    let cost = effective.cost;
+    const board = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+
+    // Check Damping Tower / Goblin Shaman penalty
+    oppBoard.forEach((c) => {
+      if (c && c.card.ability === 'all_card_cost_plus_1') cost += 1;
+      if (c && c.card.ability === 'spell_cost_plus_1' && effective.type === 'spell') cost += 1;
+    });
+
+    // Check friendly Timeweaver discount
+    board.forEach((c) => {
+      if (c && c.card.ability === 'spell_cost_minus_1' && effective.type === 'spell') {
+        cost = Math.max(1, cost - 1);
+      }
+    });
+
+    // Global Gathering-of-Power taxes (both players are affected: Everraining Land +2, Baffler Roost x2, Baffler Dragon x2).
+    cost = this.applyGlobalCostModifiers(effective, cost);
+    return Math.max(0, cost);
   }
 
   // PC Mad Hermit / Magic Rabbit uniqueness rule: "There can be only one Magic Rabbit in play."
@@ -1072,23 +1105,7 @@ export class SpectromancerEngine {
       if (board.some((c) => c !== null && c.card.ability === 'reaver_redirect')) return false;
     }
 
-    let cost = card.cost;
-    // Check Damping Tower / Goblin Shaman penalty
-    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
-    oppBoard.forEach((c) => {
-      if (c && c.card.ability === 'all_card_cost_plus_1') cost += 1;
-      if (c && c.card.ability === 'spell_cost_plus_1' && card.type === 'spell') cost += 1;
-    });
-
-    // Check friendly Timeweaver discount
-    board.forEach((c) => {
-      if (c && c.card.ability === 'spell_cost_minus_1' && card.type === 'spell') {
-        cost = Math.max(1, cost - 1);
-      }
-    });
-
-    // Global Gathering-of-Power taxes (both players are affected).
-    cost = this.applyGlobalCostModifiers(card, cost);
+    const cost = this.getCardEffectiveCost(who, card);
 
     if (actor.mana[card.element] < cost) return false;
 
@@ -1176,6 +1193,7 @@ export class SpectromancerEngine {
 
     const actor = who === 'player' ? this.player : this.enemy;
     const board = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
 
     // PC Forest Wolf: "must be summoned onto Magic Rabbit. Magic Rabbit is killed."
     // Validated before the mana is spent, so an illegal target never burns energy.
@@ -1185,18 +1203,7 @@ export class SpectromancerEngine {
     }
 
     const preCastMana: Record<ElementType, number> = { ...actor.mana };
-    let finalCost = card.cost;
-    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
-    oppBoard.forEach((c) => {
-      if (c && c.card.ability === 'all_card_cost_plus_1') finalCost += 1;
-      if (c && c.card.ability === 'spell_cost_plus_1' && card.type === 'spell') finalCost += 1;
-    });
-    board.forEach((c) => {
-      if (c && c.card.ability === 'spell_cost_minus_1' && card.type === 'spell') {
-        finalCost = Math.max(1, finalCost - 1);
-      }
-    });
-    finalCost = this.applyGlobalCostModifiers(card, finalCost);
+    const finalCost = this.getCardEffectiveCost(who, card);
 
     actor.mana[card.element] -= finalCost;
 
@@ -2002,13 +2009,13 @@ export class SpectromancerEngine {
         break;
       }
       case 'time_dragon_extra_card': {
-        this.extraActionRemaining[who] = (this.extraActionRemaining[who] || 0) + 1;
+        this.extraActionRemaining[who] = Math.min(1, (this.extraActionRemaining[who] || 0) + 1);
         sound.play('positiveeffect');
         this.log(`【${card.nameCn}】时空扭转，允许本回合额外打出一张卡牌！`, 'heal');
         break;
       }
       case 'timeweaver_extra_spell': {
-        this.extraActionRemaining[who] = (this.extraActionRemaining[who] || 0) + 1;
+        this.extraActionRemaining[who] = Math.min(1, (this.extraActionRemaining[who] || 0) + 1);
         this.extraSpellOnly[who] = true;
         sound.play('positiveeffect');
         this.log(`【${card.nameCn}】时空织锦，拥有者立即获得额外一个只能施放魔法的出牌阶段！`, 'heal');
@@ -3549,12 +3556,16 @@ export class SpectromancerEngine {
         this.notify();
         if (!this.isLanGame) {
           await this.delay(900);
-          await this.triggerAiTurn();
+          await this.triggerAiTurn('enemy');
         }
       } else {
         this.turnCount++;
         this.startTurn('player');
         this.notify();
+        if (this.isPlayerAiControlled && !this.isLanGame) {
+          await this.delay(900);
+          await this.triggerAiTurn('player');
+        }
       }
     } else {
       this.notify();
@@ -4656,49 +4667,54 @@ export class SpectromancerEngine {
     };
   }
 
-  private async triggerAiTurn(): Promise<void> {
-    if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return;
+  public async triggerAiTurn(who: 'player' | 'enemy' = 'enemy'): Promise<void> {
+    if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return;
 
     try {
       let loopCount = 0;
       // Loop allows AI to take extra actions if granted (e.g. Chrono Engine / Time Dragon)
-      while (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver && loopCount < 5) {
+      while (this.activeTurn === who && !this.isCombatPhase && !this.gameOver && loopCount < 5) {
         loopCount++;
-        const didPlay = await this.executeAiSingleDecision();
+        const didPlay = await this.executeAiSingleDecision(who);
         if (!didPlay) {
           // If could not play or chose not to play, end action phase and enter combat
-          await this.passTurn('enemy');
+          await this.passTurn(who);
           break;
         }
 
-        // If played a card, check if still in enemy action phase (e.g. extra action remaining)
-        if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
-          if (this.extraActionRemaining.enemy > 0) {
+        // If played a card, check if still in action phase (e.g. extra action remaining)
+        if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+          if (this.extraActionRemaining[who] > 0) {
             await this.delay(650);
           } else {
             // No extra action remaining, proceed to combat
-            await this.executeCombat('enemy');
+            await this.executeCombat(who);
             break;
           }
         }
       }
 
-      // Hard safety net: if still somehow stuck on enemy turn and not in combat, passTurn immediately
-      if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
-        await this.passTurn('enemy');
+      // Hard safety net: if still somehow stuck on turn and not in combat, passTurn immediately
+      if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+        await this.passTurn(who);
       }
     } catch (err) {
-      console.error('Safe fallback triggered in triggerAiTurn:', err);
-      if (this.activeTurn === 'enemy' && !this.isCombatPhase && !this.gameOver) {
-        await this.passTurn('enemy');
+      console.error(`Safe fallback triggered in triggerAiTurn(${who}):`, err);
+      if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+        await this.passTurn(who);
       }
     }
   }
 
-  private async executeAiSingleDecision(): Promise<boolean> {
-    if (this.gameOver || this.activeTurn !== 'enemy' || this.isCombatPhase) return false;
+  private async executeAiSingleDecision(who: 'player' | 'enemy' = 'enemy'): Promise<boolean> {
+    if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return false;
 
-    const playableCards = this.getEffectiveHand('enemy').filter((c) => this.canPlayCard('enemy', c));
+    const actor = who === 'player' ? this.player : this.enemy;
+    const opp = who === 'player' ? this.enemy : this.player;
+    const actorBoard = who === 'player' ? this.playerBoard : this.enemyBoard;
+    const oppBoard = who === 'player' ? this.enemyBoard : this.playerBoard;
+
+    const playableCards = this.getEffectiveHand(who).filter((c) => this.canPlayCard(who, c));
     if (playableCards.length === 0) {
       return false;
     }
@@ -4707,18 +4723,18 @@ export class SpectromancerEngine {
     if (
       this.difficulty === '容易' &&
       Math.random() < 0.25 &&
-      this.enemyBoard.some((c) => c !== null) &&
-      this.enemy.hp > 15
+      actorBoard.some((c) => c !== null) &&
+      actor.hp > 15
     ) {
       return false;
     }
 
     const emptySlots: number[] = [];
-    this.enemyBoard.forEach((slot, idx) => {
+    actorBoard.forEach((slot, idx) => {
       if (slot === null) emptySlots.push(idx);
     });
 
-    const playerActiveCount = this.playerBoard.filter((c) => c !== null).length;
+    const oppActiveCount = oppBoard.filter((c) => c !== null).length;
 
     interface CandidateAction {
       card: CardDef;
@@ -4739,16 +4755,15 @@ export class SpectromancerEngine {
       }
 
       // 2. Element mana reserve incentive: spend high mana surplus, conserve exhausted mana
-      const currentElemMana = this.enemy.mana[card.element] || 0;
+      const currentElemMana = actor.mana[card.element] || 0;
       let elemResourceBonus = 0;
       if (currentElemMana >= 7) elemResourceBonus += 4;
       else if (currentElemMana <= card.cost + 1) elemResourceBonus -= 2;
 
-      // 2b. Blood discipline double payment: the life half of the cost is a real resource, so it
-      // scales the price up and becomes prohibitive once the AI is in burn range.
+      // 2b. Blood discipline double payment: the life half of the cost is a real resource
       if (card.lifeCost) {
         elemResourceBonus -= card.lifeCost * 1.5;
-        const lifeAfter = this.enemy.hp - card.lifeCost;
+        const lifeAfter = actor.hp - card.lifeCost;
         if (lifeAfter <= 20) elemResourceBonus -= 20;
         else if (lifeAfter <= 30) elemResourceBonus -= 8;
       }
@@ -4758,7 +4773,7 @@ export class SpectromancerEngine {
           card.attack === -1 && card.ability === 'attack_equal_element_power'
             ? currentElemMana
             : (card.attack === -1 && card.ability === 'attack_equal_friendly_count'
-              ? this.enemyBoard.filter((c) => c !== null).length
+              ? actorBoard.filter((c) => c !== null).length
               : (card.attack || 0));
         const baseLife = card.life || 1;
 
@@ -4772,39 +4787,35 @@ export class SpectromancerEngine {
           traitBonus += this.turnCount <= 6 ? 12 : 5;
         }
         if (card.onSummon === 'damage_all_enemies_5' || card.onSummon === 'fire_elemental_summon') {
-          traitBonus += playerActiveCount * 4 + 6;
+          traitBonus += oppActiveCount * 4 + 6;
         } else if (card.onSummon === 'spawn_spiders') {
           traitBonus += 8;
         } else if (card.onSummon === 'dark_sculptor_x') {
           // X scales with the whole board, both sides included.
-          traitBonus += (playerActiveCount + this.enemyBoard.filter((c) => c !== null).length) * 3 + 4;
+          traitBonus += (oppActiveCount + actorBoard.filter((c) => c !== null).length) * 3 + 4;
         } else if (card.onSummon === 'golem_instructor_boost') {
           traitBonus += 6;
         } else if (card.onSummon === 'damage_all_other_20') {
-          // 20 damage to every other creature: great when the opponent has the wider board, bad
-          // when it would wipe our own.
-          traitBonus += playerActiveCount * 6 + 10 - this.enemyBoard.filter((c) => c !== null).length * 5;
+          traitBonus += oppActiveCount * 6 + 10 - actorBoard.filter((c) => c !== null).length * 5;
         }
 
         // Cult trade-offs: Fanatic is a spell magnet, and Reaver locks its own owner out of spells.
         if (card.ability === 'fanatic_spell_double') traitBonus -= 3;
         if (card.ability === 'reaver_redirect') {
-          traitBonus -= this.enemy.hand.filter((c) => c.type === 'spell').length * 3;
+          traitBonus -= actor.hand.filter((c) => c.type === 'spell').length * 3;
         }
 
         if (card.onSummon === 'forest_wolf_devour') {
-          // PC Forest Wolf: it must replace the Magic Rabbit and inherits its attack, so the
-          // only legal slot is the rabbit's.
-          const rabbitSlot = this.enemyBoard.findIndex(
+          const rabbitSlot = actorBoard.findIndex(
             (slot) => slot !== null && slot.card.id === 'forest_magic_rabbit'
           );
           if (rabbitSlot !== -1) {
-            const rabbit = this.enemyBoard[rabbitSlot]!;
+            const rabbit = actorBoard[rabbitSlot]!;
             let slotScore = 30 + rabbit.currentAttack * 3 + baseLife * 0.4 + elemResourceBonus - antiRepetitionPenalty;
-            const opp = this.playerBoard[rabbitSlot];
-            if (opp) {
-              slotScore += opp.currentAttack * 3.2;
-              if (rabbit.currentAttack >= opp.currentLife) slotScore += 16;
+            const targetOpp = oppBoard[rabbitSlot];
+            if (targetOpp) {
+              slotScore += targetOpp.currentAttack * 3.2;
+              if (rabbit.currentAttack >= targetOpp.currentLife) slotScore += 16;
             } else {
               slotScore += rabbit.currentAttack * 3.2;
             }
@@ -4812,19 +4823,18 @@ export class SpectromancerEngine {
           }
         } else if (card.id === 'death_emissary_of_dorlak') {
           const occupiedFriendlySlots: number[] = [];
-          this.enemyBoard.forEach((slot, idx) => {
+          actorBoard.forEach((slot, idx) => {
             if (slot !== null) occupiedFriendlySlots.push(idx);
           });
 
           for (const slot of occupiedFriendlySlots) {
-            const host = this.enemyBoard[slot]!;
-            // Sacrificing high-attack/high-hp is costly, sacrificing weak or damaged friendly creature is high value
+            const host = actorBoard[slot]!;
             const sacrificeCost = host.currentAttack * 2.2 + host.currentLife * 0.9;
             let slotScore = baseAttack * 2.2 + baseLife * 0.9 - sacrificeCost + traitBonus + elemResourceBonus - antiRepetitionPenalty;
-            const opp = this.playerBoard[slot];
-            if (opp) {
-              const oppAtk = opp.currentAttack;
-              const oppHp = opp.currentLife;
+            const targetOpp = oppBoard[slot];
+            if (targetOpp) {
+              const oppAtk = targetOpp.currentAttack;
+              const oppHp = targetOpp.currentLife;
               slotScore += oppAtk * 3.2;
               if (baseAttack >= oppHp) slotScore += 16;
             } else {
@@ -4834,71 +4844,70 @@ export class SpectromancerEngine {
           }
         } else {
           for (const slot of emptySlots) {
-          let slotScore = baseAttack * 2.2 + baseLife * 0.9 + traitBonus + elemResourceBonus - antiRepetitionPenalty;
-          const opp = this.playerBoard[slot];
+            let slotScore = baseAttack * 2.2 + baseLife * 0.9 + traitBonus + elemResourceBonus - antiRepetitionPenalty;
+            const targetOpp = oppBoard[slot];
 
-          if (opp) {
-            // Lane confrontation with player creature
-            const oppAtk = opp.currentAttack;
-            const oppHp = opp.currentLife;
+            if (targetOpp) {
+              // Lane confrontation with creature
+              const oppAtk = targetOpp.currentAttack;
+              const oppHp = targetOpp.currentLife;
 
-            // Block threat bonus
-            slotScore += oppAtk * 3.2;
+              // Block threat bonus
+              slotScore += oppAtk * 3.2;
 
-            // Immediate or combat kill
-            if (card.swift && baseAttack >= oppHp) {
-              slotScore += 24 + oppAtk * 2.5;
-            } else if (baseAttack >= oppHp) {
-              slotScore += 14 + oppAtk * 1.5;
-            }
+              // Immediate or combat kill
+              if (card.swift && baseAttack >= oppHp) {
+                slotScore += 24 + oppAtk * 2.5;
+              } else if (baseAttack >= oppHp) {
+                slotScore += 14 + oppAtk * 1.5;
+              }
 
-            // Survivability
-            if (oppAtk >= baseLife) {
-              if (card.isWall) {
-                slotScore -= 3;
-              } else if (baseAttack < oppHp) {
-                // Suicide feed
-                slotScore -= 18;
+              // Survivability
+              if (oppAtk >= baseLife) {
+                if (card.isWall) {
+                  slotScore -= 3;
+                } else if (baseAttack < oppHp) {
+                  // Suicide feed
+                  slotScore -= 18;
+                } else {
+                  // Mutual kill
+                  slotScore += card.cost <= 3 ? 3 : -4;
+                }
               } else {
-                // Mutual kill
-                slotScore += card.cost <= 3 ? 3 : -4;
+                // Surviving defender
+                slotScore += 10;
               }
             } else {
-              // Surviving defender
-              slotScore += 10;
+              // Unblocked lane -> direct face damage
+              slotScore += baseAttack * 3.2;
+              if (opp.hp < 25) {
+                slotScore += 10 + (25 - opp.hp);
+              }
+              if (card.isWall && baseAttack === 0) {
+                slotScore -= 25;
+              }
             }
-          } else {
-            // Unblocked lane -> direct face damage
-            slotScore += baseAttack * 3.2;
-            if (this.player.hp < 25) {
-              slotScore += 10 + (25 - this.player.hp);
-            }
-            if (card.isWall && baseAttack === 0) {
-              // 0-attack wall in empty lane is useless
-              slotScore -= 25;
-            }
-          }
 
-          candidates.push({ card, targetSlot: slot, score: slotScore });
+            candidates.push({ card, targetSlot: slot, score: slotScore });
+          }
         }
-      }
       } else if (card.type === 'spell') {
         if (card.isActivatedAbility) {
           if (card.targetType === 'empty_friendly_slot') {
             for (const slot of emptySlots) {
-              let score = 16 + playerActiveCount * 6 + elemResourceBonus - antiRepetitionPenalty;
-              const opp = this.playerBoard[slot];
-              if (!opp) score += 6;
+              let score = 16 + oppActiveCount * 6 + elemResourceBonus - antiRepetitionPenalty;
+              const targetOpp = oppBoard[slot];
+              if (!targetOpp) score += 6;
               candidates.push({ card, targetSlot: slot, score });
             }
           } else if (card.targetType === 'enemy_creature' || card.targetType === 'any_creature') {
-            for (let s = 0; s < this.playerBoard.length; s++) {
-              const opp = this.playerBoard[s];
-              if (opp && !opp.spellImmune) {
+            for (let s = 0; s < oppBoard.length; s++) {
+              const targetOpp = oppBoard[s];
+              if (targetOpp && !targetOpp.spellImmune) {
                 const estDmg = card.id.includes('scorpion') ? 14 : 6;
                 let score = 10 + elemResourceBonus - antiRepetitionPenalty;
-                if (estDmg >= opp.currentLife) {
-                  score += 20 + opp.currentAttack * 3;
+                if (estDmg >= targetOpp.currentLife) {
+                  score += 20 + targetOpp.currentAttack * 3;
                 } else {
                   score += estDmg * 1.5;
                 }
@@ -4908,13 +4917,13 @@ export class SpectromancerEngine {
           } else {
             let score = 15 + elemResourceBonus - antiRepetitionPenalty;
             if (card.id.includes('ancient_dragon')) {
-              score += playerActiveCount * 12 + 25;
+              score += oppActiveCount * 12 + 25;
             } else if (card.id.includes('hamster')) {
               let totalLost = 0;
-              this.enemyBoard.forEach((c) => { if (c) totalLost += (c.maxLife - c.currentLife); });
+              actorBoard.forEach((c) => { if (c) totalLost += (c.maxLife - c.currentLife); });
               score += Math.min(30, totalLost * 1.8);
             } else if (card.id.includes('wolverine')) {
-              const w = this.enemyBoard.find((c) => c && c.card.id === 'beast_wolverine');
+              const w = actorBoard.find((c) => c && c.card.id === 'beast_wolverine');
               if (w) score += (w.maxLife - w.currentLife) + 8;
             } else if (card.id.includes('energy_beast')) {
               score += 10;
@@ -4930,8 +4939,8 @@ export class SpectromancerEngine {
 
         if (spellInfo.isFriendly) {
           // Friendly targeted spell
-          for (let s = 0; s < this.enemyBoard.length; s++) {
-            const ally = this.enemyBoard[s];
+          for (let s = 0; s < actorBoard.length; s++) {
+            const ally = actorBoard[s];
             if (ally) {
               let spellScore = 12 + ally.currentAttack * 2 + elemResourceBonus - antiRepetitionPenalty;
               if (ally.maxLife > ally.currentLife) {
@@ -4942,19 +4951,18 @@ export class SpectromancerEngine {
           }
         } else if (card.requiresTarget) {
           // Offensive targeted spell
-          for (let s = 0; s < this.playerBoard.length; s++) {
-            const opp = this.playerBoard[s];
-            if (this.isValidSpellTarget(card, opp)) {
+          for (let s = 0; s < oppBoard.length; s++) {
+            const targetOpp = oppBoard[s];
+            if (this.isValidSpellTarget(card, targetOpp)) {
               let spellScore = 8 + elemResourceBonus - antiRepetitionPenalty;
 
-              if (spellInfo.isInstantKill || spellInfo.estDamage >= opp.currentLife) {
-                // Lethal kill on opposing unit
-                spellScore += 22 + opp.currentAttack * 3.5;
+              if (spellInfo.isInstantKill || spellInfo.estDamage >= targetOpp.currentLife) {
+                spellScore += 22 + targetOpp.currentAttack * 3.5;
               } else {
-                spellScore += Math.min(spellInfo.estDamage, opp.currentLife) * 1.5 + opp.currentAttack * 1.2;
+                spellScore += Math.min(spellInfo.estDamage, targetOpp.currentLife) * 1.5 + targetOpp.currentAttack * 1.2;
               }
 
-              if (opp.isWall) {
+              if (targetOpp.isWall) {
                 spellScore -= 12;
               }
 
@@ -4965,9 +4973,9 @@ export class SpectromancerEngine {
           // Untargeted / AOE spell
           let aoeScore = 10 + elemResourceBonus - antiRepetitionPenalty;
           if (spellInfo.isAoe) {
-            if (playerActiveCount >= 3) aoeScore += 28 + playerActiveCount * 4;
-            else if (playerActiveCount === 2) aoeScore += 16;
-            else if (playerActiveCount === 1) aoeScore += 4;
+            if (oppActiveCount >= 3) aoeScore += 28 + oppActiveCount * 4;
+            else if (oppActiveCount === 2) aoeScore += 16;
+            else if (oppActiveCount === 1) aoeScore += 4;
             else aoeScore -= 30; // Don't waste AOE on empty board
           } else if (card.id.includes('meditation')) {
             aoeScore += this.turnCount <= 5 ? 14 : 6;
@@ -4980,6 +4988,111 @@ export class SpectromancerEngine {
 
     if (candidates.length === 0) {
       return false;
+    }
+
+    // 🤖 大模型策略下棋决策通道 (当针对当前对战模式开启 AI 大模型时由大模型下达指令并执行)
+    if (isAiEnabledForBattle(this.battleSource) && !this.isLanGame) {
+      try {
+        const uniquePlayableCards = Array.from(new Set(candidates.map((c) => c.card)));
+        const playableCardsMeta = uniquePlayableCards.map((c) => {
+          const validSlotsForCard = candidates
+            .filter((cand) => cand.card.id === c.id)
+            .map((cand) => cand.targetSlot ?? 0);
+          return {
+            id: c.id,
+            name: c.nameCn,
+            cost: c.cost,
+            element: c.element,
+            type: c.type,
+            attack: c.attack,
+            life: c.life,
+            desc: c.desc || '',
+            validSlots: Array.from(new Set(validSlotsForCard)),
+          };
+        });
+
+        const actorBoardSnap = actorBoard.map((c, idx) =>
+          c
+            ? {
+                slot: idx,
+                name: c.card.nameCn,
+                attack: c.currentAttack,
+                life: c.currentLife,
+                desc: c.card.desc || '',
+              }
+            : null
+        );
+
+        const oppBoardSnap = oppBoard.map((c, idx) =>
+          c
+            ? {
+                slot: idx,
+                name: c.card.nameCn,
+                attack: c.currentAttack,
+                life: c.currentLife,
+                desc: c.card.desc || '',
+              }
+            : null
+        );
+
+        const decision = await decideAiTurnAction({
+          enemyName: actor.name,
+          enemyClassCn: ({
+            cleric: '圣殿骑士',
+            necromancer: '死灵术士',
+            mechanician: '机械工匠',
+            beastmaster: '荒野驯兽',
+            sorcery: '巫术法师',
+            demonologist: '恶魔学者',
+            chronomancer: '时空学者',
+            golem: '巨神魔像',
+            dominator: '支配心智',
+            bloodmage: '鲜血法师',
+            druid: '森林德鲁伊',
+            madhermit: '狂乱隐士',
+            goblin: '哥布林',
+            bard: '吟游诗人',
+            illusionist: '幻世星宫',
+          } as Record<string, string>)[actor.className] || actor.className || '法师',
+          difficulty: this.difficulty || '普通',
+          enemyHp: actor.hp,
+          playerHp: opp.hp,
+          enemyMana: { ...actor.mana },
+          playerMana: { ...opp.mana },
+          enemyBoard: actorBoardSnap,
+          playerBoard: oppBoardSnap,
+          playableCards: playableCardsMeta,
+        });
+
+        if (decision) {
+          if (decision.banter && this.onAiBanter) {
+            this.onAiBanter(decision.banter, who);
+          }
+
+          if (decision.action === 'pass') {
+            console.log(`[AI Strategy] LLM for ${who} explicitly decided to PASS this turn to conserve energy.`);
+            return false;
+          }
+
+          if (decision.action === 'play_card' && decision.cardId) {
+            const matched =
+              candidates.find(
+                (c) =>
+                  c.card.id === decision.cardId &&
+                  (decision.targetSlot === undefined || decision.targetSlot === null || c.targetSlot === decision.targetSlot)
+              ) || candidates.find((c) => c.card.id === decision.cardId);
+
+            if (matched) {
+              console.log(`[AI Strategy] LLM command accepted for ${who}:`, matched.card.nameCn, 'slot:', matched.targetSlot);
+              this.aiRecentCardIds.push(matched.card.id);
+              if (this.aiRecentCardIds.length > 5) this.aiRecentCardIds.shift();
+              return await this.playCard(who, matched.card, matched.targetSlot);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn(`[AI Strategy] LLM execution error for ${who}, falling back to local heuristic:`, err);
+      }
     }
 
     // Difficulty tuning
@@ -5009,16 +5122,16 @@ export class SpectromancerEngine {
       candidates.sort((a, b) => b.score - a.score);
 
       // Check if saving mana for an expensive bomb next turn is better than a weak play
-      const hasUnplayableBomb = this.enemy.hand.some(
-        (c) => c.cost >= 6 && (c.attack || 0) >= 5 && (this.enemy.mana[c.element] || 0) === c.cost - 1
+      const hasUnplayableBomb = actor.hand.some(
+        (c) => c.cost >= 6 && (c.attack || 0) >= 5 && (actor.mana[c.element] || 0) === c.cost - 1
       );
-      if (hasUnplayableBomb && candidates[0].score < 14 && playerActiveCount <= 2 && this.enemy.hp > 25) {
+      if (hasUnplayableBomb && candidates[0].score < 14 && oppActiveCount <= 2 && actor.hp > 25) {
         return false;
       }
 
       chosenAction = candidates[0];
     } else {
-      // Master (大法师): purely optimal tactical choice
+      // Master (大法师 / 专家 / 神谕): purely optimal tactical choice
       candidates.sort((a, b) => b.score - a.score);
       chosenAction = candidates[0];
     }
@@ -5028,7 +5141,7 @@ export class SpectromancerEngine {
       if (this.aiRecentCardIds.length > 5) {
         this.aiRecentCardIds.shift();
       }
-      return await this.playCard('enemy', chosenAction.card, chosenAction.targetSlot);
+      return await this.playCard(who, chosenAction.card, chosenAction.targetSlot);
     }
     return false;
   }

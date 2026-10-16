@@ -1222,13 +1222,15 @@ body, html {
   user-select: none;
 }
 
-/* Symmetrical 3-2 golden balance layout in landscape: Row 2 items 4 and 5 centered */
-.mobile-mode-card:nth-child(4) {
-  grid-column: 2 / span 2;
+/* Symmetrical 3x2 balanced grid layout in landscape: 3 cards on top row, 3 cards on bottom row */
+.mobile-mode-card.ai-duel {
+  background: linear-gradient(135deg, rgba(38, 20, 48, 0.92) 0%, rgba(18, 10, 26, 0.96) 100%);
+  border: 1.5px solid rgba(192, 132, 252, 0.65);
 }
 
-.mobile-mode-card:nth-child(5) {
-  grid-column: 4 / span 2;
+.mobile-mode-card.ai-duel:hover {
+  border-color: #d8b4fe;
+  box-shadow: 0 0 24px rgba(192, 132, 252, 0.55), 0 8px 24px rgba(0, 0, 0, 0.85);
 }
 
 .mobile-mode-card:hover {
@@ -1384,7 +1386,6 @@ body, html {
   align-items: center;
   justify-content: center;
   z-index: 100;
-  animation: fadeIn 0.2s ease;
 }
 
 .single-duel-frame {
@@ -1708,7 +1709,8 @@ body, html {
   padding: 4px clamp(5px, 0.5vw, 10px);
   background: linear-gradient(180deg, #1e1711 0%, #0d0a08 100%);
   border-right: 2px solid #8e723a;
-  z-index: 20;
+  z-index: 1000;
+  overflow: visible !important;
   box-shadow: 4px 0 18px rgba(0, 0, 0, 0.85);
   gap: clamp(5px, 0.5vw, 8px);
   box-sizing: border-box;
@@ -1987,7 +1989,7 @@ body, html {
   gap: 5px;
   height: 100%;
   min-width: 0;
-  overflow: hidden;
+  overflow: visible !important;
   box-sizing: border-box;
 }
 
@@ -1996,6 +1998,9 @@ body, html {
   flex-direction: column;
   gap: clamp(3px, 0.4vh, 5px);
   width: 100%;
+  overflow: visible !important;
+  position: relative;
+  z-index: 9990;
 }
 
 .combat-hero-row {
@@ -2022,6 +2027,7 @@ body, html {
   justify-content: flex-start !important;
   gap: 1px !important;
   padding: 2px clamp(4px, 0.6vw, 8px) !important;
+  overflow: visible !important;
 }
 
 .combat-hero-row.opponent .combat-hero-top-row {
@@ -3505,6 +3511,17 @@ body, html {
   border-color: #10b981;
   background: rgba(16, 185, 129, 0.15);
   box-shadow: 0 0 14px rgba(16, 185, 129, 0.5);
+}
+
+.scenario-grid-item:hover {
+  transform: translateY(-2px);
+  border-color: #f59e0b !important;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.35) !important;
+}
+
+.scenario-grid-item.active {
+  border-color: #ffd700 !important;
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.45) !important;
 }
 
 .class-grid-thumb-wrap {
@@ -6274,7 +6291,6 @@ body, html {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  animation: zoomInCard 0.22s ease-out;
   position: relative;
 }
 
@@ -9621,6 +9637,285 @@ body, html {
   color: #67e8f9;
   text-shadow: 0 0 10px rgba(6, 182, 212, 0.7);
   letter-spacing: 1px;
+}
+
+/* ========================================================
+   AI 魔导师战意台词 - 高清晰度魔导战书卷轴 (High-Visibility Arcane Speech Scroll)
+   ======================================================== */
+.combat-hero-row.opponent {
+  z-index: 100 !important;
+  position: relative;
+}
+
+.combat-hero-row.player {
+  z-index: 10 !important;
+  position: relative;
+}
+
+.comic-dialogue-bubble,
+.combat-banter-bubble,
+.arcane-speech-scroll {
+  position: absolute;
+  left: clamp(48px, calc(44px + 1vw), 68px);
+  top: clamp(-8px, -1.2vh, -2px);
+  min-width: clamp(340px, 42vw, 620px);
+  max-width: clamp(440px, 56vw, 820px);
+  background: linear-gradient(155deg, #fffef9 0%, #fef7e2 50%, #faebb8 100%);
+  border: 2.5px solid #5a3210;
+  border-radius: 12px;
+  padding: 8px 18px 9px 18px;
+  box-shadow: 
+    0 0 0 1.5px #f59e0b,
+    inset 0 0 16px rgba(160, 90, 20, 0.15),
+    3px 6px 0px rgba(35, 15, 5, 0.55), 
+    0 14px 40px rgba(0, 0, 0, 0.92),
+    0 0 24px rgba(245, 158, 11, 0.25);
+  z-index: 99999 !important;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.5));
+}
+
+.comic-dialogue-bubble.anim-pop,
+.combat-banter-bubble.anim-pop,
+.arcane-speech-scroll.anim-pop {
+  animation: arcaneBubblePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.25) forwards;
+}
+
+.comic-dialogue-bubble.anim-fade-out,
+.combat-banter-bubble.anim-fade-out,
+.arcane-speech-scroll.anim-fade-out {
+  animation: arcaneBubbleFadeOut 0.35s ease-in forwards;
+}
+
+/* 亮金古铜小尖尾 (精准指向左侧魔导师肖像) */
+.comic-dialogue-bubble .comic-bubble-tail,
+.combat-banter-bubble::after,
+.arcane-speech-scroll .arcane-speech-tail {
+  content: '';
+  position: absolute;
+  left: -13px;
+  top: 15px;
+  width: 0;
+  height: 0;
+  border-top: 7px solid transparent;
+  border-bottom: 7px solid transparent;
+  border-right: 13px solid #5a3210;
+}
+
+.comic-dialogue-bubble .comic-bubble-tail::after,
+.arcane-speech-scroll .arcane-speech-tail::after {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: -5px;
+  width: 0;
+  height: 0;
+  border-top: 5px solid transparent;
+  border-bottom: 5px solid transparent;
+  border-right: 11px solid #fef7e2;
+}
+
+@keyframes arcaneBubblePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.7) translateY(6px);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1.04) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes arcaneBubbleFadeOut {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.9) translateY(-6px);
+  }
+}
+
+/* 顶部发言者身份铭牌 */
+.arcane-speech-badge,
+.comic-bubble-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: clamp(13px, 0.95vw, 15px) !important;
+  font-weight: 900 !important;
+  color: #881337 !important;
+  letter-spacing: 0.6px;
+  border-bottom: 1.5px dashed rgba(180, 83, 9, 0.45);
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.comic-dialogue-bubble .comic-bubble-content,
+.combat-banter-bubble .banter-content,
+.arcane-speech-scroll .arcane-speech-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  width: 100%;
+}
+
+.comic-dialogue-bubble .comic-bubble-text,
+.combat-banter-bubble .banter-text,
+.arcane-speech-scroll .arcane-speech-text {
+  font-size: clamp(16px, 1.25vw, 20px) !important;
+  font-weight: 900 !important;
+  color: #180b02 !important;
+  line-height: 1.42;
+  letter-spacing: 0.5px;
+  word-break: break-word;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans CN", "Segoe UI", system-ui, sans-serif !important;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+/* ========================================================
+   AI 场景创世造物神殿 - 灵感预设标签 (High-Contrast Amber Cream Badge)
+   ======================================================== */
+.btn-ai-scene-preset {
+  background: #fef3c7 !important;
+  border: 1.5px solid #d97706 !important;
+  color: #451a03 !important;
+  font-size: 12.5px !important;
+  font-weight: 800 !important;
+  padding: 4px 12px !important;
+  border-radius: 6px !important;
+  cursor: pointer !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+  transition: all 0.15s ease !important;
+  white-space: nowrap !important;
+}
+
+.btn-ai-scene-preset:hover {
+  background: #fde68a !important;
+  border-color: #b45309 !important;
+  color: #1c1917 !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.18) !important;
+}
+
+/* ========================================================
+   回合思考倒计时徽章 (Turn Timer Badge)
+   ======================================================== */
+.turn-timer-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: clamp(14px, 1.25vw, 17px) !important;
+  font-weight: 900 !important;
+  padding: 2px 9px !important;
+  border-radius: 12px !important;
+  margin-left: 6px !important;
+  font-variant-numeric: tabular-nums;
+  border: 1.6px solid rgba(234, 179, 8, 0.75) !important;
+  background: rgba(234, 179, 8, 0.28) !important;
+  color: #fef08a !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.95);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
+  white-space: nowrap;
+}
+
+.turn-timer-badge.enemy {
+  border-color: rgba(248, 113, 113, 0.8) !important;
+  background: rgba(185, 28, 28, 0.38) !important;
+  color: #fca5a5 !important;
+}
+
+.turn-timer-badge.urgent {
+  background: rgba(239, 68, 68, 0.55) !important;
+  border-color: #ef4444 !important;
+  color: #ffffff !important;
+  animation: turnTimerPulse 0.8s ease-in-out infinite;
+}
+
+@keyframes turnTimerPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.08); filter: brightness(1.35); }
+}
+
+/* ========================================================
+   卡牌动态费用指示器 (Dynamic Card Cost Indicators)
+   支持永雨之地+2、抑魔处所×2、法师减费等实时环境修正
+   ======================================================== */
+.card-cost-gem.cost-increased {
+  border-color: #ff4d4f !important;
+  color: #ff7875 !important;
+  background: rgba(60, 10, 10, 0.96) !important;
+  box-shadow: 0 0 8px rgba(255, 77, 79, 0.8), inset 0 0 4px rgba(255, 77, 79, 0.35) !important;
+  font-weight: 900 !important;
+}
+
+.card-cost-gem.cost-discounted {
+  border-color: #52c41a !important;
+  color: #73d13d !important;
+  background: rgba(10, 50, 18, 0.96) !important;
+  box-shadow: 0 0 8px rgba(82, 196, 26, 0.8), inset 0 0 4px rgba(82, 196, 26, 0.35) !important;
+  font-weight: 900 !important;
+}
+
+.cost-mod-sub {
+  font-size: 11px;
+  color: #ff7875;
+  margin-left: 3px;
+  font-weight: bold;
+}
+
+/* ========================================================
+   战场场景总览弹窗与专属高对比滚动条 (Scenario Grid Scrollbar)
+   ======================================================== */
+.scenario-grid-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: #ca8a04 rgba(20, 15, 11, 0.85);
+}
+
+.scenario-grid-scroll-container::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scenario-grid-scroll-container::-webkit-scrollbar-track {
+  background: rgba(16, 12, 9, 0.9);
+  border-radius: 6px;
+  border: 1px solid rgba(198, 155, 63, 0.25);
+}
+
+.scenario-grid-scroll-container::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #eab308 0%, #ca8a04 50%, #854d0e 100%);
+  border-radius: 6px;
+  border: 1.5px solid #fef08a;
+  box-shadow: 0 0 8px rgba(234, 179, 8, 0.5);
+}
+
+.scenario-grid-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #fde047 0%, #eab308 100%);
+}
+
+.scenario-grid-item.custom-scenario {
+  border-color: #d97706 !important;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.25) !important;
+}
+
+.btn-delete-custom-scenario:hover {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.65) !important;
+  transform: translateY(-1px);
+}
+
+.btn-delete-custom-scenario:active {
+  transform: scale(0.96);
 }
 
 
