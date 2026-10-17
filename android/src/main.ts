@@ -369,6 +369,7 @@ let campaignMapPanX = 0;
 let campaignMapPanY = 0;
 let campaignMapScale = 1;
 let campaignMapInitialized = false;
+let isCampaignDeckCollapsed = false;
 
 // ==========================================
 // LEAGUE OF HEROES STATE (Images 2 & 3)
@@ -6896,11 +6897,23 @@ function renderCampaignMapScreen(): string {
 
         <!-- 悬浮地图操控按钮 -->
         <div class="campaign-map-controls">
-          <button class="map-ctrl-btn" id="btn-campaign-toggle-map" title="切换大陆地图 (当前：第 ${campaignMapIndex} 大陆)">🗺️ 大陆${campaignMapIndex === 1 ? '②' : (campaignMapIndex === 2 ? '③' : '①')}</button>
-          <button class="map-ctrl-btn" id="btn-campaign-zoom-in" title="放大地图 (或鼠标滚轮向上)">＋</button>
-          <button class="map-ctrl-btn" id="btn-campaign-zoom-out" title="缩小地图 (或鼠标滚轮向下)">－</button>
-          <button class="map-ctrl-btn" id="btn-campaign-recenter" title="聚焦当前关卡">🎯</button>
-          <button class="map-ctrl-btn" id="btn-campaign-fit" title="全景居中">🗺️</button>
+          <div class="campaign-continent-selector-box" title="战役大陆切换 (当前：第 ${campaignMapIndex} 大陆)">
+            <div class="continent-selector-header">
+              <span class="continent-hdr-icon">🗺️</span>
+              <span class="continent-hdr-title">大陆 ${campaignMapIndex}</span>
+            </div>
+            <div class="continent-btn-row">
+              <button class="continent-nav-btn ${campaignMapIndex === 1 ? 'active' : ''}" data-target-map="1" title="第一大陆 · 黎明平原与要塞 (第1~8关)${campaignMapIndex === 1 ? '【当前所在】' : ''}">Ⅰ</button>
+              <button class="continent-nav-btn ${campaignMapIndex === 2 ? 'active' : ''}" data-target-map="2" title="第二大陆 · 元素荒原与苍穹 (第9~16关)${campaignMapIndex === 2 ? '【当前所在】' : ''}">Ⅱ</button>
+              <button class="continent-nav-btn ${campaignMapIndex === 3 ? 'active' : ''}" data-target-map="3" title="第三大陆 · 龙之群峰与终焉神殿 (第17~23关)${campaignMapIndex === 3 ? '【当前所在】' : ''}">Ⅲ</button>
+            </div>
+          </div>
+          <div class="campaign-ctrl-btn-group">
+            <button class="map-ctrl-btn" id="btn-campaign-zoom-in" title="放大地图 (或鼠标滚轮向上)">＋</button>
+            <button class="map-ctrl-btn" id="btn-campaign-zoom-out" title="缩小地图 (或鼠标滚轮向下)">－</button>
+            <button class="map-ctrl-btn" id="btn-campaign-recenter" title="聚焦当前关卡">🎯</button>
+            <button class="map-ctrl-btn" id="btn-campaign-fit" title="全景居中 (自适应屏幕)">🗺️</button>
+          </div>
         </div>
 
         <div class="campaign-map-drag-hint">
@@ -6908,7 +6921,28 @@ function renderCampaignMapScreen(): string {
         </div>
       </div>
 
-      <div class="campaign-bottom-deck">
+      <div class="campaign-bottom-deck ${isCampaignDeckCollapsed ? 'collapsed' : ''}" id="campaign-bottom-deck">
+        <!-- 折叠/展开悬浮控制手柄 -->
+        <button class="campaign-deck-toggle-btn" id="btn-campaign-toggle-deck" title="${isCampaignDeckCollapsed ? '展开战役详情面板' : '收起面板，畅享全景大地图'}">
+          <span class="toggle-icon">${isCampaignDeckCollapsed ? '▲ 展开面板' : '▼ 收起面板'}</span>
+        </button>
+
+        <!-- 收起时的极简迷你快捷条 (Mini HUD) -->
+        <div class="campaign-deck-mini-bar" id="campaign-deck-mini-bar">
+          <div class="mini-bar-left">
+            <span class="mini-level-badge">第 ${currentLvl.id} 关</span>
+            <span class="mini-opp-name">${currentLvl.oppName} · ${currentLvl.title}</span>
+            <span class="mini-opp-hp">❤️ ${currentLvl.enemyHp}</span>
+          </div>
+          <div class="mini-bar-right">
+            ${hasSavedCampaignBattle(activeCampaign?.id) ? `
+              <button class="mini-pc-btn resume-btn" id="btn-mini-resume-battle">接续战斗</button>
+            ` : ''}
+            <button class="mini-pc-btn start-btn" id="btn-mini-start-battle">${unlockedCampaignLevels.includes(selectedCampaignLevelId) ? '开始战斗 ⚔️' : '关卡未解锁 🔒'}</button>
+            <button class="mini-pc-btn expand-btn" id="btn-mini-expand-deck">展开详情 ▲</button>
+          </div>
+        </div>
+
         <div class="campaign-deck-left">
           <div style="display:flex; align-items:center; gap:8px; cursor:pointer;" id="btn-campaign-avatar-click" title="点击查看/切换战役角色">
             <img src="${activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg'}" style="width:40px; height:40px; border-radius:6px; border:1.5px solid #d4af37; object-fit:cover;" alt="Avatar" />
@@ -9675,17 +9709,32 @@ function attachEventListeners() {
       stage.style.transform = `translate3d(${campaignMapPanX}px, ${campaignMapPanY}px, 0) scale(${campaignMapScale})`;
     }
 
+    function getSafeViewportHeight(): number {
+      if (!viewport) return window.innerHeight;
+      const vh = viewport.clientHeight;
+      const deck = document.getElementById('campaign-bottom-deck');
+      const isCollapsed = deck?.classList.contains('collapsed') ?? isCampaignDeckCollapsed;
+      const deckH = isCollapsed ? 44 : (deck?.clientHeight || 200);
+      return Math.max(160, vh - deckH);
+    }
+
     function clampPan(x: number, y: number, scale: number): { x: number; y: number } {
       if (!viewport) return { x, y };
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
+      const safeH = getSafeViewportHeight();
       const sw = STAGE_W * scale;
       const sh = STAGE_H * scale;
 
-      const minX = Math.min(0, vw - sw - 40);
-      const maxX = Math.max(0, vw - sw > 0 ? (vw - sw) / 2 : 40);
-      const minY = Math.min(0, vh - sh - 40);
-      const maxY = Math.max(0, vh - sh > 0 ? (vh - sh) / 2 : 40);
+      const rawMinX = Math.min(60, vw - sw - 60);
+      const rawMaxX = Math.max(-60, vw - sw > 0 ? (vw - sw) / 2 + 60 : 60);
+      const minX = Math.min(rawMinX, rawMaxX);
+      const maxX = Math.max(rawMinX, rawMaxX);
+
+      // Y 轴平移：允许地图下半部及边缘完全平移至底部面板之上，留出 60px 充裕余量
+      const rawMinY = safeH - sh - 60;
+      const rawMaxY = Math.max(50, safeH - sh > 0 ? (safeH - sh) / 2 + 50 : 50);
+      const minY = Math.min(rawMinY, rawMaxY);
+      const maxY = Math.max(rawMinY, rawMaxY);
 
       return {
         x: Math.max(minX, Math.min(maxX, x)),
@@ -9700,10 +9749,12 @@ function attachEventListeners() {
       const nx = (node.x / 100) * STAGE_W;
       const ny = (node.y / 100) * STAGE_H;
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
+      const safeH = getSafeViewportHeight();
 
+      // 将关卡优雅居中于安全可视区域内（避让顶部条幅）
+      const visualCenterY = Math.max(60, (safeH + 36) / 2);
       const targetX = (vw / 2) - (nx * campaignMapScale);
-      const targetY = (vh / 2) - (ny * campaignMapScale);
+      const targetY = visualCenterY - (ny * campaignMapScale);
       const clamped = clampPan(targetX, targetY, campaignMapScale);
       campaignMapPanX = clamped.x;
       campaignMapPanY = clamped.y;
@@ -9713,19 +9764,22 @@ function attachEventListeners() {
     function fitAll(smooth = true) {
       if (!viewport) return;
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
-      const scale = Math.max(0.55, Math.min(1.2, Math.min(vw / STAGE_W, vh / STAGE_H)));
+      const safeH = getSafeViewportHeight();
+      const scale = Math.max(0.48, Math.min(1.2, Math.min(vw / STAGE_W, safeH / STAGE_H)));
       campaignMapScale = scale;
       campaignMapPanX = (vw - STAGE_W * scale) / 2;
-      campaignMapPanY = (vh - STAGE_H * scale) / 2;
+      campaignMapPanY = (safeH - STAGE_H * scale) / 2;
+      const clamped = clampPan(campaignMapPanX, campaignMapPanY, scale);
+      campaignMapPanX = clamped.x;
+      campaignMapPanY = clamped.y;
       updateTransform(smooth);
     }
 
     // 初次进入时计算最佳自适应视角并对焦当前关卡
     if (!campaignMapInitialized) {
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
-      campaignMapScale = Math.max(0.72, Math.min(1.15, Math.max(vw / STAGE_W, vh / STAGE_H)));
+      const safeH = getSafeViewportHeight();
+      campaignMapScale = Math.max(0.72, Math.min(1.15, Math.min(vw / STAGE_W, safeH / STAGE_H) * 1.15));
       focusLevel(selectedCampaignLevelId, false);
       campaignMapInitialized = true;
     } else {
@@ -9783,12 +9837,12 @@ function attachEventListeners() {
     viewport.addEventListener('pointerup', onPointerUp);
     viewport.addEventListener('pointercancel', onPointerUp);
 
-    // 滚轮缩放 (以鼠标位置为中心)
+    // 滚轮缩放 (以安全可视区鼠标位置为中心)
     viewport.addEventListener('wheel', (e: WheelEvent) => {
       e.preventDefault();
       const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
       const oldScale = campaignMapScale;
-      const newScale = Math.max(0.5, Math.min(2.0, oldScale * zoomFactor));
+      const newScale = Math.max(0.48, Math.min(2.0, oldScale * zoomFactor));
       if (newScale === oldScale) return;
 
       const rect = viewport.getBoundingClientRect();
@@ -9805,17 +9859,52 @@ function attachEventListeners() {
       updateTransform(false);
     }, { passive: false });
 
-    // 控制栏按钮事件
-    document.getElementById('btn-campaign-toggle-map')?.addEventListener('click', (e) => {
+    // 大陆战区直选控制盒标签事件
+    document.querySelectorAll('.continent-nav-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const targetMap = parseInt((btn as HTMLElement).dataset.targetMap || '1', 10) as 1 | 2 | 3;
+        if (targetMap === campaignMapIndex) return;
+        sound.play('click');
+        campaignMapIndex = targetMap;
+        const nodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+        if (!nodes.some(n => n.levelId === selectedCampaignLevelId)) {
+          selectedCampaignLevelId = nodes[0].levelId;
+        }
+        render();
+        focusLevel(selectedCampaignLevelId, false);
+      });
+    });
+
+    // 折叠/展开底部情报面板事件
+    const toggleDeckBtn = document.getElementById('btn-campaign-toggle-deck');
+    const miniExpandBtn = document.getElementById('btn-mini-expand-deck');
+    const toggleDeckHandler = (e: Event) => {
       e.stopPropagation();
       sound.play('click');
-      campaignMapIndex = (campaignMapIndex % 3 + 1) as 1 | 2 | 3;
-      const nodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
-      if (!nodes.some(n => n.levelId === selectedCampaignLevelId)) {
-        selectedCampaignLevelId = nodes[0].levelId;
+      isCampaignDeckCollapsed = !isCampaignDeckCollapsed;
+      const deck = document.getElementById('campaign-bottom-deck');
+      if (deck) {
+        deck.classList.toggle('collapsed', isCampaignDeckCollapsed);
       }
-      render();
-      focusLevel(selectedCampaignLevelId, false);
+      if (toggleDeckBtn) {
+        toggleDeckBtn.title = isCampaignDeckCollapsed ? '展开战役详情面板' : '收起面板，畅享全景大地图';
+        const icon = toggleDeckBtn.querySelector('.toggle-icon');
+        if (icon) icon.textContent = isCampaignDeckCollapsed ? '▲ 展开面板' : '▼ 收起面板';
+      }
+      focusLevel(selectedCampaignLevelId, true);
+    };
+    toggleDeckBtn?.addEventListener('click', toggleDeckHandler);
+    miniExpandBtn?.addEventListener('click', toggleDeckHandler);
+
+    // 迷你栏开始战斗与接续战斗事件
+    document.getElementById('btn-mini-start-battle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('btn-campaign-start-battle')?.click();
+    });
+    document.getElementById('btn-mini-resume-battle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      document.getElementById('btn-campaign-resume-battle')?.click();
     });
 
     document.getElementById('btn-campaign-zoom-in')?.addEventListener('click', (e) => {
@@ -9823,9 +9912,9 @@ function attachEventListeners() {
       sound.play('click');
       const newScale = Math.min(2.0, campaignMapScale * 1.2);
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
+      const safeH = getSafeViewportHeight();
       campaignMapPanX = (vw / 2) - ((vw / 2) - campaignMapPanX) * (newScale / campaignMapScale);
-      campaignMapPanY = (vh / 2) - ((vh / 2) - campaignMapPanY) * (newScale / campaignMapScale);
+      campaignMapPanY = (safeH / 2) - ((safeH / 2) - campaignMapPanY) * (newScale / campaignMapScale);
       campaignMapScale = newScale;
       const clamped = clampPan(campaignMapPanX, campaignMapPanY, newScale);
       campaignMapPanX = clamped.x;
@@ -9836,11 +9925,11 @@ function attachEventListeners() {
     document.getElementById('btn-campaign-zoom-out')?.addEventListener('click', (e) => {
       e.stopPropagation();
       sound.play('click');
-      const newScale = Math.max(0.5, campaignMapScale * 0.83);
+      const newScale = Math.max(0.48, campaignMapScale * 0.83);
       const vw = viewport.clientWidth;
-      const vh = viewport.clientHeight;
+      const safeH = getSafeViewportHeight();
       campaignMapPanX = (vw / 2) - ((vw / 2) - campaignMapPanX) * (newScale / campaignMapScale);
-      campaignMapPanY = (vh / 2) - ((vh / 2) - campaignMapPanY) * (newScale / campaignMapScale);
+      campaignMapPanY = (safeH / 2) - ((safeH / 2) - campaignMapPanY) * (newScale / campaignMapScale);
       campaignMapScale = newScale;
       const clamped = clampPan(campaignMapPanX, campaignMapPanY, newScale);
       campaignMapPanX = clamped.x;
@@ -9928,6 +10017,20 @@ function attachEventListeners() {
               </div>
             ` : ''}
           `;
+        }
+
+        // 同步更新迷你栏
+        const miniBadge = document.querySelector('.mini-level-badge');
+        const miniName = document.querySelector('.mini-opp-name');
+        const miniHp = document.querySelector('.mini-opp-hp');
+        const miniStartBtn = document.getElementById('btn-mini-start-battle');
+        if (miniBadge) miniBadge.textContent = `第 ${lvlId} 关`;
+        if (miniName) miniName.textContent = `${currentLvl.oppName} · ${currentLvl.title}`;
+        if (miniHp) miniHp.textContent = `❤️ ${currentLvl.enemyHp}`;
+        if (miniStartBtn) {
+          miniStartBtn.textContent = isUnlocked ? '开始战斗 ⚔️' : '关卡未解锁 🔒';
+          (miniStartBtn as HTMLElement).style.opacity = isUnlocked ? '1' : '0.6';
+          (miniStartBtn as HTMLElement).style.filter = isUnlocked ? 'none' : 'grayscale(0.5)';
         }
 
         const startBtn = document.getElementById('btn-campaign-start-battle');
