@@ -1955,12 +1955,13 @@ body, html {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 150;
+  z-index: 10000;
   animation: fadeIn 0.2s ease-out;
 }
 
 .combat-rules-modal {
   width: clamp(560px, 58vw, 840px);
+  max-width: 92vw;
   max-height: 85vh;
   overflow-y: auto;
   background: #ecd9b5 url('/ui/Paper.png') center / 100% 100% no-repeat;

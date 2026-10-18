@@ -249,6 +249,28 @@ function saveCampaignProfiles() {
   } catch {}
 }
 
+function recordCampaignVictory() {
+  if (currentBattleSource !== 'campaign') return;
+  if (!engine || engine.winner !== 'player') return;
+  if (!completedCampaignLevels.includes(selectedCampaignLevelId)) {
+    completedCampaignLevels.push(selectedCampaignLevelId);
+  }
+  unlockedCampaignLevels = computeUnlockedCampaignLevels(completedCampaignLevels);
+  const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
+  if (nextUncompleted) {
+    selectedCampaignLevelId = nextUncompleted;
+  }
+  if (selectedCampaignLevelId >= 17 || completedCampaignLevels.includes(16)) {
+    campaignMapIndex = 3;
+  } else if (selectedCampaignLevelId >= 9 || completedCampaignLevels.includes(8)) {
+    campaignMapIndex = 2;
+  }
+  saveCampaignProfiles();
+  try {
+    localStorage.removeItem(SAVE_BATTLE_KEY);
+  } catch {}
+}
+
 function createNewCampaignProfile(name: string, faceId: number, classIdx: number, diffIdx: number) {
   let resolvedClassIdx = classIdx;
   if (resolvedClassIdx === 0 || HERO_CLASSES[resolvedClassIdx]?.id === 'random') {
@@ -2174,6 +2196,11 @@ function triggerBattleCompletion() {
   if (hasSavedCurrentBattleReplay) return;
   hasSavedCurrentBattleReplay = true;
   saveCompletedBattleReplay(engine, currentBattleSource);
+
+  // If player won campaign, record and persist campaign progress immediately!
+  if (currentBattleSource === 'campaign' && engine.winner === 'player') {
+    recordCampaignVictory();
+  }
 
   // Check achievements
   if (engine.winner === 'player') {
@@ -6664,18 +6691,20 @@ function renderBattlefieldRulesModal(): string {
       </div>
     `;
   } else if (currentBattleSource === 'campaign') {
-    const lvl = (campaignData as CampaignLevel[]).find(l => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
+    const lvl = engine.campaignLevel || (campaignData as CampaignLevel[]).find(l => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
     title = `战役关卡 · ${lvl.oppName} (${lvl.title})`;
     bodyHtml = `
-      <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:10px; color:#5c2c10; font-weight:900;">
+      <div style="font-size:clamp(17px, 1.4vw, 22px); margin-bottom:12px; color:#5c2c10; font-weight:900;">
         领地首领：${lvl.oppName} · ${lvl.title} (生命值: ${lvl.enemyHp})
       </div>
-      <div style="margin-bottom:12px; font-size:clamp(15.5px, 1.25vw, 19.5px); line-height:1.6; color:#2a1a0e; font-weight:700;">
-        <strong>领地战况：</strong>${lvl.story.replace(/\r?\n/g, ' ')}
+      <div style="margin-bottom:14px; font-size:clamp(15.5px, 1.25vw, 19.5px); line-height:1.6; color:#2a1a0e; font-weight:700;">
+        <strong style="color:#5c2c10;">📜 领地战况：</strong>
+        <div style="margin-top:6px; line-height:1.65;">${formatStoryText(lvl.story)}</div>
       </div>
       ${lvl.rules ? `
         <div style="background:rgba(142,114,58,0.18); border-left:4px solid #8e723a; padding:12px 16px; border-radius:6px; font-size:clamp(16px, 1.3vw, 20px); line-height:1.65; color:#221508; font-weight:800;">
-          ⚡ <strong>特殊规则：</strong>${lvl.rules.replace(/\r?\n/g, ' ')}
+          ⚡ <strong>特殊战规：</strong>
+          <div style="margin-top:6px; line-height:1.65;">${formatStoryText(lvl.rules)}</div>
         </div>
       ` : `
         <div style="background:rgba(142,114,58,0.18); border-left:4px solid #8e723a; padding:12px 16px; border-radius:6px; font-size:clamp(16px, 1.3vw, 20px); line-height:1.65; color:#221508; font-weight:800;">
@@ -8681,51 +8710,56 @@ function attachEventListeners() {
     render();
   });
 
+function startSingleDuelBattle() {
+  currentBattleSource = 'duel';
+  hasSavedCurrentBattleReplay = false;
+  resetBattleBanterSession();
+  activeEnemyBanter = null;
+
+  const chosenDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
+
+  // Determine Scenario
+  const allSc = getAllScenarios();
+  const scenario = pickScenarioById(allSc[singleDuelScenarioIdx]?.id || 'sanctuary');
+
+  currentBattlefieldTheme = scenario.theme;
+  sound.playBgm(getCombatBgmForCurrentBattle());
+
+  const availableClasses = getSelectableClasses();
+
+  let pClass: HeroClass = HERO_CLASSES[playerClassIndex].id === 'random'
+    ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
+    : (HERO_CLASSES[playerClassIndex].id as HeroClass);
+
+  let eClass: HeroClass = HERO_CLASSES[aiClassIndex].id === 'random'
+    ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
+    : (HERO_CLASSES[aiClassIndex].id as HeroClass);
+
+  const aiChosenName = MASTER_OPPONENT_NAMES[singleDuelAiNameIdx % MASTER_OPPONENT_NAMES.length] || '大法师';
+
+  engine = new SpectromancerEngine(pClass, undefined, {
+    playerName: '玩家',
+    playerFace: `./faces/Face${playerFaceIndex + 1}.jpg`,
+    enemyName: aiChosenName,
+    enemyFace: `./faces/Face${aiFaceIndex + 1}.jpg`,
+    enemyClass: eClass,
+    difficulty: chosenDiff,
+    ...buildScenarioEngineOptions(scenario),
+  });
+
+  setupEngineCallbacks();
+  selectedCard = null;
+  inspectedCard = null;
+  showHelpModal = false;
+  showOptionsModal = false;
+  currentView = 'battle';
+  render();
+  showToastNotice(`⚔️ 对战开启！【${scenario.name}】(${chosenDiff}难度)`);
+}
+
   document.getElementById('btn-start-duel')?.addEventListener('click', () => {
     sound.play('click');
-    currentBattleSource = 'duel';
-    resetBattleBanterSession();
-    activeEnemyBanter = null;
-
-    const chosenDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx];
-
-    // Determine Scenario
-    const allSc = getAllScenarios();
-    const scenario = pickScenarioById(allSc[singleDuelScenarioIdx]?.id || 'sanctuary');
-
-    currentBattlefieldTheme = scenario.theme;
-    sound.playBgm(getCombatBgmForCurrentBattle());
-
-    const availableClasses = getSelectableClasses();
-
-    let pClass: HeroClass = HERO_CLASSES[playerClassIndex].id === 'random'
-      ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
-      : (HERO_CLASSES[playerClassIndex].id as HeroClass);
-
-    let eClass: HeroClass = HERO_CLASSES[aiClassIndex].id === 'random'
-      ? availableClasses[Math.floor(Math.random() * availableClasses.length)]
-      : (HERO_CLASSES[aiClassIndex].id as HeroClass);
-
-    const aiChosenName = MASTER_OPPONENT_NAMES[singleDuelAiNameIdx % MASTER_OPPONENT_NAMES.length] || '大法师';
-
-    engine = new SpectromancerEngine(pClass, undefined, {
-      playerName: '玩家',
-      playerFace: `./faces/Face${playerFaceIndex + 1}.jpg`,
-      enemyName: aiChosenName,
-      enemyFace: `./faces/Face${aiFaceIndex + 1}.jpg`,
-      enemyClass: eClass,
-      difficulty: chosenDiff,
-      ...buildScenarioEngineOptions(scenario),
-    });
-
-    setupEngineCallbacks();
-    selectedCard = null;
-    inspectedCard = null;
-    showHelpModal = false;
-    showOptionsModal = false;
-    currentView = 'battle';
-    render();
-    showToastNotice(`⚔️ 对战开启！【${scenario.name}】(${chosenDiff}难度)`);
+    startSingleDuelBattle();
   });
 
   // ===================================
@@ -8895,6 +8929,154 @@ function attachEventListeners() {
   // ===================================
   // CAMPAIGN ACTIONS
   // ===================================
+function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
+  selectedCampaignLevelId = levelId;
+  currentBattleSource = 'campaign';
+  hasSavedCurrentBattleReplay = false;
+  resetBattleBanterSession();
+  activeEnemyBanter = null;
+  activeBattleBgm = '';
+
+  const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
+  const validClasses: HeroClass[] = [
+    'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
+    'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
+  ];
+  const rawClassId = activeCampaign ? HERO_CLASSES[activeCampaign.playerClassIdx]?.id : undefined;
+  const pClass: HeroClass = (!rawClassId || rawClassId === 'random')
+    ? validClasses[Math.floor(Math.random() * validClasses.length)]
+    : rawClassId;
+  const pName = activeCampaign ? activeCampaign.playerName : '战役法师';
+  const pFace = activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg';
+
+  // PC Spectromancer Campaign Initial Battlefield Creatures & Relics
+  const initialPlayerCreatures: Array<{ slot: number; card: CardDef }> = [];
+  const initialEnemyCreatures: Array<{ slot: number; card: CardDef }> = [];
+  const allCards = cardsData as CardDef[];
+
+  // Level 1 (Demir): Player starts with a Priest of Fire at slot 2
+  if (selectedCampaignLevelId === 1) {
+    const priest = allCards.find(c => c.id === 'fire_priest_of_fire');
+    if (priest) initialPlayerCreatures.push({ slot: 2, card: priest });
+  }
+
+  // Relic: Tamed Gryphon (Unlocked if level 1 is completed)
+  if (completedCampaignLevels.includes(1) && selectedCampaignLevelId !== 1) {
+    const gryphon = allCards.find(c => c.id === 'air_griffin');
+    if (gryphon) initialPlayerCreatures.push({ slot: 2, card: gryphon });
+  }
+
+  // Level 2 (Silver): Enemy starts with Water/Ice Elemental or Golem
+  if (selectedCampaignLevelId === 2) {
+    const elem = allCards.find(c => c.id === 'water_water_elemental') || allCards.find(c => c.id === 'water_ice_golem');
+    if (elem) initialEnemyCreatures.push({ slot: 2, card: elem });
+  }
+
+  // Level 3 (Fedemir): Enemy starts with Mech / Chaos Peacemaker or Guardian
+  if (selectedCampaignLevelId === 3) {
+    const guard = allCards.find(c => c.id === 'mech_steel_golem') || allCards.find(c => c.id === 'sorcery_spectral_assassin');
+    if (guard) initialEnemyCreatures.push({ slot: 2, card: guard });
+  }
+
+  // Level 5 (Lorana / Vilan): Enemy starts with two Goblin Berserkers
+  if (selectedCampaignLevelId === 5) {
+    const goblin = allCards.find(c => c.id === 'fire_goblin_berserker');
+    if (goblin) {
+      initialEnemyCreatures.push({ slot: 1, card: goblin });
+      initialEnemyCreatures.push({ slot: 4, card: goblin });
+    }
+  }
+
+  // Level 6 (Sirroca / 斯哈克): Enemy starts with an Air Elemental
+  if (selectedCampaignLevelId === 6) {
+    const airElem = allCards.find(c => c.id === 'air_air_elemental');
+    if (airElem) {
+      initialEnemyCreatures.push({ slot: 2, card: airElem });
+    }
+  }
+
+  // Level 7 (Avdofya / 阿芙黛娅): Enemy starts with 3 Elven Healers
+  if (selectedCampaignLevelId === 7) {
+    const healer = allCards.find(c => c.id === 'earth_elvish_healer');
+    if (healer) {
+      initialEnemyCreatures.push({ slot: 1, card: healer });
+      initialEnemyCreatures.push({ slot: 2, card: healer });
+      initialEnemyCreatures.push({ slot: 3, card: healer });
+    }
+  }
+
+  // Level 8 (Borey / 博瑞): Player starts with a Cloistered Elemental
+  if (selectedCampaignLevelId === 8) {
+    const cloistered = allCards.find(c => c.id === 'gop_cloistered_elemental');
+    if (cloistered) {
+      initialPlayerCreatures.push({ slot: 2, card: cloistered });
+    }
+  }
+
+  // Level 9 (Alrio / 艾瑞欧): Enemy starts with Mad Cat of Alrio
+  if (selectedCampaignLevelId === 9) {
+    const cat = allCards.find(c => c.id === 'gop_mad_cat_of_alrio');
+    if (cat) {
+      initialEnemyCreatures.push({ slot: 2, card: cat });
+    }
+  }
+
+  // Level 10 (Katla / 卡特拉): Both sides start with a Volcano
+  if (selectedCampaignLevelId === 10) {
+    const volcano = allCards.find(c => c.id === 'gop_volcano');
+    if (volcano) {
+      initialPlayerCreatures.push({ slot: 2, card: volcano });
+      initialEnemyCreatures.push({ slot: 2, card: volcano });
+    }
+  }
+
+  // Level 11 (Melidiadus / 曼迪阿杜斯): Enemy starts with 3 Vampires
+  if (selectedCampaignLevelId === 11) {
+    const vampire = allCards.find(c => c.id === 'gop_vampire');
+    if (vampire) {
+      initialEnemyCreatures.push({ slot: 1, card: vampire });
+      initialEnemyCreatures.push({ slot: 2, card: vampire });
+      initialEnemyCreatures.push({ slot: 3, card: vampire });
+    }
+  }
+
+  // Relic: Talisman of Health (+5 max HP if level 2 completed)
+  const pMaxHp = completedCampaignLevels.includes(2) ? 65 : 60;
+
+  // Relic: Signets of the Elements (+1 initial mana if level 4 completed)
+  const extraPlayerMana: Partial<Record<ElementType, number>> = {
+    fire: completedCampaignLevels.includes(4) ? 1 : 0,
+    water: completedCampaignLevels.includes(4) ? 1 : 0,
+    air: completedCampaignLevels.includes(4) ? 1 : 0,
+    earth: completedCampaignLevels.includes(4) ? 1 : 0,
+    special: 0,
+  };
+
+  const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
+  engine = new SpectromancerEngine(pClass, currentLvl, {
+    playerName: pName,
+    playerFace: pFace,
+    playerHp: pMaxHp,
+    enemyHp: currentLvl.enemyHp,
+    enemyName: currentLvl.oppName,
+    enemyFace: currentLvl.face,
+    difficulty: campaignDiff,
+    initialPlayerCreatures,
+    initialEnemyCreatures,
+    extraPlayerMana,
+    leagueRule: currentLvl.rules || undefined,
+  });
+  if (currentLvl.rules) {
+    engine.log(`【战役战场规则】${currentLvl.rules.replace(/\r?\n/g, ' ')}`, 'heal');
+  }
+  setupEngineCallbacks();
+  selectedCard = null;
+  inspectedCard = null;
+  currentView = 'battle';
+  sound.playBgm(getCombatBgmForCurrentBattle());
+  render();
+}
+
   document.getElementById('close-campaign-btn')?.addEventListener('click', () => {
     sound.play('click');
     currentView = 'menu';
@@ -8905,23 +9087,8 @@ function attachEventListeners() {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const lvlId = parseInt((btn as HTMLElement).dataset.levelId || '1');
-      const lvl = (campaignData as CampaignLevel[]).find((l) => l.id === lvlId);
-      if (lvl) {
-        sound.play('click');
-        currentBattleSource = 'campaign';
-        resetBattleBanterSession();
-        activeEnemyBanter = null;
-        selectedCampaignLevelId = lvlId;
-        const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
-        engine = new SpectromancerEngine('sorcery', lvl, {
-          difficulty: campaignDiff,
-        });
-        setupEngineCallbacks();
-        selectedCard = null;
-        inspectedCard = null;
-        currentView = 'battle';
-        render();
-      }
+      sound.play('click');
+      startCampaignBattle(lvlId);
     });
   });
 
@@ -8989,6 +9156,14 @@ function attachEventListeners() {
     sound.play('click');
     showRulesModal = false;
     render();
+  });
+
+  document.getElementById('combat-rules-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      sound.play('click');
+      showRulesModal = false;
+      render();
+    }
   });
 
   document.getElementById('btn-combat-log')?.addEventListener('click', () => {
@@ -10075,138 +10250,7 @@ function attachEventListeners() {
       return;
     }
     sound.play('click');
-    currentBattleSource = 'campaign';
-    const currentLvl = (campaignData as CampaignLevel[]).find((l) => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
-    const validClasses: HeroClass[] = [
-      'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
-      'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
-    ];
-    const rawClassId = activeCampaign ? HERO_CLASSES[activeCampaign.playerClassIdx]?.id : undefined;
-    const pClass: HeroClass = (!rawClassId || rawClassId === 'random')
-      ? validClasses[Math.floor(Math.random() * validClasses.length)]
-      : rawClassId;
-    const pName = activeCampaign ? activeCampaign.playerName : '战役法师';
-    const pFace = activeCampaign ? `./faces/Face${activeCampaign.playerFaceId}.jpg` : './faces/Face1.jpg';
-
-    // PC Spectromancer Campaign Initial Battlefield Creatures & Relics
-    const initialPlayerCreatures: Array<{ slot: number; card: CardDef }> = [];
-    const initialEnemyCreatures: Array<{ slot: number; card: CardDef }> = [];
-    const allCards = cardsData as CardDef[];
-
-    // Level 1 (Demir): Player starts with a Priest of Fire at slot 2
-    if (selectedCampaignLevelId === 1) {
-      const priest = allCards.find(c => c.id === 'fire_priest_of_fire');
-      if (priest) initialPlayerCreatures.push({ slot: 2, card: priest });
-    }
-
-    // Relic: Tamed Gryphon (Unlocked if level 1 is completed)
-    if (completedCampaignLevels.includes(1) && selectedCampaignLevelId !== 1) {
-      const gryphon = allCards.find(c => c.id === 'air_griffin');
-      if (gryphon) initialPlayerCreatures.push({ slot: 2, card: gryphon });
-    }
-
-    // Level 2 (Silver): Enemy starts with Water/Ice Elemental or Golem
-    if (selectedCampaignLevelId === 2) {
-      const elem = allCards.find(c => c.id === 'water_water_elemental') || allCards.find(c => c.id === 'water_ice_golem');
-      if (elem) initialEnemyCreatures.push({ slot: 2, card: elem });
-    }
-
-    // Level 3 (Fedemir): Enemy starts with Mech / Chaos Peacemaker or Guardian
-    if (selectedCampaignLevelId === 3) {
-      const guard = allCards.find(c => c.id === 'mech_steel_golem') || allCards.find(c => c.id === 'sorcery_spectral_assassin');
-      if (guard) initialEnemyCreatures.push({ slot: 2, card: guard });
-    }
-
-    // Level 5 (Lorana / Vilan): Enemy starts with two Goblin Berserkers
-    if (selectedCampaignLevelId === 5) {
-      const goblin = allCards.find(c => c.id === 'fire_goblin_berserker');
-      if (goblin) {
-        initialEnemyCreatures.push({ slot: 1, card: goblin });
-        initialEnemyCreatures.push({ slot: 4, card: goblin });
-      }
-    }
-
-    // Level 6 (Sirroca / 斯哈克): Enemy starts with an Air Elemental
-    if (selectedCampaignLevelId === 6) {
-      const airElem = allCards.find(c => c.id === 'air_air_elemental');
-      if (airElem) {
-        initialEnemyCreatures.push({ slot: 2, card: airElem });
-      }
-    }
-
-    // Level 7 (Avdofya / 阿芙黛娅): Enemy starts with 3 Elven Healers
-    if (selectedCampaignLevelId === 7) {
-      const healer = allCards.find(c => c.id === 'earth_elvish_healer');
-      if (healer) {
-        initialEnemyCreatures.push({ slot: 1, card: healer });
-        initialEnemyCreatures.push({ slot: 2, card: healer });
-        initialEnemyCreatures.push({ slot: 3, card: healer });
-      }
-    }
-
-    // Level 8 (Borey / 博瑞): Player starts with a Cloistered Elemental
-    if (selectedCampaignLevelId === 8) {
-      const cloistered = allCards.find(c => c.id === 'gop_cloistered_elemental');
-      if (cloistered) {
-        initialPlayerCreatures.push({ slot: 2, card: cloistered });
-      }
-    }
-
-    // Level 9 (Alrio / 艾瑞欧): Enemy starts with Mad Cat of Alrio
-    if (selectedCampaignLevelId === 9) {
-      const cat = allCards.find(c => c.id === 'gop_mad_cat_of_alrio');
-      if (cat) {
-        initialEnemyCreatures.push({ slot: 2, card: cat });
-      }
-    }
-
-    // Level 10 (Katla / 卡特拉): Both sides start with a Volcano
-    if (selectedCampaignLevelId === 10) {
-      const volcano = allCards.find(c => c.id === 'gop_volcano');
-      if (volcano) {
-        initialPlayerCreatures.push({ slot: 2, card: volcano });
-        initialEnemyCreatures.push({ slot: 2, card: volcano });
-      }
-    }
-
-    // Level 11 (Melidiadus / 曼迪阿杜斯): Enemy starts with 3 Vampires
-    if (selectedCampaignLevelId === 11) {
-      const vampire = allCards.find(c => c.id === 'gop_vampire');
-      if (vampire) {
-        initialEnemyCreatures.push({ slot: 1, card: vampire });
-        initialEnemyCreatures.push({ slot: 2, card: vampire });
-        initialEnemyCreatures.push({ slot: 3, card: vampire });
-      }
-    }
-
-    // Relic: Talisman of Health (+5 max HP if level 2 completed)
-    const pMaxHp = completedCampaignLevels.includes(2) ? 65 : 60;
-
-    // Relic: Signets of the Elements (+1 initial mana if level 4 completed)
-    const extraPlayerMana: Partial<Record<ElementType, number>> = {
-      fire: completedCampaignLevels.includes(4) ? 1 : 0,
-      water: completedCampaignLevels.includes(4) ? 1 : 0,
-      air: completedCampaignLevels.includes(4) ? 1 : 0,
-      earth: completedCampaignLevels.includes(4) ? 1 : 0,
-      special: 0,
-    };
-
-    const campaignDiff = activeCampaign?.difficulty || campaignDifficulties[campaignDifficultyIndex] || '普通';
-    engine = new SpectromancerEngine(pClass, currentLvl, {
-      playerName: pName,
-      playerFace: pFace,
-      playerHp: pMaxHp,
-      enemyHp: currentLvl.enemyHp,
-      enemyName: currentLvl.oppName,
-      enemyFace: currentLvl.face,
-      difficulty: campaignDiff,
-      initialPlayerCreatures,
-      initialEnemyCreatures,
-      extraPlayerMana,
-    });
-    setupEngineCallbacks();
-    currentView = 'battle';
-    render();
+    startCampaignBattle(selectedCampaignLevelId);
   });
 
   document.getElementById('btn-campaign-profile-hub')?.addEventListener('click', () => {
@@ -10427,28 +10471,35 @@ function attachEventListeners() {
     }
   });
 
+function startLeagueBattle() {
+  if (!activeLeague) return;
+  currentBattleSource = 'league';
+  hasSavedCurrentBattleReplay = false;
+  sound.playBgm(getCombatBgmForCurrentBattle());
+  const curOpponent = getNextOpponentForLeague();
+  const leagueScenario = getLeagueScenarioForCurrentMatch();
+  currentBattlefieldTheme = leagueScenario.theme || 'citadel';
+  const pClass = activeLeague.standings.find((s) => s.isPlayer)?.className || 'cleric';
+  engine = new SpectromancerEngine(pClass, undefined, {
+    playerName: activeLeague.playerName,
+    playerFace: `./faces/Face${activeLeague.playerFaceId}.jpg`,
+    enemyName: curOpponent.cnName,
+    enemyFace: curOpponent.face,
+    enemyClass: curOpponent.className,
+    difficulty: activeLeague.difficulty || '普通',
+    ...buildLeagueOpponentEngineOptions(curOpponent, leagueScenario),
+  });
+  setupEngineCallbacks();
+  selectedCard = null;
+  inspectedCard = null;
+  currentView = 'battle';
+  render();
+  showToastNotice(`🏆 联赛开战！对决【${curOpponent.cnName}】· 战场环境【${leagueScenario.name}】`);
+}
+
   document.getElementById('btn-league-start-match')?.addEventListener('click', () => {
-    if (!activeLeague) return;
     sound.play('click');
-    currentBattleSource = 'league';
-    sound.playBgm(getCombatBgmForCurrentBattle());
-    const curOpponent = getNextOpponentForLeague();
-    const leagueScenario = getLeagueScenarioForCurrentMatch();
-    currentBattlefieldTheme = leagueScenario.theme || 'citadel';
-    const pClass = activeLeague.standings.find((s) => s.isPlayer)?.className || 'cleric';
-    engine = new SpectromancerEngine(pClass, undefined, {
-      playerName: activeLeague.playerName,
-      playerFace: `./faces/Face${activeLeague.playerFaceId}.jpg`,
-      enemyName: curOpponent.cnName,
-      enemyFace: curOpponent.face,
-      enemyClass: curOpponent.className,
-      difficulty: activeLeague.difficulty || '普通',
-      ...buildLeagueOpponentEngineOptions(curOpponent, leagueScenario),
-    });
-    setupEngineCallbacks();
-    currentView = 'battle';
-    render();
-    showToastNotice(`🏆 联赛开战！对决【${curOpponent.cnName}】· 战场环境【${leagueScenario.name}】`);
+    startLeagueBattle();
   });
 
   document.getElementById('btn-league-advice')?.addEventListener('click', () => {
@@ -10599,22 +10650,29 @@ function attachEventListeners() {
     });
   });
 
+function startCustomDeckBattle() {
+  currentBattleSource = 'custom_deck';
+  hasSavedCurrentBattleReplay = false;
+  sound.playBgm(getCombatBgmForCurrentBattle());
+  const d = customDecks[selectedDeckIdx] || customDecks[0];
+  const oppName = customDeckOpponentList[selectedCustomOpponentIdx] || '大法师';
+  const chosenCustomDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx] || '普通';
+  engine = new SpectromancerEngine(d.className, undefined, {
+    enemyName: oppName,
+    enemyFace: `./faces/Face${(selectedCustomOpponentIdx % 20) + 10}.jpg`,
+    difficulty: chosenCustomDiff,
+    customDeck: d.cards,
+  });
+  setupEngineCallbacks();
+  selectedCard = null;
+  inspectedCard = null;
+  currentView = 'battle';
+  render();
+}
+
   document.getElementById('btn-deck-start')?.addEventListener('click', () => {
     sound.play('click');
-    currentBattleSource = 'custom_deck';
-    sound.playBgm(getCombatBgmForCurrentBattle());
-    const d = customDecks[selectedDeckIdx] || customDecks[0];
-    const oppName = customDeckOpponentList[selectedCustomOpponentIdx] || '大法师';
-    const chosenCustomDiff = SINGLE_DUEL_DIFFICULTIES[singleDuelDifficultyIdx] || '普通';
-    engine = new SpectromancerEngine(d.className, undefined, {
-      enemyName: oppName,
-      enemyFace: `./faces/Face${(selectedCustomOpponentIdx % 20) + 10}.jpg`,
-      difficulty: chosenCustomDiff,
-      customDeck: d.cards,
-    });
-    setupEngineCallbacks();
-    currentView = 'battle';
-    render();
+    startCustomDeckBattle();
   });
 
   document.getElementById('btn-deck-back')?.addEventListener('click', () => {
@@ -10800,22 +10858,7 @@ function attachEventListeners() {
   document.getElementById('btn-campaign-result-return')?.addEventListener('click', () => {
     sound.play('click');
     sound.playBgm('campaign_map');
-    if (engine.winner === 'player') {
-      if (!completedCampaignLevels.includes(selectedCampaignLevelId)) {
-        completedCampaignLevels.push(selectedCampaignLevelId);
-      }
-      unlockedCampaignLevels = computeUnlockedCampaignLevels(completedCampaignLevels);
-      const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
-      if (nextUncompleted) {
-        selectedCampaignLevelId = nextUncompleted;
-      }
-      if (selectedCampaignLevelId >= 17 || completedCampaignLevels.includes(16)) {
-        campaignMapIndex = 3;
-      } else if (selectedCampaignLevelId >= 9 || completedCampaignLevels.includes(8)) {
-        campaignMapIndex = 2;
-      }
-      saveCampaignProfiles();
-    }
+    recordCampaignVictory();
     currentView = 'campaign';
     render();
   });
@@ -10911,20 +10954,34 @@ function attachEventListeners() {
   document.getElementById('btn-restart')?.addEventListener('click', () => {
     sound.play('click');
     activeBattleBgm = '';
+    if (currentBattleSource === 'campaign' && engine && engine.winner === 'player') {
+      recordCampaignVictory();
+    }
     if (currentBattleSource === 'ai_duel') {
       startAiDuelBattle();
       return;
     }
-    engine.reset(engine.player.className as HeroClass, engine.currentCampaign || undefined);
-    setupEngineCallbacks();
-    selectedCard = null;
-    inspectedCard = null;
-    render();
+    if (currentBattleSource === 'campaign') {
+      startCampaignBattle(selectedCampaignLevelId);
+      return;
+    }
+    if (currentBattleSource === 'league') {
+      startLeagueBattle();
+      return;
+    }
+    if (currentBattleSource === 'custom_deck') {
+      startCustomDeckBattle();
+      return;
+    }
+    startSingleDuelBattle();
   });
 
   document.getElementById('btn-return-menu')?.addEventListener('click', () => {
     sound.play('click');
     sound.playBgm('menu1');
+    if (currentBattleSource === 'campaign' && engine && engine.winner === 'player') {
+      recordCampaignVictory();
+    }
     currentView = 'menu';
     render();
   });

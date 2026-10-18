@@ -5237,13 +5237,22 @@ export class SpectromancerEngine {
     customConfig?: {
       playerName?: string;
       playerFace?: string;
+      playerHp?: number;
       enemyName?: string;
       enemyFace?: string;
       enemyClass?: HeroClass;
       enemyHp?: number;
+      leagueRule?: string;
+      difficulty?: string;
+      extraPlayerMana?: Partial<Record<ElementType, number>>;
+      extraEnemyMana?: Partial<Record<ElementType, number>>;
+      initialPlayerCreatures?: Array<{ slot: number; card: CardDef }>;
+      initialEnemyCreatures?: Array<{ slot: number; card: CardDef }>;
+      customDeck?: CardDef[];
     }
   ) {
     this.currentCampaign = campaign || null;
+    this.campaignLevel = campaign;
     const enemyClassPool: HeroClass[] = [
       'sorcery', 'necromancer', 'cleric', 'mechanician', 'dominator',
       'chaosmaster', 'illusionist', 'demonologist', 'beastmaster', 'chronomancer', 'goblin', 'forest', 'golem', 'cult', 'blood'
@@ -5255,9 +5264,20 @@ export class SpectromancerEngine {
 
     const playerName = customConfig?.playerName || '玩家';
     const playerFace = customConfig?.playerFace || './faces/Face1.jpg';
+    const playerHp = customConfig?.playerHp || 60;
+    if (customConfig?.difficulty) {
+      this.difficulty = customConfig.difficulty;
+    }
 
-    this.player = this.createPlayer('player', playerName, playerFace, playerClass, 60);
+    this.player = this.createPlayer('player', playerName, playerFace, playerClass, playerHp);
     this.enemy = this.createPlayer('enemy', enemyName, enemyFace, enemyClass, enemyHp);
+
+    if (customConfig?.customDeck && customConfig.customDeck.length === 20) {
+      this.player.hand = [...customConfig.customDeck];
+    }
+
+    this.leagueRule = customConfig?.leagueRule || (campaign ? campaign.rules : undefined);
+
     this.playerBoard = [null, null, null, null, null, null];
     this.enemyBoard = [null, null, null, null, null, null];
     this.activeTurn = 'player';
@@ -5270,6 +5290,39 @@ export class SpectromancerEngine {
     this.extraActionRemaining = { player: 0, enemy: 0 };
     this.enemyRevealedCardIds.clear();
     this.playerRevealedCardIds.clear();
+
+    if (this.leagueRule) {
+      this.log(`【战场规则生效】${this.leagueRule.replace(/\r?\n/g, ' ')}`, 'heal');
+    }
+
+    if (customConfig?.extraPlayerMana) {
+      Object.entries(customConfig.extraPlayerMana).forEach(([elem, amount]) => {
+        const e = elem === 'special' ? this.player.specialElement : (elem as ElementType);
+        if (this.player.mana[e] !== undefined) {
+          this.player.mana[e] += amount;
+        }
+      });
+    }
+    if (customConfig?.extraEnemyMana) {
+      Object.entries(customConfig.extraEnemyMana).forEach(([elem, amount]) => {
+        const e = elem === 'special' ? this.enemy.specialElement : (elem as ElementType);
+        if (this.enemy.mana[e] !== undefined) {
+          this.enemy.mana[e] += amount;
+        }
+      });
+    }
+
+    if (customConfig?.initialPlayerCreatures) {
+      customConfig.initialPlayerCreatures.forEach((item) => {
+        this.placeInitialCreature('player', item.slot, item.card);
+      });
+    }
+    if (customConfig?.initialEnemyCreatures) {
+      customConfig.initialEnemyCreatures.forEach((item) => {
+        this.placeInitialCreature('enemy', item.slot, item.card);
+      });
+    }
+
     this.placeClassChampion('player');
     this.placeClassChampion('enemy');
     this.startTurn('player');

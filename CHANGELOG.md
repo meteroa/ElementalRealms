@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-18
+
+- **战役战场规则层级遮挡根治与排版优化（Battlefield Rules Modal Z-Index & Layout Fixes）**：
+  - **层级提升消除左栏遮挡**：修复战场规则弹窗遮罩原 `z-index: 150` 低于战斗界面左侧信息操作栏（`z-index: 1000`）导致弹窗左半部被左侧栏严重遮盖的缺陷；将遮罩层级提升至 `z-index: 10000` 并引入 `max-width: 92vw`，确保全屏居中覆盖，视野舒展无遮挡；
+  - **剧情战况与战规段落规范排版**：战役战场规则弹窗全面接入 `formatStoryText` 段落排版，领地首领、生命值、领地战况故事与特殊战场战规分区清爽展示，并支持点击背景蒙层或关闭按钮便捷关闭；
+- **战役通关进度即时与多路径持久化保存（Instant Campaign Victory Persistence Across All Exits）**：
+  - **获胜即刻持久化**：根除原战役胜利进度只在结果弹窗点击【返回大地图】才写入存档的缺陷；提炼集中幂等的 `recordCampaignVictory()` 机制，在战斗判定玩家胜利（`triggerBattleCompletion`）的一瞬间立即将关卡记入通关列表并写入本地存储，同时自动清理对局临时断点存档；
+  - **返回主菜单与再次对战无缝防丢**：在战斗结果弹窗点击【返回主菜单】或【再次对战/整军再战】时同步执行安全校验与保存，确保无论玩家通过何种路径退出战斗，已通关进度与新解锁关卡均 100% 完整保留，再次进入战役大地图无需重复通关；
+- **战斗重来全套战场规则与初始配置完整还原（Complete Rules & Scenario Retention on Battle Restart）**：
+  - **战役重来全要素还原**：根除战斗失败后点击【整军再战/再来一次】调用旧 `reset` 导致丢失战场规则、初始站场随从（如艾瑞欧的疯猫、火山、吸血鬼等）和已解锁遗物加成（生命上限提升、初始能量加成、首发狮鹫）的重大缺陷；将其重塑为标准战役重开流程，完整恢复关卡全部特殊随从、遗物增益与战役专属胜负规则；
+  - **开局战报规则同步**：在战役开局战报实况中同步播报特殊战场规则（如 `【战役战场规则】...`），方便玩家在战局中随时核验战规生效状态；
+  - **全模式重来健壮性对齐**：英雄联赛、单局对决、自组卡牌与大模型巅峰对决在点击重来时全面对齐各自标准启动流程，对手特技战规与战场场景环境法则全链路完整保留。
+
 ## [Unreleased] - 2026-10-17
 
 - **战役大地图战区标识纠偏与底部面板折叠/安全视口全景重构（Campaign Map Continent Selector & Collapsible Deck Viewport Fixes）**：
