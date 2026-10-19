@@ -1594,40 +1594,57 @@ function launchLanMatchWithCountdown(
 function setupLanNetworkCallbacks() {
   lanNetwork.onStatusChange = (_status, msg) => {
     lanStatusText = msg || '';
-    render();
+    if (showLanLobbyModal) {
+      updateLanLobbyInPlace();
+    } else {
+      render();
+    }
   };
 
   lanNetwork.onPeerConnected = (peerProfile) => {
     sound.play('click');
     showToastNotice(`🤝 对手【${peerProfile.name}】已加入房间！`);
     lanStatusText = `对手【${peerProfile.name}】已就绪`;
-    render();
+    if (showLanLobbyModal) {
+      updateLanLobbyInPlace();
+    } else {
+      render();
+    }
   };
 
   lanNetwork.onPeerDisconnected = (reason) => {
     if (currentView === 'battle' && engine.isLanGame) {
       showLanDisconnectModal = true;
       lanDisconnectReason = reason || '对手已退出游戏或网络连接中断';
+      render();
     } else {
       lanStatusText = reason || '对手已断开连接';
+      if (showLanLobbyModal) {
+        updateLanLobbyInPlace();
+      } else {
+        render();
+      }
     }
-    render();
   };
 
   lanNetwork.onErrorOccurred = (errText) => {
     lanStatusText = errText;
     lanIsConnecting = false;
     showToastNotice('⚠️ ' + errText);
-    render();
+    if (showLanLobbyModal) {
+      updateLanLobbyInPlace();
+    } else {
+      render();
+    }
   };
 
   lanNetwork.onMessageReceived = async (msg: NetworkMessage) => {
     if (msg.type === 'GAME_START') {
-      const { hostProfile, guestProfile, snapshot, scenarioId } = msg.payload;
-      // 与房主在同一战场场景（含特殊造物预置）下开场；
-      // 场面 HP/手牌/牌组随后由快照对齐。
-      const lanScenario = pickScenarioById(scenarioId || 'sanctuary');
-      launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+      try {
+        const { hostProfile, guestProfile, snapshot, scenarioId } = msg.payload;
+        // 与房主在同一战场场景（含特殊造物预置）下开场；
+        // 场面 HP/手牌/牌组随后由快照对齐。
+        const lanScenario = pickScenarioById(scenarioId || 'sanctuary');
         engine = new SpectromancerEngine(guestProfile.className, undefined, {
           playerName: guestProfile.name,
           playerFace: guestProfile.face,
@@ -1641,11 +1658,17 @@ function setupLanNetworkCallbacks() {
         engine.isGuest = true;
         setupEngineCallbacks();
         engine.applyStateSnapshot(snapshot);
-        currentBattleSource = 'lan';
-        currentView = 'battle';
+
         showLanLobbyModal = false;
-        render();
-      });
+        launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+          currentBattleSource = 'lan';
+          currentView = 'battle';
+          render();
+        });
+      } catch (err: any) {
+        console.error('[LAN] Failed to process GAME_START:', err);
+        showToastNotice('⚠️ 局域网开局失败: ' + (err?.message || err));
+      }
       return;
     }
 
@@ -1716,7 +1739,7 @@ function startLanBattleAsHost() {
   // 双方引擎在同一场景规则与预置造物下开场。
   const scenario = getCurrentLanScenario();
 
-  launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+  try {
     engine = new SpectromancerEngine(hostProfile.className, undefined, {
       playerName: hostProfile.name,
       playerFace: hostProfile.face,
@@ -1739,6 +1762,7 @@ function startLanBattleAsHost() {
     };
 
     const initialSnapshot = engine.exportStateSnapshot();
+    // 立即向对手发送 GAME_START，双方几乎在同一毫秒内同步开启 3-2-1 倒计时
     lanNetwork.sendMessage({
       type: 'GAME_START',
       payload: {
@@ -1749,11 +1773,16 @@ function startLanBattleAsHost() {
       },
     });
 
-    currentBattleSource = 'lan';
-    currentView = 'battle';
     showLanLobbyModal = false;
-    render();
-  });
+    launchLanMatchWithCountdown(hostProfile, guestProfile, () => {
+      currentBattleSource = 'lan';
+      currentView = 'battle';
+      render();
+    });
+  } catch (err: any) {
+    console.error('[LAN] Host failed to start battle:', err);
+    showToastNotice('⚠️ 启动对决失败: ' + (err?.message || err));
+  }
 }
 
 setupLanNetworkCallbacks();
@@ -4553,14 +4582,153 @@ function renderMainMenu(): string {
   `;
 }
 
-function renderLanLobbyModal(): string {
+function renderLanLobbyBody(): string {
   const currentRoomCode = lanNetwork.getRoomCode();
   const isHost = lanActiveTab === 'host';
   const isConnected = lanNetwork.isConnected();
   const peerProfile = lanNetwork.getPeerProfile();
+
+  if (isHost) {
+    return `
+      <!-- HOST PANEL -->
+      <div class="lan-host-box">
+        <div class="lan-code-title">
+          <span>🔑 4 位局域网对决房间码</span>
+        </div>
+        <div class="lan-digit-display">
+          ${currentRoomCode ? currentRoomCode.split('').map(d => `<div class="lan-digit-box">${d}</div>`).join('') : `
+            <div class="lan-digit-box placeholder">-</div>
+            <div class="lan-digit-box placeholder">-</div>
+            <div class="lan-digit-box placeholder">-</div>
+            <div class="lan-digit-box placeholder">-</div>
+          `}
+        </div>
+
+        ${currentRoomCode ? `
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button class="lan-copy-btn" id="btn-lan-copy-code">
+              <span>📋 复制房间码</span>
+            </button>
+            <button class="lan-copy-btn" id="btn-lan-recreate-room" style="color:#cbd5e1; border-color:#64748b;">
+              <span>🔄 重新生成</span>
+            </button>
+          </div>
+        ` : `
+          <button class="lan-action-btn primary" id="btn-lan-create-room">
+            <span>⚡ 立即生成房间码</span>
+          </button>
+        `}
+      </div>
+
+      <!-- STATUS OR PEER CARD -->
+      ${isConnected && peerProfile ? `
+        <div class="lan-peer-card">
+          <img src="${peerProfile.face}" class="lan-peer-avatar" alt="${peerProfile.name}" />
+          <div class="lan-peer-info">
+            <div class="lan-peer-name">${peerProfile.name}</div>
+            <div class="lan-peer-class">流派: ${peerProfile.classCn} · 已进入对战席位</div>
+          </div>
+          <div style="font-size:12px; color:#4ade80; font-weight:800;">● 已就绪</div>
+        </div>
+      ` : `
+        <div class="lan-status-box">
+          ${currentRoomCode ? `
+            <div class="lan-status-spinner"></div>
+            <div class="lan-status-text">${lanStatusText || '等待局域网内好友输入此 4 位房间码加入...'}</div>
+          ` : `
+            <div class="lan-status-text" style="color:#94a3b8;">点击上方按钮创建房间，好友即可在同一 Wi-Fi 或热点下加入对决</div>
+          `}
+        </div>
+      `}
+    `;
+  } else {
+    // JOIN PANEL
+    if (isConnected && peerProfile) {
+      return `
+        <div class="lan-host-box">
+          <div class="lan-code-title">
+            <span>🔑 已连接房间码 [${lanJoinCode || currentRoomCode}]</span>
+          </div>
+        </div>
+        <div class="lan-peer-card">
+          <img src="${peerProfile.face}" class="lan-peer-avatar" alt="${peerProfile.name}" />
+          <div class="lan-peer-info">
+            <div class="lan-peer-name">房主: ${peerProfile.name}</div>
+            <div class="lan-peer-class">流派: ${peerProfile.classCn} · 席位已连接</div>
+          </div>
+          <div style="font-size:12px; color:#4ade80; font-weight:800;">● 就绪中</div>
+        </div>
+        <div class="lan-status-box">
+          <div class="lan-status-spinner"></div>
+          <div class="lan-status-text">已成功进入房间，请等待房主点击开始对战...</div>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="lan-host-box">
+        <div class="lan-code-title">
+          <span>🔢 请输入房主的 4 位房间码</span>
+        </div>
+        <div class="lan-digit-display">
+          ${[0, 1, 2, 3].map(i => {
+            const digit = lanJoinCode[i] || '';
+            return `<div class="lan-digit-box ${digit ? '' : 'placeholder'}">${digit || '-'}</div>`;
+          }).join('')}
+        </div>
+      </div>
+
+      <!-- TOUCH NUMPAD -->
+      <div class="lan-keypad">
+        ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `
+          <button class="lan-keypad-btn btn-lan-key" data-key="${n}">${n}</button>
+        `).join('')}
+        <button class="lan-keypad-btn action-btn btn-lan-key-clear">清空</button>
+        <button class="lan-keypad-btn btn-lan-key" data-key="0">0</button>
+        <button class="lan-keypad-btn action-btn btn-lan-key-backspace">⌫</button>
+      </div>
+
+      <div class="lan-status-box">
+        ${lanIsConnecting ? `
+          <div class="lan-status-spinner"></div>
+          <div class="lan-status-text">${lanStatusText || '正在搜寻局域网对决房间...'}</div>
+        ` : `
+          <div class="lan-status-text" style="color:${lanStatusText.includes('失败') || lanStatusText.includes('超时') ? '#f87171' : '#94a3b8'};">
+            ${lanStatusText || '提示：双方需处于同一无线局域网 Wi-Fi 或手机热点下'}
+          </div>
+        `}
+      </div>
+    `;
+  }
+}
+
+function renderLanLobbyFooter(): string {
+  const isHost = lanActiveTab === 'host';
+  const isConnected = lanNetwork.isConnected();
+  const peerProfile = lanNetwork.getPeerProfile();
+
+  return `
+    <button class="lan-action-btn secondary" id="btn-lan-footer-cancel">返回</button>
+    ${isHost ? `
+      <button class="lan-action-btn primary" id="btn-lan-start-duel" ${!isConnected || !peerProfile ? 'disabled' : ''}>
+        <span>⚔️ 开始对决 ▶</span>
+      </button>
+    ` : isConnected ? `
+      <button class="lan-action-btn secondary" id="btn-lan-guest-exit-room">
+        <span>🚪 退出房间</span>
+      </button>
+    ` : `
+      <button class="lan-action-btn primary" id="btn-lan-join-action" ${lanJoinCode.length !== 4 || lanIsConnecting ? 'disabled' : ''}>
+        <span>⚡ 立即加入房间</span>
+      </button>
+    `}
+  `;
+}
+
+function renderLanLobbyModal(): string {
+  const isHost = lanActiveTab === 'host';
   const currentClass = HERO_CLASSES[lanPlayerClassIdx] || HERO_CLASSES[1];
   const lanScenario = getCurrentLanScenario();
-  const lanScenarioList = getLanSelectableScenarios();
   const relicPreview = getScenarioRelicIds(lanScenario).slice(0, 6)
     .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
     .filter((c): c is CardDef => !!c);
@@ -4580,169 +4748,265 @@ function renderLanLobbyModal(): string {
           <button class="modal-close-btn" id="btn-lan-lobby-close" style="position:static; width:34px; height:34px; font-size:22px; cursor:pointer;" title="返回主菜单">×</button>
         </div>
 
-        <!-- PROFILE CUSTOMIZATION BAR -->
-        <div class="lan-profile-bar">
-          <div class="lan-profile-face-wrap" id="btn-lan-cycle-face" title="点击切换英雄形象 (共${TOTAL_FACES}款)">
-            <img src="./faces/Face${lanPlayerFaceId}.jpg" class="hero-avatar" alt="Avatar" />
-            <div class="face-change-hint">换头像</div>
-          </div>
-          <div class="lan-profile-info">
-            <div class="lan-profile-name-row">
-              <input type="text" class="lan-profile-name-input" id="input-lan-player-name" value="${lanPlayerName}" maxlength="12" placeholder="输入玩家昵称" />
-              <div class="lan-class-stepper">
-                <button class="lan-class-step-btn" id="btn-lan-class-prev" title="上一个流派">◀</button>
-                <button class="lan-class-display-btn" id="btn-lan-open-class-picker" title="点击展开全流派石板选择">
-                  <img src="${toRel(currentClass.artImg)}" class="lan-class-avatar" alt="${currentClass.nameCn}" />
-                  <span class="lan-class-name">${currentClass.nameCn}</span>
-                  <span class="lan-class-badge-pill">切换</span>
-                </button>
-                <button class="lan-class-step-btn" id="btn-lan-class-next" title="下一个流派">▶</button>
+        <!-- TWO-COLUMN RESPONSIVE GRID -->
+        <div class="lan-lobby-grid">
+          <!-- LEFT COLUMN: Profile & Scenario Setup -->
+          <div class="lan-lobby-col-setup">
+            <!-- PROFILE CUSTOMIZATION BAR -->
+            <div class="lan-profile-bar">
+              <div class="lan-profile-face-wrap" id="btn-lan-cycle-face" title="点击切换英雄形象 (共${TOTAL_FACES}款)">
+                <img src="./faces/Face${lanPlayerFaceId}.jpg" class="hero-avatar" id="lan-avatar-img" alt="Avatar" />
+                <div class="face-change-hint">换头像</div>
+              </div>
+              <div class="lan-profile-info">
+                <input type="text" class="lan-profile-name-input" id="input-lan-player-name" value="${lanPlayerName}" maxlength="12" placeholder="输入玩家昵称" />
+                <div class="lan-class-stepper">
+                  <button class="lan-class-step-btn" id="btn-lan-class-prev" title="上一个流派">◀</button>
+                  <button class="lan-class-display-btn" id="btn-lan-open-class-picker" title="点击展开全流派石板选择">
+                    <img src="${toRel(currentClass.artImg)}" class="lan-class-avatar" id="lan-class-avatar-img" alt="${currentClass.nameCn}" />
+                    <span class="lan-class-name" id="lan-class-name-txt">${currentClass.nameCn}</span>
+                    <span class="lan-class-badge-pill">切换</span>
+                  </button>
+                  <button class="lan-class-step-btn" id="btn-lan-class-next" title="下一个流派">▶</button>
+                </div>
+                <div class="lan-profile-subtext" id="lan-profile-subtext">
+                  当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 ${HERO_CLASSES.length - 1} 大流派及随机可选）
+                </div>
               </div>
             </div>
-            <div style="font-size:11px; color:#94a3b8;">
-              当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 ${HERO_CLASSES.length - 1} 大流派及随机可选）
+
+            <!-- BATTLEFIELD SCENE & RULES -->
+            <div class="lan-scene-section" id="lan-scene-section">
+              ${isHost ? `
+                <div class="lan-scene-header-title">🏛️ 战场场景与法则（随房间下发）</div>
+                <div class="lan-class-stepper" style="margin-top:2px;">
+                  <button class="lan-class-step-btn" id="btn-lan-scene-prev" title="上一个战场场景">◀</button>
+                  <button class="lan-class-display-btn" id="btn-lan-scene-display" title="点击查看战场场景规则" style="flex:1; justify-content:center;">
+                    <span id="lan-scene-icon" style="font-size:16px;">${lanScenario.icon}</span>
+                    <span class="lan-class-name" id="lan-scene-name">${lanScenario.name}</span>
+                    <span class="lan-class-badge-pill">法则</span>
+                  </button>
+                  <button class="lan-class-step-btn" id="btn-lan-scene-next" title="下一个战场场景">▶</button>
+                </div>
+                <div class="lan-scene-rule-text" id="lan-scene-rule">
+                  ⚡ <strong>场景法则：</strong>${lanScenario.rule}
+                </div>
+                <div id="lan-scene-relics" style="margin-top:4px; display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
+                  ${relicPreview.length ? `
+                    <span style="font-size:11px; color:#fbbf24;">预置造物:</span>
+                    ${relicPreview.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}" style="width:26px; height:36px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.06);" />`).join('')}
+                  ` : ''}
+                </div>
+              ` : `
+                <div class="lan-scene-header-title">🏛️ 战场场景与法则</div>
+                <div class="lan-scene-rule-text" style="color:#94a3b8;">
+                  战场场景由房主选定，开局时将自动同步双方战场与预置造物法则。
+                </div>
+              `}
             </div>
-            ${isHost ? `
-            <div class="lan-class-stepper" style="margin-top:6px;">
-              <button class="lan-class-step-btn" id="btn-lan-scene-prev" title="上一个战场场景">◀</button>
-              <button class="lan-class-display-btn" id="btn-lan-scene-display" title="点击查看战场场景规则">
-                <span style="font-size:16px;">${lanScenario.icon}</span>
-                <span class="lan-class-name">${lanScenario.name}</span>
-                <span class="lan-class-badge-pill">战场</span>
+          </div>
+
+          <!-- RIGHT COLUMN: Host/Join Room Actions -->
+          <div class="lan-lobby-col-action">
+            <!-- TAB STRIP -->
+            <div class="lan-tab-strip">
+              <button class="lan-tab-btn ${lanActiveTab === 'host' ? 'active' : ''}" id="btn-lan-tab-host">
+                <span>👑 我要建房 (Host)</span>
               </button>
-              <button class="lan-class-step-btn" id="btn-lan-scene-next" title="下一个战场场景">▶</button>
+              <button class="lan-tab-btn ${lanActiveTab === 'join' ? 'active' : ''}" id="btn-lan-tab-join">
+                <span>⚔️ 我要加入 (Join)</span>
+              </button>
             </div>
-            <div style="font-size:11px; color:#94a3b8; margin-top:4px;">
-              战场场景: <strong style="color:#7dd3fc;">${lanScenario.name}</strong>（共 ${lanScenarioList.length} 款，随房间同步给对手）
-              ${relicPreview.length ? `<div style="margin-top:3px; display:flex; gap:4px; align-items:center; flex-wrap:wrap;">
-                <span style="color:#fbbf24;">预置造物:</span>
-                ${relicPreview.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}" style="width:26px; height:36px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.06);" />`).join('')}
-              </div>` : ''}
+
+            <!-- INTERACTIVE BODY -->
+            <div class="lan-lobby-body" id="lan-lobby-body-container">
+              ${renderLanLobbyBody()}
             </div>
-            ` : `
-            <div style="font-size:11px; color:#94a3b8; margin-top:4px;">
-              战场场景由房主选择，开局时自动同步
+
+            <!-- ACTIONS FOOTER -->
+            <div class="lan-actions-footer" id="lan-lobby-footer-container">
+              ${renderLanLobbyFooter()}
             </div>
-            `}
           </div>
-        </div>
-
-        <!-- TAB STRIP -->
-        <div class="lan-tab-strip">
-          <button class="lan-tab-btn ${lanActiveTab === 'host' ? 'active' : ''}" id="btn-lan-tab-host">
-            <span>👑 我要建房 (Host)</span>
-          </button>
-          <button class="lan-tab-btn ${lanActiveTab === 'join' ? 'active' : ''}" id="btn-lan-tab-join">
-            <span>⚔️ 我要加入 (Join)</span>
-          </button>
-        </div>
-
-        <!-- BODY -->
-        <div class="lan-lobby-body">
-          ${isHost ? `
-            <!-- HOST PANEL -->
-            <div class="lan-host-box">
-              <div class="lan-code-title">
-                <span>🔑 4 位局域网对决房间码</span>
-              </div>
-              <div class="lan-digit-display">
-                ${currentRoomCode ? currentRoomCode.split('').map(d => `<div class="lan-digit-box">${d}</div>`).join('') : `
-                  <div class="lan-digit-box placeholder">-</div>
-                  <div class="lan-digit-box placeholder">-</div>
-                  <div class="lan-digit-box placeholder">-</div>
-                  <div class="lan-digit-box placeholder">-</div>
-                `}
-              </div>
-
-              ${currentRoomCode ? `
-                <div style="display:flex; gap:10px; align-items:center;">
-                  <button class="lan-copy-btn" id="btn-lan-copy-code">
-                    <span>📋 复制房间码</span>
-                  </button>
-                  <button class="lan-copy-btn" id="btn-lan-recreate-room" style="color:#cbd5e1; border-color:#64748b;">
-                    <span>🔄 重新生成</span>
-                  </button>
-                </div>
-              ` : `
-                <button class="lan-action-btn primary" id="btn-lan-create-room">
-                  <span>⚡ 立即生成房间码</span>
-                </button>
-              `}
-            </div>
-
-            <!-- STATUS OR PEER CARD -->
-            ${isConnected && peerProfile ? `
-              <div class="lan-peer-card">
-                <img src="${peerProfile.face}" class="lan-peer-avatar" alt="${peerProfile.name}" />
-                <div class="lan-peer-info">
-                  <div class="lan-peer-name">${peerProfile.name}</div>
-                  <div class="lan-peer-class">流派: ${peerProfile.classCn} · 已进入对战席位</div>
-                </div>
-                <div style="font-size:12px; color:#4ade80; font-weight:800;">● 已就绪</div>
-              </div>
-            ` : `
-              <div class="lan-status-box">
-                ${currentRoomCode ? `
-                  <div class="lan-status-spinner"></div>
-                  <div class="lan-status-text">${lanStatusText || '等待局域网内好友输入此 4 位房间码加入...'}</div>
-                ` : `
-                  <div class="lan-status-text" style="color:#94a3b8;">点击上方按钮创建房间，好友即可在同一 Wi-Fi 或热点下加入对决</div>
-                `}
-              </div>
-            `}
-          ` : `
-            <!-- JOIN PANEL -->
-            <div class="lan-host-box">
-              <div class="lan-code-title">
-                <span>🔢 请输入房主的 4 位房间码</span>
-              </div>
-              <div class="lan-digit-display">
-                ${[0, 1, 2, 3].map(i => {
-                  const digit = lanJoinCode[i] || '';
-                  return `<div class="lan-digit-box ${digit ? '' : 'placeholder'}">${digit || '-'}</div>`;
-                }).join('')}
-              </div>
-            </div>
-
-            <!-- TOUCH NUMPAD -->
-            <div class="lan-keypad">
-              ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(n => `
-                <button class="lan-keypad-btn btn-lan-key" data-key="${n}">${n}</button>
-              `).join('')}
-              <button class="lan-keypad-btn action-btn btn-lan-key-clear">清空</button>
-              <button class="lan-keypad-btn btn-lan-key" data-key="0">0</button>
-              <button class="lan-keypad-btn action-btn btn-lan-key-backspace">⌫</button>
-            </div>
-
-            <div class="lan-status-box">
-              ${lanIsConnecting ? `
-                <div class="lan-status-spinner"></div>
-                <div class="lan-status-text">${lanStatusText || '正在搜寻局域网对决房间...'}</div>
-              ` : `
-                <div class="lan-status-text" style="color:${lanStatusText.includes('失败') || lanStatusText.includes('超时') ? '#f87171' : '#94a3b8'};">
-                  ${lanStatusText || '提示：双方需处于同一无线局域网 Wi-Fi 或手机热点下'}
-                </div>
-              `}
-            </div>
-          `}
-        </div>
-
-        <!-- ACTIONS FOOTER -->
-        <div class="lan-actions-footer">
-          <button class="lan-action-btn secondary" id="btn-lan-footer-cancel">返回</button>
-          ${isHost ? `
-            <button class="lan-action-btn primary" id="btn-lan-start-duel" ${!isConnected || !peerProfile ? 'disabled' : ''}>
-              <span>⚔️ 开始对决 ▶</span>
-            </button>
-          ` : `
-            <button class="lan-action-btn primary" id="btn-lan-join-action" ${lanJoinCode.length !== 4 || lanIsConnecting ? 'disabled' : ''}>
-              <span>⚡ 立即加入房间</span>
-            </button>
-          `}
         </div>
       </div>
     </div>
   `;
+}
+
+function bindLanLobbyDynamicEvents() {
+  const overlay = document.getElementById('lan-lobby-modal-overlay');
+  if (!overlay) return;
+
+  overlay.querySelector('#btn-lan-copy-code')?.addEventListener('click', () => {
+    sound.play('click');
+    const code = lanNetwork.getRoomCode();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(code).then(() => {
+        showToastNotice(`📋 房间码 [${code}] 已复制到剪贴板！`);
+      }).catch(() => {
+        showToastNotice(`房间码: ${code}`);
+      });
+    } else {
+      showToastNotice(`房间码: ${code}`);
+    }
+  });
+
+  overlay.querySelector('#btn-lan-create-room')?.addEventListener('click', async () => {
+    sound.play('click');
+    lanStatusText = '正在创建局域网房间...';
+    updateLanLobbyInPlace();
+    try {
+      await lanNetwork.createRoom(getMyLanProfile());
+      showToastNotice(`🎉 房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
+    } catch (err: any) {
+      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
+    }
+    updateLanLobbyInPlace();
+  });
+
+  overlay.querySelector('#btn-lan-recreate-room')?.addEventListener('click', async () => {
+    sound.play('click');
+    lanStatusText = '正在重新生成房间...';
+    updateLanLobbyInPlace();
+    try {
+      await lanNetwork.createRoom(getMyLanProfile());
+      showToastNotice(`🎉 新房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
+    } catch (err: any) {
+      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
+    }
+    updateLanLobbyInPlace();
+  });
+
+  overlay.querySelector('#btn-lan-start-duel')?.addEventListener('click', () => {
+    sound.play('click');
+    startLanBattleAsHost();
+  });
+
+  overlay.querySelector('#btn-lan-guest-exit-room')?.addEventListener('click', () => {
+    sound.play('click');
+    lanNetwork.disconnect();
+    lanStatusText = '';
+    updateLanLobbyInPlace();
+  });
+
+  overlay.querySelectorAll('.btn-lan-key').forEach((el) => {
+    el.addEventListener('click', () => {
+      const key = (el as HTMLElement).dataset.key;
+      if (key && lanJoinCode.length < 4) {
+        sound.play('click');
+        lanJoinCode += key;
+        updateLanLobbyInPlace();
+      }
+    });
+  });
+
+  overlay.querySelector('.btn-lan-key-clear')?.addEventListener('click', () => {
+    sound.play('click');
+    lanJoinCode = '';
+    updateLanLobbyInPlace();
+  });
+
+  overlay.querySelector('.btn-lan-key-backspace')?.addEventListener('click', () => {
+    sound.play('click');
+    lanJoinCode = lanJoinCode.slice(0, -1);
+    updateLanLobbyInPlace();
+  });
+
+  overlay.querySelector('#btn-lan-join-action')?.addEventListener('click', async () => {
+    if (lanJoinCode.length === 4 && !lanIsConnecting) {
+      sound.play('click');
+      lanIsConnecting = true;
+      lanStatusText = `正在连接房间 [${lanJoinCode}]...`;
+      updateLanLobbyInPlace();
+      try {
+        await lanNetwork.joinRoom(lanJoinCode, getMyLanProfile());
+        lanIsConnecting = false;
+        showToastNotice(`✅ 已成功加入房间 [${lanJoinCode}]！等待房主开始...`);
+        updateLanLobbyInPlace();
+      } catch (err: any) {
+        lanIsConnecting = false;
+        lanStatusText = err.message || '连接失败，请确认房间码';
+        updateLanLobbyInPlace();
+      }
+    }
+  });
+}
+
+function updateLanLobbyInPlace() {
+  const overlay = document.getElementById('lan-lobby-modal-overlay');
+  if (!overlay) return;
+
+  const currentClass = HERO_CLASSES[lanPlayerClassIdx] || HERO_CLASSES[1];
+  const lanScenario = getCurrentLanScenario();
+  const relicPreview = getScenarioRelicIds(lanScenario).slice(0, 6)
+    .map((id) => (cardsData as CardDef[]).find((c) => c.id === id))
+    .filter((c): c is CardDef => !!c);
+
+  // 1. Update Profile Image & Text
+  const avatarImg = overlay.querySelector<HTMLImageElement>('#lan-avatar-img');
+  if (avatarImg) avatarImg.src = `./faces/Face${lanPlayerFaceId}.jpg`;
+
+  const classAvatarImg = overlay.querySelector<HTMLImageElement>('#lan-class-avatar-img');
+  if (classAvatarImg) classAvatarImg.src = toRel(currentClass.artImg);
+
+  const classNameTxt = overlay.querySelector<HTMLElement>('#lan-class-name-txt');
+  if (classNameTxt) classNameTxt.textContent = currentClass.nameCn;
+
+  const profileSubtext = overlay.querySelector<HTMLElement>('#lan-profile-subtext');
+  if (profileSubtext) {
+    profileSubtext.innerHTML = `当前形象: <strong>#${lanPlayerFaceId}</strong> · 流派: <strong style="color:#ffd700;">${currentClass.nameCn}</strong>（共 ${HERO_CLASSES.length - 1} 大流派及随机可选）`;
+  }
+
+  // 2. Update Scene Section (if host)
+  const isHost = lanActiveTab === 'host';
+  const sceneIcon = overlay.querySelector<HTMLElement>('#lan-scene-icon');
+  if (sceneIcon) sceneIcon.textContent = lanScenario.icon;
+
+  const sceneName = overlay.querySelector<HTMLElement>('#lan-scene-name');
+  if (sceneName) sceneName.textContent = lanScenario.name;
+
+  const sceneRule = overlay.querySelector<HTMLElement>('#lan-scene-rule');
+  if (sceneRule) sceneRule.innerHTML = `⚡ <strong>场景法则：</strong>${lanScenario.rule}`;
+
+  const relicsContainer = overlay.querySelector<HTMLElement>('#lan-scene-relics');
+  if (relicsContainer) {
+    if (relicPreview.length) {
+      relicsContainer.innerHTML = `
+        <span style="font-size:11px; color:#fbbf24;">预置造物:</span>
+        ${relicPreview.map((c) => `<img src="${toRel(c.imgUrl)}" title="${c.nameCn}" style="width:26px; height:36px; object-fit:contain; border-radius:4px; background:rgba(255,255,255,0.06);" />`).join('')}
+      `;
+    } else {
+      relicsContainer.innerHTML = '';
+    }
+  }
+
+  // 3. Update Tab states
+  const tabHost = overlay.querySelector<HTMLElement>('#btn-lan-tab-host');
+  const tabJoin = overlay.querySelector<HTMLElement>('#btn-lan-tab-join');
+  if (tabHost && tabJoin) {
+    if (isHost) {
+      tabHost.classList.add('active');
+      tabJoin.classList.remove('active');
+    } else {
+      tabHost.classList.remove('active');
+      tabJoin.classList.add('active');
+    }
+  }
+
+  // 4. Update Body & Footer
+  const bodyContainer = overlay.querySelector<HTMLElement>('#lan-lobby-body-container');
+  if (bodyContainer) {
+    bodyContainer.innerHTML = renderLanLobbyBody();
+  }
+
+  const footerContainer = overlay.querySelector<HTMLElement>('#lan-lobby-footer-container');
+  if (footerContainer) {
+    footerContainer.innerHTML = renderLanLobbyFooter();
+  }
+
+  // 5. Re-bind dynamic events for newly rendered body & footer
+  bindLanLobbyDynamicEvents();
 }
 
 function renderLanVsOverlay(): string {
@@ -8012,7 +8276,7 @@ function attachEventListeners() {
     lanPlayerFaceId = (lanPlayerFaceId % TOTAL_FACES) + 1;
     saveLanProfilePreferences();
     sound.play('click');
-    render();
+    updateLanLobbyInPlace();
   });
 
   const lanNameInput = document.getElementById('input-lan-player-name') as HTMLInputElement | null;
@@ -8025,14 +8289,14 @@ function attachEventListeners() {
     sound.play('click');
     lanPlayerClassIdx = (lanPlayerClassIdx - 1 + HERO_CLASSES.length) % HERO_CLASSES.length;
     saveLanProfilePreferences();
-    render();
+    updateLanLobbyInPlace();
   });
 
   document.getElementById('btn-lan-class-next')?.addEventListener('click', () => {
     sound.play('click');
     lanPlayerClassIdx = (lanPlayerClassIdx + 1) % HERO_CLASSES.length;
     saveLanProfilePreferences();
-    render();
+    updateLanLobbyInPlace();
   });
 
   document.getElementById('btn-lan-open-class-picker')?.addEventListener('click', () => {
@@ -8047,7 +8311,7 @@ function attachEventListeners() {
     const list = getLanSelectableScenarios();
     lanScenarioIdx = (lanScenarioIdx - 1 + list.length) % list.length;
     saveLanProfilePreferences();
-    render();
+    updateLanLobbyInPlace();
   });
 
   document.getElementById('btn-lan-scene-next')?.addEventListener('click', () => {
@@ -8055,7 +8319,7 @@ function attachEventListeners() {
     const list = getLanSelectableScenarios();
     lanScenarioIdx = (lanScenarioIdx + 1) % list.length;
     saveLanProfilePreferences();
-    render();
+    updateLanLobbyInPlace();
   });
 
   document.getElementById('btn-lan-scene-display')?.addEventListener('click', () => {
@@ -8067,7 +8331,7 @@ function attachEventListeners() {
     if (lanActiveTab !== 'host') {
       sound.play('click');
       lanActiveTab = 'host';
-      render();
+      updateLanLobbyInPlace();
     }
   });
 
@@ -8075,96 +8339,11 @@ function attachEventListeners() {
     if (lanActiveTab !== 'join') {
       sound.play('click');
       lanActiveTab = 'join';
-      render();
+      updateLanLobbyInPlace();
     }
   });
 
-  document.getElementById('btn-lan-create-room')?.addEventListener('click', async () => {
-    sound.play('click');
-    lanStatusText = '正在创建局域网房间...';
-    render();
-    try {
-      await lanNetwork.createRoom(getMyLanProfile());
-      showToastNotice(`🎉 房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
-    } catch (err: any) {
-      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
-    }
-    render();
-  });
-
-  document.getElementById('btn-lan-recreate-room')?.addEventListener('click', async () => {
-    sound.play('click');
-    lanStatusText = '正在重新生成房间...';
-    render();
-    try {
-      await lanNetwork.createRoom(getMyLanProfile());
-      showToastNotice(`🎉 新房间创建成功！房间码: ${lanNetwork.getRoomCode()}`);
-    } catch (err: any) {
-      showToastNotice('⚠️ 创建房间失败: ' + (err.message || '网络错误'));
-    }
-    render();
-  });
-
-  document.getElementById('btn-lan-copy-code')?.addEventListener('click', () => {
-    sound.play('click');
-    const code = lanNetwork.getRoomCode();
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(code).then(() => {
-        showToastNotice(`📋 房间码 [${code}] 已复制到剪贴板！`);
-      }).catch(() => {
-        showToastNotice(`房间码: ${code}`);
-      });
-    } else {
-      showToastNotice(`房间码: ${code}`);
-    }
-  });
-
-  document.getElementById('btn-lan-start-duel')?.addEventListener('click', () => {
-    sound.play('click');
-    startLanBattleAsHost();
-  });
-
-  document.querySelectorAll('.btn-lan-key').forEach((el) => {
-    el.addEventListener('click', () => {
-      const key = (el as HTMLElement).dataset.key;
-      if (key && lanJoinCode.length < 4) {
-        sound.play('click');
-        lanJoinCode += key;
-        render();
-      }
-    });
-  });
-
-  document.querySelector('.btn-lan-key-clear')?.addEventListener('click', () => {
-    sound.play('click');
-    lanJoinCode = '';
-    render();
-  });
-
-  document.querySelector('.btn-lan-key-backspace')?.addEventListener('click', () => {
-    sound.play('click');
-    lanJoinCode = lanJoinCode.slice(0, -1);
-    render();
-  });
-
-  document.getElementById('btn-lan-join-action')?.addEventListener('click', async () => {
-    if (lanJoinCode.length === 4 && !lanIsConnecting) {
-      sound.play('click');
-      lanIsConnecting = true;
-      lanStatusText = `正在连接房间 [${lanJoinCode}]...`;
-      render();
-      try {
-        await lanNetwork.joinRoom(lanJoinCode, getMyLanProfile());
-        lanIsConnecting = false;
-        showToastNotice(`✅ 已成功加入房间 [${lanJoinCode}]！等待房主开始...`);
-        render();
-      } catch (err: any) {
-        lanIsConnecting = false;
-        lanStatusText = err.message || '连接失败，请确认房间码';
-        render();
-      }
-    }
-  });
+  bindLanLobbyDynamicEvents();
 
   document.getElementById('btn-lan-disconnect-confirm')?.addEventListener('click', () => {
     sound.play('click');

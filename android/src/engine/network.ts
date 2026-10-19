@@ -5,6 +5,14 @@ import type { NetworkMessage, NetworkUserProfile } from '../types';
 export type NetworkRole = 'host' | 'guest' | 'none';
 export type ConnectionStatus = 'disconnected' | 'creating' | 'waiting' | 'joining' | 'connected';
 
+const LAN_ICE_SERVERS = [
+  { urls: 'stun:stun.qq.com:3478' },
+  { urls: 'stun:stun.miwifi.com:3478' },
+  { urls: 'stun:stun.chat.bilibili.com:3478' },
+  { urls: 'stun:stun.cloudflare.com:3478' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+];
+
 export class LanNetworkManager {
   private peer: Peer | null = null;
   private conn: DataConnection | null = null;
@@ -78,10 +86,7 @@ export class LanNetworkManager {
         this.peer = new Peer(fullPeerId, {
           debug: 1,
           config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-            ],
+            iceServers: LAN_ICE_SERVERS,
           },
         });
 
@@ -153,10 +158,7 @@ export class LanNetworkManager {
         this.peer = new Peer({
           debug: 1,
           config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:stun1.l.google.com:19302' },
-            ],
+            iceServers: LAN_ICE_SERVERS,
           },
         });
 
@@ -238,6 +240,7 @@ export class LanNetworkManager {
 
   private handleIncomingData(data: any) {
     if (!data || typeof data !== 'object') return;
+    this.lastPongTime = Date.now();
     const msg = data as NetworkMessage;
 
     // Internal system messages
@@ -246,7 +249,6 @@ export class LanNetworkManager {
       return;
     }
     if (msg.type === 'PONG') {
-      this.lastPongTime = Date.now();
       return;
     }
 
@@ -276,8 +278,10 @@ export class LanNetworkManager {
       try {
         this.conn.send(msg);
       } catch (err) {
-        console.error('[LanNetworkManager] Send error:', err);
+        console.error('[LanNetworkManager] Send error for', msg.type, err);
       }
+    } else {
+      console.warn('[LanNetworkManager] Channel not open, dropped message:', msg.type);
     }
   }
 
@@ -287,7 +291,7 @@ export class LanNetworkManager {
     this.pingTimer = window.setInterval(() => {
       if (this.isConnected()) {
         this.sendMessage({ type: 'PING' });
-        if (Date.now() - this.lastPongTime > 15000) {
+        if (Date.now() - this.lastPongTime > 24000) {
           console.warn('[LanNetworkManager] Heartbeat timeout');
           if (this.onPeerDisconnected) {
             this.onPeerDisconnected('网络延迟过高或连接中断');

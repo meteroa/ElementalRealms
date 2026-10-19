@@ -170,6 +170,8 @@ export interface NetworkGameStateSnapshot {
   enemyGolemTempAttackBonus?: number;
   guestHand?: CardDef[];
   hostHand?: CardDef[];
+  guestHandIds?: string[];
+  hostHandIds?: string[];
   enemyRevealedCardIds?: string[];
   lastLog?: BattleLogEntry;
 }

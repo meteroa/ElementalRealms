@@ -5,7 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-10-18
+## [Unreleased] - 2026-10-19
+
+- **局域网对决横竖版自适应双列排版重构与横向滚动条根除（LAN Multiplayer Responsive 2-Column Grid & Zero Horizontal Scroll）**：
+  - **横屏一屏尽览彻底告别滚动条**：将局域网对决弹窗由旧版单列纵向无限堆叠重塑为响应式双列栅格（`.lan-lobby-grid`），左列聚焦魔导师形象/昵称/流派及战场场景法则，右列专职房主建房码与对手加入小键盘，在手机横屏（高度 <= 520px）下无需滑动滚动条即可一屏尽览全部内容与操作大按钮；
+  - **横向滚动条根治与输入流派分行解耦**：彻底解决浏览器宽屏下左列底部突兀出现横向滚动条的问题；将原先强行并列挤压在同一狭窄行内的玩家昵称输入框与流派切换步进器分行解耦，赋予流派名称与战场场景卡片弹性收缩能力，并在左右列及弹窗网格上全面显式设定 `overflow-x: hidden`，杜绝任何意外水平溢出；
+  - **竖屏紧凑自适应与边界防溢出**：在竖屏与窄屏模式下自适应切换为紧凑垂直堆叠，收紧内外边距并对步进器、房间码框与触摸九宫格数字键盘实施 `clamp()` 动态缩放，彻底消除横竖屏溢出屏幕边界的问题。
+- **弹窗反复闪烁与重渲染动画根治（Zero-Flicker In-Place Modal Updates）**：
+  - **就地局部 DOM 刷新**：根除局域网大厅在切换头像、流派步进、场景切换、标签页切换、输入数字键盘或网络状态回调时频繁触发全局 `render()` 重建整个页面 DOM 的缺陷；全面引入 `updateLanLobbyInPlace()` 机制，在弹窗打开时仅针对目标节点就地刷新内容，输入昵称不丢失焦点、敲击按键即时响应；
+  - **全局弹窗淡入闪烁动画剔除**：移除 `.modal-overlay`、`.stone-options-dialog` 等全局弹窗类上在每次 DOM 重绘时重复触发的 `fadeIn` 与弹出放大关键帧动画，彻底根治所有弹窗在操作或更新时的一直闪烁问题。
+- **局域网对战进局失败与断连问题根除（LAN P2P Compact Snapshot & Synchronized Matchmaking）**：
+  - **对战快照轻量化压缩**：彻底根除开局时将 40 余张卡牌完整定义与场上随从对象打包导致快照体积膨胀至 25KB、触发 WebRTC SCTP 缓冲区上限导致连接被 PeerJS 内部强行掐断的严重隐患；改为仅传输卡牌 ID 列表（体积降至 <1KB），由对端本地卡库精准还原；
+  - **双方倒计时开局毫秒级时序对齐**：修复房主端独自主观跑完 2.4 秒倒计时后才向对手发送 `GAME_START`、导致房主已开战而对手仍停留在倒计时或大厅的开局时序脱节问题；调整为房主点击【开始对决】后立即构建引擎并向对手下发开局包，双方几乎同频启动 3-2-1 倒计时并同步迈入战场；
+  - **国内可用 STUN 服务器替换**：剔除国内无法直连的 Google STUN 节点，换用腾讯、小米、B站与 Cloudflare 高速 STUN 服务，大幅提升局域网穿透成功率与稳定性；并在全部接收数据包上刷新心跳存活计时，避免因心跳误判导致对局中途弹出网络中断。
+
+
 
 - **战役战场规则层级遮挡根治与排版优化（Battlefield Rules Modal Z-Index & Layout Fixes）**：
   - **层级提升消除左栏遮挡**：修复战场规则弹窗遮罩原 `z-index: 150` 低于战斗界面左侧信息操作栏（`z-index: 1000`）导致弹窗左半部被左侧栏严重遮盖的缺陷；将遮罩层级提升至 `z-index: 10000` 并引入 `max-width: 92vw`，确保全屏居中覆盖，视野舒展无遮挡；

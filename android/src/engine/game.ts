@@ -5153,6 +5153,16 @@ export class SpectromancerEngine {
     }
   }
 
+  public cloneBoardCompact(board: (BoardCreature | null)[]): (BoardCreature | null)[] {
+    return board.map((c) => {
+      if (!c) return null;
+      return {
+        ...c,
+        card: { id: c.card.id } as CardDef,
+      };
+    });
+  }
+
   public exportStateSnapshot(): NetworkGameStateSnapshot {
     return {
       turnCount: this.turnCount,
@@ -5168,20 +5178,21 @@ export class SpectromancerEngine {
       enemyMaxHp: this.enemy.maxHp,
       enemyMana: { ...this.enemy.mana },
       enemyGrowth: { ...this.enemy.growth },
-      playerBoard: this.cloneBoard(this.playerBoard),
-      enemyBoard: this.cloneBoard(this.enemyBoard),
+      playerBoard: this.cloneBoardCompact(this.playerBoard),
+      enemyBoard: this.cloneBoardCompact(this.enemyBoard),
       playerGolemAttackBonus: this.player.golemAttackBonus || 0,
       playerGolemTempAttackBonus: this.player.golemTempAttackBonus || 0,
       enemyGolemAttackBonus: this.enemy.golemAttackBonus || 0,
       enemyGolemTempAttackBonus: this.enemy.golemTempAttackBonus || 0,
-      guestHand: this.enemy.hand.map((c) => ({ ...c })),
-      hostHand: this.player.hand.map((c) => ({ ...c })),
+      guestHandIds: this.enemy.hand.map((c) => c.id),
+      hostHandIds: this.player.hand.map((c) => c.id),
       enemyRevealedCardIds: Array.from(this.playerRevealedCardIds),
       lastLog: this.logs.length > 0 ? this.logs[0] : undefined,
     };
   }
 
   public applyStateSnapshot(snapshot: NetworkGameStateSnapshot) {
+    const allCards = cardsData as CardDef[];
     this.turnCount = snapshot.turnCount;
     // For guest: host's 'player' is guest's 'enemy', host's 'enemy' is guest's 'player'
     this.activeTurn = snapshot.activeTurn === 'player' ? 'enemy' : 'player';
@@ -5200,19 +5211,36 @@ export class SpectromancerEngine {
     this.enemy.mana = { ...snapshot.playerMana };
     this.enemy.growth = { ...snapshot.playerGrowth };
 
-    // Swap boards
-    this.playerBoard = snapshot.enemyBoard.map((c) => (c ? { ...c, owner: 'player', card: { ...c.card } } : null));
-    this.enemyBoard = snapshot.playerBoard.map((c) => (c ? { ...c, owner: 'enemy', card: { ...c.card } } : null));
+    // Swap boards and restore full card definitions
+    this.playerBoard = snapshot.enemyBoard.map((c) => {
+      if (!c) return null;
+      const fullCard = (c.card && c.card.id ? allCards.find((cd) => cd.id === c.card.id) : null) || c.card;
+      return { ...c, owner: 'player', card: fullCard || c.card };
+    });
+    this.enemyBoard = snapshot.playerBoard.map((c) => {
+      if (!c) return null;
+      const fullCard = (c.card && c.card.id ? allCards.find((cd) => cd.id === c.card.id) : null) || c.card;
+      return { ...c, owner: 'enemy', card: fullCard || c.card };
+    });
 
     this.player.golemAttackBonus = snapshot.enemyGolemAttackBonus || 0;
     this.player.golemTempAttackBonus = snapshot.enemyGolemTempAttackBonus || 0;
     this.enemy.golemAttackBonus = snapshot.playerGolemAttackBonus || 0;
     this.enemy.golemTempAttackBonus = snapshot.playerGolemTempAttackBonus || 0;
 
-    if (snapshot.guestHand) {
+    if (snapshot.guestHandIds && snapshot.guestHandIds.length) {
+      this.player.hand = snapshot.guestHandIds
+        .map((id) => allCards.find((c) => c.id === id))
+        .filter((c): c is CardDef => !!c);
+    } else if (snapshot.guestHand) {
       this.player.hand = snapshot.guestHand.map((c) => ({ ...c }));
     }
-    if (snapshot.hostHand) {
+
+    if (snapshot.hostHandIds && snapshot.hostHandIds.length) {
+      this.enemy.hand = snapshot.hostHandIds
+        .map((id) => allCards.find((c) => c.id === id))
+        .filter((c): c is CardDef => !!c);
+    } else if (snapshot.hostHand) {
       this.enemy.hand = snapshot.hostHand.map((c) => ({ ...c }));
     }
 
