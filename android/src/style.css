@@ -4042,124 +4042,183 @@ body, html {
    AUTHENTIC SPECTROMANCER COMBAT & SPELL VFX ANIMATIONS
    ======================================================== */
 
-/* Screen Shake Effect */
+/* Screen Shake Effect - High Impact Damped Impulse */
 .screen-shake {
-  animation: anim-screen-shake 0.38s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  animation: anim-screen-shake 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes anim-screen-shake {
-  10%, 90% { transform: translate3d(-3px, 0, 0); }
-  20%, 80% { transform: translate3d(4px, -2px, 0); }
-  30%, 50%, 70% { transform: translate3d(-5px, 3px, 0); }
-  40%, 60% { transform: translate3d(5px, -3px, 0); }
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  12% { transform: translate3d(-6px, 4px, 0) scale(1.012) rotate(-0.4deg); }
+  25% { transform: translate3d(7px, -5px, 0) scale(1.008) rotate(0.35deg); }
+  40% { transform: translate3d(-5px, 3px, 0) scale(1.004) rotate(-0.2deg); }
+  60% { transform: translate3d(3px, -2px, 0) scale(1.002) rotate(0.1deg); }
+  80% { transform: translate3d(-1px, 1px, 0) scale(1); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
 }
 
-/* Floating Combat Text (Damage / Heal) */
+/* Floating Combat Text (Damage / Heal) - Snappy Spring Arc */
 .floating-combat-text {
   position: fixed;
   font-family: 'Cinzel', 'Trebuchet MS', serif, sans-serif;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 900;
   pointer-events: none;
   z-index: 99999;
-  text-shadow: 0 2px 8px #000, 0 0 16px rgba(0, 0, 0, 0.9);
-  animation: anim-combat-float 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+  text-shadow: 0 3px 12px rgba(0, 0, 0, 0.95), 0 0 24px rgba(0, 0, 0, 0.9);
+  animation: anim-combat-float 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   transform: translate(-50%, -50%);
+  will-change: transform, opacity;
 }
 
 .floating-combat-text.damage {
-  color: #ff3333;
-  text-shadow: 0 0 10px rgba(255, 0, 0, 0.8), 0 2px 4px #000;
+  color: #ff3838;
+  text-shadow: 0 0 14px rgba(255, 30, 30, 0.9), 0 0 30px rgba(255, 0, 0, 0.6), 0 3px 6px #000;
+  letter-spacing: 0.5px;
 }
 
 .floating-combat-text.heal {
-  color: #38ef7d;
-  text-shadow: 0 0 10px rgba(56, 239, 125, 0.8), 0 2px 4px #000;
+  color: #22c55e;
+  text-shadow: 0 0 14px rgba(34, 197, 94, 0.9), 0 0 30px rgba(16, 185, 129, 0.6), 0 3px 6px #000;
+  letter-spacing: 0.5px;
 }
 
 @keyframes anim-combat-float {
   0% {
     opacity: 0;
-    transform: translate(-50%, 0px) scale(0.6);
+    transform: translate(-50%, 4px) scale(0.45);
   }
-  25% {
+  20% {
     opacity: 1;
-    transform: translate(-50%, -24px) scale(1.35);
+    transform: translate(-50%, -28px) scale(1.42);
+  }
+  40% {
+    opacity: 1;
+    transform: translate(-50%, -42px) scale(1.15);
   }
   75% {
-    opacity: 1;
-    transform: translate(-50%, -46px) scale(1.1);
+    opacity: 0.95;
+    transform: translate(-50%, -64px) scale(1.05);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%, -68px) scale(0.85);
+    transform: translate(-50%, -84px) scale(0.85);
   }
 }
 
-/* Creature Attack Lunging */
+/* Creature Attack Lunging - Modern Kinetic Strike with Motion Trail */
 .board-card.lungePlayer {
-  animation: anim-lunge-player 0.52s cubic-bezier(0.2, 0.85, 0.35, 1) forwards;
-  z-index: 100 !important;
+  animation: anim-lunge-player 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 120 !important;
+  will-change: transform, filter;
 }
 
 .board-card.lungeEnemy {
-  animation: anim-lunge-enemy 0.52s cubic-bezier(0.2, 0.85, 0.35, 1) forwards;
-  z-index: 100 !important;
+  animation: anim-lunge-enemy 0.52s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  z-index: 120 !important;
+  will-change: transform, filter;
 }
 
 @keyframes anim-lunge-player {
-  0% { transform: translateY(0) scale(1); }
-  28% { transform: translateY(-44px) scale(1.09); filter: brightness(1.25); }
-  55% { transform: translateY(-52px) scale(1.12); filter: brightness(1.4); }
-  75% { transform: translateY(-12px) scale(1.02); }
-  100% { transform: translateY(0) scale(1); filter: none; }
+  0% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+  20% {
+    /* Anticipation pull back */
+    transform: translateY(8px) scale(0.96);
+    filter: brightness(0.92);
+  }
+  48% {
+    /* Explosive thrust into enemy field with golden motion blur trail */
+    transform: translateY(-56px) scale(1.15);
+    filter: brightness(1.4) drop-shadow(0 14px 18px rgba(255, 170, 0, 0.75)) drop-shadow(0 0 25px rgba(255, 220, 100, 0.8));
+  }
+  72% {
+    /* Kinetic impact recoil */
+    transform: translateY(-16px) scale(1.04);
+    filter: brightness(1.15) drop-shadow(0 4px 10px rgba(255, 120, 0, 0.4));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
 }
 
 @keyframes anim-lunge-enemy {
-  0% { transform: translateY(0) scale(1); }
-  28% { transform: translateY(44px) scale(1.09); filter: brightness(1.25); }
-  55% { transform: translateY(52px) scale(1.12); filter: brightness(1.4); }
-  75% { transform: translateY(12px) scale(1.02); }
-  100% { transform: translateY(0) scale(1); filter: none; }
+  0% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
+  20% {
+    /* Anticipation pull back */
+    transform: translateY(-8px) scale(0.96);
+    filter: brightness(0.92);
+  }
+  48% {
+    /* Explosive thrust into player field with sinister crimson trail */
+    transform: translateY(56px) scale(1.15);
+    filter: brightness(1.4) drop-shadow(0 -14px 18px rgba(239, 68, 68, 0.75)) drop-shadow(0 0 25px rgba(255, 60, 60, 0.8));
+  }
+  72% {
+    /* Kinetic impact recoil */
+    transform: translateY(16px) scale(1.04);
+    filter: brightness(1.15) drop-shadow(0 -4px 10px rgba(220, 38, 38, 0.4));
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    filter: none;
+  }
 }
 
-/* Card Impact Hit Flash */
+/* Card Impact Hit Flash - Chromatic Shock Recoil */
 .card-impact-hit {
-  animation: anim-card-impact 0.45s ease-out forwards;
+  animation: anim-card-impact 0.45s cubic-bezier(0.15, 0.9, 0.2, 1) forwards;
+  will-change: transform, filter;
 }
 
 @keyframes anim-card-impact {
   0% {
-    filter: brightness(2.8) contrast(1.5) drop-shadow(0 0 20px #ff2200);
-    transform: scale(1.08);
+    transform: scale(1.12) translate3d(0, -3px, 0);
+    filter: brightness(2.6) contrast(1.5) drop-shadow(-4px 0 10px rgba(255, 0, 60, 0.9)) drop-shadow(4px 0 10px rgba(0, 240, 255, 0.85));
   }
-  30% {
-    filter: brightness(1.8) contrast(1.2) drop-shadow(0 0 10px #ff5500);
-    transform: scale(0.94);
+  25% {
+    transform: scale(0.93) translate3d(2px, 3px, 0);
+    filter: brightness(1.8) contrast(1.3) drop-shadow(0 0 16px rgba(255, 60, 0, 0.9));
   }
-  60% {
-    filter: brightness(1.2);
-    transform: scale(1.02);
+  55% {
+    transform: scale(1.04) translate3d(-1px, -1px, 0);
+    filter: brightness(1.25);
+  }
+  80% {
+    transform: scale(0.98);
+    filter: brightness(1.1);
   }
   100% {
+    transform: scale(1) translate3d(0, 0, 0);
     filter: none;
-    transform: scale(1);
   }
 }
 
-/* Slot Summon Ripple & Landing Flash */
+/* Slot Summon Ripple & Landing Flash - Elemental Mana Surge */
 .slot-landing-flash {
-  animation: anim-slot-flash 0.65s ease-out forwards;
+  animation: anim-slot-flash 0.65s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-slot-flash {
   0% {
-    box-shadow: 0 0 35px 12px rgba(255, 215, 0, 0.95), inset 0 0 25px rgba(255, 255, 255, 0.8);
-    filter: brightness(1.6);
+    box-shadow: 0 0 45px 16px rgba(255, 215, 0, 0.95), inset 0 0 32px rgba(255, 255, 255, 0.9);
+    filter: brightness(1.9);
+    transform: scale(1.06);
+  }
+  35% {
+    box-shadow: 0 0 25px 8px rgba(255, 180, 0, 0.7), inset 0 0 15px rgba(255, 255, 255, 0.5);
+    filter: brightness(1.35);
   }
   100% {
     box-shadow: none;
     filter: none;
+    transform: scale(1);
   }
 }
 
@@ -4209,16 +4268,22 @@ body, html {
 
 @keyframes anim-summon-ripple {
   0% {
-    width: 20px;
-    height: 20px;
+    width: 16px;
+    height: 16px;
     opacity: 1;
-    transform: translate(-50%, -50%) scale(0.4);
+    transform: translate(-50%, -50%) scale(0.3);
+    box-shadow: 0 0 12px currentColor, inset 0 0 8px #ffffff;
+  }
+  50% {
+    opacity: 0.9;
+    box-shadow: 0 0 28px currentColor, inset 0 0 16px #ffffff;
   }
   100% {
-    width: 260px;
-    height: 260px;
+    width: 290px;
+    height: 290px;
     opacity: 0;
-    transform: translate(-50%, -50%) scale(1.3);
+    transform: translate(-50%, -50%) scale(1.4);
+    box-shadow: 0 0 40px currentColor;
   }
 }
 
@@ -4255,12 +4320,29 @@ body, html {
   height: 64px;
   pointer-events: none;
   z-index: 9700;
-  transform: translate(-50%, -50%) scale(1.6);
+  transform: translate(-50%, -50%) scale(1.85);
   background-image: url('/ui/vfx/lparts.png');
   background-repeat: no-repeat;
   background-size: 320px 64px;
-  filter: drop-shadow(0 0 15px #00bfff) brightness(2.2);
+  filter: drop-shadow(0 0 25px #38bdf8) drop-shadow(0 0 50px #0284c7) brightness(2.6);
   animation: anim-lparts-frames 0.5s steps(5) forwards;
+}
+
+.vfx-lightning-spark {
+  position: fixed;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 8px 3px #38bdf8, 0 0 16px 6px #0284c7;
+  pointer-events: none;
+  z-index: 9750;
+  animation: anim-lightning-spark 0.42s cubic-bezier(0.1, 0.9, 0.2, 1) forwards;
+}
+
+@keyframes anim-lightning-spark {
+  0% { transform: translate(-50%, -50%) scale(1.6); opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--tx, 0px)), calc(-50% + var(--ty, 0px))) scale(0.2); opacity: 0; }
 }
 
 @keyframes anim-lparts-frames {
@@ -4272,15 +4354,15 @@ body, html {
 .vfx-wrath-column {
   position: fixed;
   top: 0;
-  width: 80px;
+  width: 90px;
   height: 100vh;
   pointer-events: none;
   z-index: 9600;
   background-image: url('/ui/vfx/wrath1.png');
   background-repeat: repeat-y;
-  background-size: 80px 80px;
-  filter: drop-shadow(0 0 25px #ffd700) drop-shadow(0 0 50px #ffffff) brightness(2);
-  animation: anim-wrath-frames 0.75s steps(4) infinite, anim-wrath-fall 0.85s ease-out forwards;
+  background-size: 90px 90px;
+  filter: drop-shadow(0 0 35px #ffd700) drop-shadow(0 0 70px #ffffff) brightness(2.4);
+  animation: anim-wrath-frames 0.75s steps(4) infinite, anim-wrath-fall 0.85s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-wrath-frames {
@@ -4289,16 +4371,16 @@ body, html {
 }
 
 @keyframes anim-wrath-fall {
-  0% { opacity: 0; transform: scaleX(0.2); }
-  25% { opacity: 1; transform: scaleX(1.3); }
-  70% { opacity: 0.9; transform: scaleX(1.1); }
-  100% { opacity: 0; transform: scaleX(0.1); }
+  0% { opacity: 0; transform: scaleX(0.15); filter: brightness(3.5); }
+  22% { opacity: 1; transform: scaleX(1.45); filter: brightness(2.8); }
+  70% { opacity: 0.95; transform: scaleX(1.15); filter: brightness(2.2); }
+  100% { opacity: 0; transform: scaleX(0.08); filter: brightness(1.5); }
 }
 
 .vfx-wrath-burst {
   position: fixed;
-  width: 120px;
-  height: 150px;
+  width: 140px;
+  height: 170px;
   pointer-events: none;
   z-index: 9700;
   transform: translate(-50%, -50%);
@@ -4306,14 +4388,15 @@ body, html {
   background-repeat: no-repeat;
   background-size: contain;
   background-position: center;
-  filter: drop-shadow(0 0 25px #ffd700) brightness(2.5);
-  animation: anim-wrath-burst 0.85s ease-out forwards;
+  filter: drop-shadow(0 0 35px #ffd700) drop-shadow(0 0 60px #ffaa00) brightness(2.8);
+  animation: anim-wrath-burst 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes anim-wrath-burst {
-  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
-  30% { transform: translate(-50%, -50%) scale(1.5); opacity: 1; }
-  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  0% { transform: translate(-50%, -50%) scale(0.25); opacity: 0; }
+  25% { transform: translate(-50%, -50%) scale(1.65); opacity: 1; }
+  65% { transform: translate(-50%, -50%) scale(2.0); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(2.5); opacity: 0; }
 }
 
 /* 3. Flame Wave & Inferno Fire Wall */
@@ -4325,62 +4408,66 @@ body, html {
   height: 100vh;
   pointer-events: none;
   z-index: 9550;
-  background: radial-gradient(circle at center, rgba(255, 69, 0, 0.45) 0%, rgba(255, 140, 0, 0.25) 50%, transparent 80%);
-  animation: anim-flame-wave 0.75s cubic-bezier(0.1, 0.85, 0.2, 1) forwards;
+  background: radial-gradient(circle at center, rgba(255, 69, 0, 0.55) 0%, rgba(255, 140, 0, 0.35) 45%, rgba(220, 38, 38, 0.15) 75%, transparent 90%);
+  animation: anim-flame-wave 0.8s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-flame-wave {
-  0% { opacity: 0; transform: scaleY(0.4); }
-  35% { opacity: 1; transform: scaleY(1.1); filter: brightness(1.6); }
-  100% { opacity: 0; transform: scaleY(1.3); }
+  0% { opacity: 0; transform: scaleY(0.35); filter: brightness(1.8); }
+  32% { opacity: 1; transform: scaleY(1.15); filter: brightness(2.1) contrast(1.2); }
+  70% { opacity: 0.85; transform: scaleY(1.25); }
+  100% { opacity: 0; transform: scaleY(1.4); filter: brightness(1); }
 }
 
 .vfx-fireball-projectile {
   position: fixed;
-  width: 60px;
-  height: 60px;
+  width: 68px;
+  height: 68px;
   border-radius: 50%;
   pointer-events: none;
   z-index: 9700;
-  background: radial-gradient(circle, #fff 0%, #ffeb3b 30%, #ff5722 70%, #d84315 100%);
-  box-shadow: 0 0 35px 15px #ff5722, 0 0 65px 25px #ff9800;
-  filter: brightness(1.6);
-  animation: anim-fireball-fly 0.55s cubic-bezier(0.2, 0.8, 0.35, 1) forwards;
+  background: radial-gradient(circle, #ffffff 0%, #ffeb3b 25%, #ff5722 65%, #b71c1c 100%);
+  box-shadow: 0 0 45px 20px #ff5722, 0 0 85px 35px #ff9800, inset 0 0 15px #ffffff;
+  filter: brightness(1.85);
+  animation: anim-fireball-fly 0.55s cubic-bezier(0.18, 0.85, 0.3, 1) forwards;
 }
 
 @keyframes anim-fireball-fly {
-  0% { transform: translate(-50%, -50%) scale(0.4); opacity: 0.8; }
-  85% { opacity: 1; transform: translate(-50%, -50%) scale(1.3); }
-  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+  0% { transform: translate(-50%, -50%) scale(0.35); opacity: 0.8; }
+  65% { opacity: 1; transform: translate(-50%, -50%) scale(1.35); }
+  85% { opacity: 1; transform: translate(-50%, -50%) scale(1.6); }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; filter: brightness(3); }
 }
 
 /* 4. Stone Rain (Stone.tga) */
 .vfx-falling-rock {
   position: fixed;
-  width: 64px;
-  height: 32px;
+  width: 70px;
+  height: 38px;
   pointer-events: none;
   z-index: 9650;
   background-image: url('/ui/vfx/stone.png');
   background-size: cover;
   background-repeat: no-repeat;
-  filter: drop-shadow(0 15px 12px rgba(0, 0, 0, 0.9));
-  animation: anim-rock-fall 0.6s cubic-bezier(0.3, 0, 0.7, 1) forwards;
+  filter: drop-shadow(0 18px 14px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 10px rgba(180, 83, 9, 0.5));
+  animation: anim-rock-fall 0.62s cubic-bezier(0.25, 0.1, 0.7, 1) forwards;
 }
 
 @keyframes anim-rock-fall {
   0% {
-    top: -80px;
+    top: -90px;
     opacity: 1;
-    transform: rotate(0deg) scale(0.9);
+    transform: rotate(0deg) scale(0.85) scaleY(1.2);
   }
-  80% {
+  75% {
     opacity: 1;
+    transform: rotate(260deg) scale(1.1) scaleY(1.1);
   }
   100% {
     top: var(--target-top, 60vh);
-    transform: rotate(380deg) scale(1.4);
+    transform: rotate(390deg) scale(1.5) scaleY(0.8);
     opacity: 0;
+    filter: drop-shadow(0 0 25px rgba(245, 158, 11, 0.9)) brightness(2);
   }
 }
 
@@ -4393,46 +4480,48 @@ body, html {
   height: 100vh;
   pointer-events: none;
   z-index: 9550;
-  background: radial-gradient(circle at center, rgba(34, 197, 94, 0.35) 0%, rgba(16, 185, 129, 0.15) 60%, transparent 85%);
-  animation: anim-acid-flash 0.8s ease-out forwards;
+  background: radial-gradient(circle at center, rgba(34, 197, 94, 0.42) 0%, rgba(16, 185, 129, 0.22) 55%, transparent 88%);
+  animation: anim-acid-flash 0.85s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-acid-flash {
   0% { opacity: 0; }
-  30% { opacity: 1; filter: brightness(1.5); }
+  28% { opacity: 1; filter: brightness(1.75); }
+  75% { opacity: 0.8; }
   100% { opacity: 0; }
 }
 
 .vfx-acid-drop {
   position: fixed;
-  width: 6px;
-  height: 32px;
-  border-radius: 4px;
-  background: linear-gradient(180deg, #a7f3d0 0%, #10b981 60%, #047857 100%);
-  box-shadow: 0 0 10px #10b981;
+  width: 7px;
+  height: 38px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #d1fae5 0%, #10b981 50%, #047857 100%);
+  box-shadow: 0 0 14px #10b981, 0 0 24px rgba(52, 211, 153, 0.8);
   pointer-events: none;
   z-index: 9600;
-  animation: anim-acid-drop 0.45s linear forwards;
+  animation: anim-acid-drop 0.46s linear forwards;
 }
 
 @keyframes anim-acid-drop {
-  0% { transform: translateY(-40px) scaleY(0.6); opacity: 0.9; }
-  100% { transform: translateY(80vh) scaleY(1.2); opacity: 0; }
+  0% { transform: translateY(-45px) scaleY(0.7); opacity: 0.95; }
+  90% { opacity: 1; }
+  100% { transform: translateY(85vh) scaleY(1.3); opacity: 0; }
 }
 
 /* 6. Spirits Ethereal Apparitions (Spirits.tga 381x125 -> 3 frames) */
 .vfx-spirits-apparition {
   position: fixed;
-  width: 127px;
-  height: 125px;
+  width: 132px;
+  height: 130px;
   pointer-events: none;
   z-index: 9650;
-  transform: translate(-50%, -50%) scale(1.15);
+  transform: translate(-50%, -50%) scale(1.2);
   background-image: url('/ui/vfx/spirits.png');
   background-repeat: no-repeat;
   background-size: 381px 125px;
-  filter: drop-shadow(0 0 20px #8a2be2) brightness(1.7);
-  animation: anim-spirits-cycle 0.65s steps(3) infinite, anim-spirits-float 1.1s ease-out forwards;
+  filter: drop-shadow(0 0 28px #9333ea) drop-shadow(0 0 50px #c084fc) brightness(2.0);
+  animation: anim-spirits-cycle 0.65s steps(3) infinite, anim-spirits-float 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes anim-spirits-cycle {
@@ -4441,9 +4530,10 @@ body, html {
 }
 
 @keyframes anim-spirits-float {
-  0% { opacity: 0; transform: translate(-50%, 20px) scale(0.7); }
-  35% { opacity: 0.95; transform: translate(-50%, -20px) scale(1.2); }
-  100% { opacity: 0; transform: translate(-50%, -80px) scale(1.35); }
+  0% { opacity: 0; transform: translate(-50%, 25px) scale(0.65); }
+  30% { opacity: 1; transform: translate(-50%, -20px) scale(1.3); filter: brightness(2.4); }
+  70% { opacity: 0.9; transform: translate(-50%, -60px) scale(1.4); }
+  100% { opacity: 0; transform: translate(-50%, -95px) scale(1.55); filter: brightness(1.2); }
 }
 
 /* 7. Army of Rats Swarm (Rat.tga) */
@@ -4518,8 +4608,8 @@ body, html {
   position: fixed;
   top: 50%;
   left: 50%;
-  width: 90px;
-  height: 130px;
+  width: 96px;
+  height: 140px;
   transform: translate(-50%, -50%);
   pointer-events: none;
   z-index: 9800;
@@ -4527,15 +4617,15 @@ body, html {
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
-  filter: drop-shadow(0 0 30px #ffd700) drop-shadow(0 0 60px #fff) brightness(2);
-  animation: anim-timestop-pulse 1.2s cubic-bezier(0.15, 0.85, 0.35, 1) forwards;
+  filter: drop-shadow(0 0 40px #ffd700) drop-shadow(0 0 80px #ffffff) brightness(2.4);
+  animation: anim-timestop-pulse 1.25s cubic-bezier(0.15, 0.9, 0.3, 1) forwards;
 }
 
 @keyframes anim-timestop-pulse {
-  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.3) rotate(-35deg); }
-  35% { opacity: 1; transform: translate(-50%, -50%) scale(1.4) rotate(0deg); }
-  75% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.25) rotate(10deg); }
-  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.8) rotate(30deg); }
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.25) rotate(-40deg); }
+  32% { opacity: 1; transform: translate(-50%, -50%) scale(1.5) rotate(0deg); filter: brightness(2.8); }
+  72% { opacity: 0.95; transform: translate(-50%, -50%) scale(1.3) rotate(12deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.0) rotate(35deg); filter: brightness(1.5); }
 }
 
 .vfx-timestop-wave {
@@ -4543,16 +4633,29 @@ body, html {
   top: 50%;
   left: 50%;
   border-radius: 50%;
-  border: 4px solid #ffd700;
-  box-shadow: 0 0 50px #ffea00, inset 0 0 35px #ffffff;
+  border: 5px solid #ffd700;
+  box-shadow: 0 0 65px #ffea00, inset 0 0 45px #ffffff;
   pointer-events: none;
   z-index: 9750;
-  animation: anim-timestop-wave 1.1s ease-out forwards;
+  animation: anim-timestop-wave 1.15s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-timestop-wave {
-  0% { width: 40px; height: 40px; transform: translate(-50%, -50%) scale(0.2); opacity: 1; }
-  100% { width: 140vw; height: 140vw; transform: translate(-50%, -50%) scale(1); opacity: 0; }
+  0% {
+    width: 40px;
+    height: 40px;
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(0.2);
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    width: 150vw;
+    height: 150vw;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1.3);
+  }
 }
 
 /* 9. Ritual of Forest Tree Sprout (RitForest.tga) */
@@ -4749,23 +4852,30 @@ body, html {
   transform: translateX(-50%) translateY(0);
 }
 
-/* 15. In-Slot Flame Pillar (Flame Wave eruption from video 00:36) */
+/* 15. In-Slot Flame Pillar (Flame Wave eruption with natural curved flickering base) */
 .vfx-slot-flame-pillar {
   position: absolute;
-  inset: -12px -6px;
-  border-radius: 8px;
+  top: -35px;
+  bottom: -22px;
+  left: -12px;
+  right: -12px;
+  border-radius: 45% 45% 35% 35% / 55% 55% 40% 40%;
   pointer-events: none;
   z-index: 80;
-  background: radial-gradient(ellipse at bottom, rgba(255, 255, 220, 0.98) 0%, rgba(255, 140, 0, 0.95) 30%, rgba(220, 38, 38, 0.85) 65%, transparent 95%);
-  filter: drop-shadow(0 0 25px #ff4500) brightness(2);
+  background: 
+    radial-gradient(ellipse 90% 75% at 50% 82%, rgba(255, 255, 240, 0.98) 0%, rgba(255, 160, 0, 0.95) 25%, rgba(239, 68, 68, 0.88) 55%, rgba(185, 28, 28, 0.35) 75%, transparent 92%),
+    radial-gradient(ellipse 70% 45% at 50% 88%, rgba(255, 220, 80, 0.95) 0%, rgba(249, 115, 22, 0.75) 45%, transparent 85%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 88% at 50% 70%, black 40%, rgba(0, 0, 0, 0.85) 65%, transparent 98%);
+  mask-image: radial-gradient(ellipse 90% 88% at 50% 70%, black 40%, rgba(0, 0, 0, 0.85) 65%, transparent 98%);
+  filter: drop-shadow(0 0 30px #ff4500) brightness(2.1);
   animation: anim-slot-flame-pillar 0.75s ease-out forwards;
 }
 
 @keyframes anim-slot-flame-pillar {
-  0% { transform: scaleY(0.2) scaleX(0.7); opacity: 0; }
-  25% { transform: scaleY(1.35) scaleX(1.15); opacity: 1; filter: brightness(2.6); }
-  60% { transform: scaleY(1.1) scaleX(1.05); opacity: 0.95; }
-  100% { transform: scaleY(0.4) scaleX(0.85); opacity: 0; filter: brightness(0.8); }
+  0% { transform: scaleY(0.25) scaleX(0.7); opacity: 0; }
+  22% { transform: scaleY(1.35) scaleX(1.15); opacity: 1; filter: brightness(2.8) drop-shadow(0 -10px 35px #ff6600); }
+  55% { transform: scaleY(1.1) scaleX(1.05); opacity: 0.95; }
+  100% { transform: scaleY(0.35) scaleX(0.85); opacity: 0; filter: brightness(0.8); }
 }
 
 /* 16. Slashing Physical Strike Impact (Creature attack hit flash from video) */
@@ -5207,21 +5317,51 @@ body, html {
 
 /* 23. Complete Authentic Visual Effects for All Spell Cards */
 
-/* Flame Wave Fiery Surge */
+/* Flame Wave Roaring Fiery Wave */
 .spell-vfx-flamewave {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 9600;
-  background: linear-gradient(180deg, transparent 20%, rgba(249, 115, 22, 0.45) 45%, rgba(239, 68, 68, 0.6) 55%, transparent 80%);
-  filter: blur(2px) brightness(1.6);
-  animation: anim-flame-wave 0.75s ease-out forwards;
+  background: radial-gradient(ellipse at center, rgba(255, 240, 180, 0.95) 0%, rgba(255, 120, 0, 0.85) 30%, rgba(220, 38, 38, 0.75) 60%, rgba(153, 27, 27, 0.35) 80%, transparent 100%);
+  filter: drop-shadow(0 0 50px #ff4500) brightness(1.9);
+  animation: anim-flame-wave-roaring 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes anim-flame-wave {
-  0% { opacity: 0; transform: translateY(-40px) scaleY(0.7); }
-  35% { opacity: 1; transform: translateY(0) scaleY(1.1); filter: brightness(2.2); }
-  100% { opacity: 0; transform: translateY(30px) scaleY(0.9); }
+@keyframes anim-flame-wave-roaring {
+  0% { opacity: 0; transform: scaleY(0.1) scaleX(1.4); filter: brightness(3); }
+  25% { opacity: 1; transform: scaleY(1.3) scaleX(1.1); filter: brightness(2.4); }
+  60% { opacity: 0.95; transform: scaleY(1.05) scaleX(1.02); filter: brightness(1.8); }
+  100% { opacity: 0; transform: scaleY(0.4) scaleX(0.9); filter: brightness(1.0); }
+}
+
+/* Flying Fire Embers */
+.vfx-fire-ember {
+  position: fixed;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9750;
+  background: radial-gradient(circle, #ffffff 15%, #facc15 45%, #ea580c 80%, #dc2626 100%);
+  box-shadow: 0 0 12px #f97316, 0 0 24px #ef4444;
+  animation: anim-fire-ember 0.75s ease-out forwards;
+}
+
+@keyframes anim-fire-ember {
+  0% { transform: translate(0, 0) scale(1.3); opacity: 1; }
+  100% { transform: translate(var(--tx, 0px), var(--ty, -110px)) scale(0.2); opacity: 0; }
+}
+
+/* Burning Card Flash Glow */
+.card-burning-impact {
+  animation: anim-card-burn 0.75s ease-out !important;
+}
+
+@keyframes anim-card-burn {
+  0% { filter: brightness(2.8) drop-shadow(0 0 30px #ff4500); transform: scale(0.94); }
+  30% { filter: brightness(2.2) drop-shadow(0 0 22px #ff6600); transform: scale(1.04); }
+  100% { filter: none; transform: scale(1); }
 }
 
 /* Fireball Blazing Projectile */
@@ -5307,24 +5447,93 @@ body, html {
   100% { background-position: -128px 0; }
 }
 
-/* World Tree Projection (ritforest.png 110x134) */
-.vfx-ritforest-tree {
+/* ========================================================
+   RECONSTRUCTED SACRED TREE OF LIFE (Earth Healing Spells)
+   ======================================================== */
+
+/* Ground Druidic Roots & Life Circle */
+.vfx-tree-roots-circle {
   position: fixed;
-  width: 110px;
-  height: 134px;
+  width: 130px;
+  height: 38px;
   pointer-events: none;
-  z-index: 9680;
+  z-index: 9670;
   transform: translate(-50%, -50%);
-  background: url('/ui/vfx/ritforest.png') center / contain no-repeat;
-  filter: drop-shadow(0 0 25px #22c55e) drop-shadow(0 0 45px #15803d) brightness(1.3);
-  animation: anim-world-tree 0.9s cubic-bezier(0.18, 0.89, 0.32, 1.1) forwards;
+  border-radius: 50%;
+  border: 2px solid rgba(74, 222, 128, 0.9);
+  background: radial-gradient(ellipse at center, rgba(34, 197, 94, 0.45) 0%, rgba(21, 128, 61, 0.2) 60%, transparent 80%);
+  box-shadow: 0 0 30px #22c55e, inset 0 0 18px #4ade80;
+  animation: anim-roots-circle 1.05s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes anim-world-tree {
-  0% { transform: translate(-50%, -20%) scale(0.2); opacity: 0; filter: brightness(2); }
-  45% { transform: translate(-50%, -55%) scale(1.15); opacity: 1; filter: brightness(1.4); }
-  75% { transform: translate(-50%, -50%) scale(1.0); opacity: 0.95; }
-  100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0; filter: brightness(0.7); }
+@keyframes anim-roots-circle {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.15); opacity: 1; }
+  75% { transform: translate(-50%, -50%) scale(1.0); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(0.8); opacity: 0; }
+}
+
+/* Sacred World Tree of Life (Reconstructed Vivid Animation) */
+.vfx-ritforest-tree,
+.vfx-sacred-tree {
+  position: fixed;
+  width: 140px;
+  height: 165px;
+  pointer-events: none;
+  z-index: 9680;
+  transform: translate(-50%, -85%);
+  background-image: url('/ui/vfx/ritforest.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center bottom;
+  filter: drop-shadow(0 0 35px #22c55e) drop-shadow(0 0 65px #4ade80) brightness(1.6);
+  animation: anim-sacred-tree-sprout 1.1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes anim-sacred-tree-sprout {
+  0% { transform: translate(-50%, -10%) scaleY(0.1) scaleX(0.4); opacity: 0; filter: brightness(2.6); }
+  35% { transform: translate(-50%, -90%) scaleY(1.15) scaleX(1.1); opacity: 1; filter: brightness(2.0); }
+  70% { transform: translate(-50%, -85%) scaleY(1.0) scaleX(1.0); opacity: 0.95; filter: brightness(1.6); }
+  100% { transform: translate(-50%, -85%) scaleY(0.9) scaleX(0.95); opacity: 0; filter: brightness(1.0); }
+}
+
+/* Floating Healing Life Leaves & Emerald Spores */
+.vfx-healing-leaf {
+  position: fixed;
+  width: 9px;
+  height: 15px;
+  border-radius: 50% 0 50% 0;
+  pointer-events: none;
+  z-index: 9690;
+  background: linear-gradient(135deg, #bbf7d0 0%, #4ade80 50%, #15803d 100%);
+  box-shadow: 0 0 14px #4ade80, 0 0 25px #22c55e;
+  animation: anim-healing-leaf-float 0.95s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
+}
+
+@keyframes anim-healing-leaf-float {
+  0% { transform: translate(0, 0) rotate(0deg) scale(0.6); opacity: 1; }
+  50% { transform: translate(var(--tx, 20px), var(--ty, -60px)) rotate(140deg) scale(1.2); opacity: 1; }
+  100% { transform: translate(calc(var(--tx, 20px) * 1.5), calc(var(--ty, -60px) - 40px)) rotate(280deg) scale(0.3); opacity: 0; }
+}
+
+/* Expanding Emerald Restorative Life Pulse */
+.vfx-healing-pulse {
+  position: fixed;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9660;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(74, 222, 128, 0.6) 0%, rgba(34, 197, 94, 0.3) 45%, transparent 75%);
+  box-shadow: 0 0 45px rgba(34, 197, 94, 0.8);
+  animation: anim-healing-pulse-wave 0.85s ease-out forwards;
+}
+
+@keyframes anim-healing-pulse-wave {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  40% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; filter: brightness(1.8); }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
 }
 
 /* Shield Protective Ward (shield.png 150x150) */
@@ -5452,43 +5661,108 @@ body, html {
   100% { transform: translate(-50%, -50%) scale(1.4); opacity: 0; }
 }
 
-/* Wrath Heavenly Light Column (wrath1.png 256x64 / wrath2.png 66x94) */
+/* ========================================================
+   RECONSTRUCTED WRATH OF GOD (Holy Divine Celestial Judgement)
+   ======================================================== */
+
+/* Celestial Sacred Golden Mandala on Ground */
+.vfx-wrath-mandala {
+  position: fixed;
+  width: 150px;
+  height: 48px;
+  pointer-events: none;
+  z-index: 9710;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid rgba(254, 240, 138, 0.95);
+  background: radial-gradient(ellipse at center, rgba(251, 191, 36, 0.6) 0%, rgba(245, 158, 11, 0.3) 50%, transparent 80%);
+  box-shadow: 0 0 35px #f59e0b, 0 0 65px #fde047, inset 0 0 20px #ffffff;
+  animation: anim-wrath-mandala 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes anim-wrath-mandala {
+  0% { transform: translate(-50%, -50%) scale(0.1) rotate(0deg); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.25) rotate(90deg); opacity: 1; filter: brightness(2.4); }
+  70% { transform: translate(-50%, -50%) scale(1.05) rotate(180deg); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(0.6) rotate(270deg); opacity: 0; }
+}
+
+/* Colossal Heavenly Pillar of Divine Light */
 .vfx-wrath-column {
   position: fixed;
   top: 0;
-  width: 80px;
+  width: 110px;
   height: 100vh;
   pointer-events: none;
   z-index: 9720;
   transform: translateX(-50%);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(253, 224, 71, 0.85) 50%, rgba(234, 179, 8, 0.95) 100%);
-  box-shadow: 0 0 45px #fbbf24, 0 0 90px #ffffff;
-  animation: anim-wrath-column 0.8s ease-out forwards;
+  background: linear-gradient(180deg, #ffffff 0%, rgba(255, 255, 255, 0.98) 25%, rgba(253, 224, 71, 0.9) 65%, rgba(245, 158, 11, 0.95) 100%);
+  box-shadow: 0 0 60px #f59e0b, 0 0 110px #ffffff, inset 0 0 30px #ffffff;
+  animation: anim-wrath-column 0.9s cubic-bezier(0.12, 0.85, 0.25, 1) forwards;
 }
 
 @keyframes anim-wrath-column {
-  0% { transform: translateX(-50%) scaleX(0.1); opacity: 0; }
-  25% { transform: translateX(-50%) scaleX(1.4); opacity: 1; filter: brightness(2.6); }
-  65% { transform: translateX(-50%) scaleX(1.0); opacity: 0.9; }
-  100% { transform: translateX(-50%) scaleX(0.2); opacity: 0; }
+  0% { transform: translateX(-50%) scaleX(0.05); opacity: 0; filter: brightness(3.5); }
+  22% { transform: translateX(-50%) scaleX(1.5); opacity: 1; filter: brightness(3.0); }
+  65% { transform: translateX(-50%) scaleX(1.1); opacity: 0.95; filter: brightness(2.0); }
+  100% { transform: translateX(-50%) scaleX(0.15); opacity: 0; filter: brightness(1.2); }
 }
 
-.vfx-wrath-burst {
+/* Concentric Divine Shockwave Rings */
+.vfx-wrath-burst,
+.vfx-wrath-holy-shockwave {
   position: fixed;
-  width: 90px;
-  height: 120px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
   pointer-events: none;
   z-index: 9730;
   transform: translate(-50%, -50%);
-  background: url('/ui/vfx/wrath2.png') center / contain no-repeat;
-  filter: drop-shadow(0 0 30px #f59e0b) brightness(1.8);
-  animation: anim-wrath-burst 0.75s ease-out forwards;
+  border: 3px solid rgba(255, 255, 255, 0.95);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9) 0%, rgba(251, 191, 36, 0.6) 40%, rgba(245, 158, 11, 0.2) 70%, transparent 90%);
+  box-shadow: 0 0 50px #fbbf24, 0 0 90px #ffffff;
+  animation: anim-wrath-burst 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes anim-wrath-burst {
-  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
-  35% { transform: translate(-50%, -50%) scale(1.4); opacity: 1; filter: brightness(2.2); }
-  100% { transform: translate(-50%, -50%) scale(1.8); opacity: 0; }
+  0% { transform: translate(-50%, -50%) scale(0.15); opacity: 0; }
+  30% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; filter: brightness(2.8); }
+  70% { transform: translate(-50%, -50%) scale(1.7); opacity: 0.85; }
+  100% { transform: translate(-50%, -50%) scale(2.2); opacity: 0; }
+}
+
+/* Ascending Golden Holy Light Motes */
+.vfx-wrath-holy-spark {
+  position: fixed;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9740;
+  background: radial-gradient(circle, #ffffff 20%, #fef08a 60%, #eab308 100%);
+  box-shadow: 0 0 14px #facc15, 0 0 25px #ffffff;
+  animation: anim-wrath-spark-rise 0.85s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes anim-wrath-spark-rise {
+  0% { transform: translate(0, 0) scale(1.4); opacity: 1; }
+  100% { transform: translate(var(--tx, 0px), var(--ty, -140px)) scale(0.2); opacity: 0; }
+}
+
+/* Screen Holy Golden Bloom */
+.screen-flash-holy {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9990;
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.7) 0%, rgba(251, 191, 36, 0.45) 50%, rgba(245, 158, 11, 0.15) 100%);
+  animation: anim-holy-flash 0.5s ease-out forwards;
+}
+
+@keyframes anim-holy-flash {
+  0% { opacity: 0; }
+  25% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Death Spirits / Phantoms (spirits.png 381x125 - 3 frames 127x125) */

@@ -2666,44 +2666,45 @@ function drawBranchingLightning(
   const dx = x2 - x1;
   const dy = y2 - y1;
   const dist = Math.sqrt(dx * dx + dy * dy);
-  const steps = Math.max(6, Math.floor(dist / 24));
+  if (dist < 4) return;
+  const steps = Math.max(9, Math.floor(dist / 14));
 
-  let curX = x1;
-  let curY = y1;
+  const perpX = -dy / dist;
+  const perpY = dx / dist;
+
+  const points: { x: number; y: number }[] = [{ x: x1, y: y1 }];
+  for (let i = 1; i < steps; i++) {
+    const t = i / steps;
+    // Sinusoidal envelope with strong lateral electric displacement
+    const jitterAmp = Math.max(28, dist * 0.28) * Math.sin(t * Math.PI);
+    const jitter = (Math.random() - 0.5) * jitterAmp;
+    points.push({
+      x: x1 + dx * t + perpX * jitter,
+      y: y1 + dy * t + perpY * jitter
+    });
+  }
+  points.push({ x: x2, y: y2 });
 
   ctx.beginPath();
-  ctx.moveTo(curX, curY);
-
-  for (let i = 1; i <= steps; i++) {
-    const t = i / steps;
-    let nextX = x1 + dx * t;
-    let nextY = y1 + dy * t;
-
-    if (i < steps) {
-      const perpX = -dy / dist;
-      const perpY = dx / dist;
-      const jitter = (Math.random() - 0.5) * (dist * 0.16) * (1 - Math.abs(t - 0.5) * 0.4);
-      nextX += perpX * jitter;
-      nextY += perpY * jitter;
-    }
-
-    ctx.lineTo(nextX, nextY);
-
-    // Branch arcs
-    if (depth < 2 && Math.random() < 0.3 && i > 1 && i < steps - 1) {
-      const branchLen = dist * (0.2 + Math.random() * 0.25);
-      const branchAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.3;
-      const bx = nextX + Math.cos(branchAngle) * branchLen;
-      const by = nextY + Math.sin(branchAngle) * branchLen;
-      drawBranchingLightning(ctx, nextX, nextY, bx, by, depth + 1);
-      ctx.moveTo(nextX, nextY);
-    }
-
-    curX = nextX;
-    curY = nextY;
+  ctx.moveTo(points[0].x, points[0].y);
+  for (let i = 1; i < points.length; i++) {
+    ctx.lineTo(points[i].x, points[i].y);
   }
-
   ctx.stroke();
+
+  // Branch arcs
+  if (depth < 2) {
+    for (let i = 1; i < points.length - 1; i++) {
+      if (Math.random() < 0.25) {
+        const p = points[i];
+        const branchLen = dist * (0.2 + Math.random() * 0.25);
+        const branchAngle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 1.5;
+        const bx = p.x + Math.cos(branchAngle) * branchLen;
+        const by = p.y + Math.sin(branchAngle) * branchLen;
+        drawBranchingLightning(ctx, p.x, p.y, bx, by, depth + 1);
+      }
+    }
+  }
 }
 
 // Render dynamic lightning strike from sky to target coordinates
@@ -2742,6 +2743,20 @@ async function triggerAuthenticLightning(
   burst.style.top = `${targetY}px`;
   layer.appendChild(burst);
   setTimeout(() => burst.remove(), 600);
+
+  // Dynamic electric sparks radiating outward from lightning strike point
+  for (let s = 0; s < 10; s++) {
+    const spark = document.createElement('div');
+    spark.className = 'vfx-lightning-spark';
+    const angle = Math.random() * Math.PI * 2;
+    const dist = 32 + Math.random() * 56;
+    spark.style.left = `${targetX}px`;
+    spark.style.top = `${targetY}px`;
+    spark.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+    spark.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+    layer.appendChild(spark);
+    setTimeout(() => spark.remove(), 420);
+  }
 
   const originX = startX ?? (targetX + (Math.random() - 0.5) * 50);
   const originY = 0;
@@ -2783,6 +2798,148 @@ async function triggerAuthenticLightning(
   } finally {
     canvas.remove();
   }
+}
+
+// Chain Lightning between sequential nodes (Hero -> slot 0 -> slot 1 -> slot 2 ...)
+async function triggerChainLightningArcs(
+  nodes: { x: number; y: number; el?: HTMLElement | null }[],
+  layer: HTMLElement
+): Promise<void> {
+  if (nodes.length === 0) return;
+  const canvas = document.createElement('canvas');
+  canvas.className = 'vfx-lightning-canvas';
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  layer.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    canvas.remove();
+    return;
+  }
+
+  // 1. Initial screen flash
+  const flash = document.createElement('div');
+  flash.className = 'screen-flash-lightning';
+  document.body.appendChild(flash);
+  setTimeout(() => flash.remove(), 350);
+
+  // 2. Initial strike from sky to first target
+  const first = nodes[0];
+  ctx.save();
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'bevel';
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 4;
+  drawBranchingLightning(ctx, first.x, 0, first.x, first.y);
+  ctx.restore();
+
+  if (first.el) {
+    first.el.classList.add('card-impact-hit');
+    setTimeout(() => first.el?.classList.remove('card-impact-hit'), 450);
+  }
+
+    // 3. Chain jumping sequentially between nodes (Faster tempo per user request)
+    for (let i = 0; i < nodes.length - 1; i++) {
+      const from = nodes[i];
+      const to = nodes[i + 1];
+
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'bevel';
+
+      // Outer cyan electric haze
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.55)';
+      ctx.lineWidth = 7;
+      drawBranchingLightning(ctx, from.x, from.y, to.x, to.y);
+
+      // Inner bright white lightning core
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      drawBranchingLightning(ctx, from.x, from.y, to.x, to.y);
+      ctx.restore();
+
+      // Node impact burst & electric sparks
+      const burst = document.createElement('div');
+      burst.className = 'vfx-lparts-burst';
+      burst.style.left = `${to.x}px`;
+      burst.style.top = `${to.y}px`;
+      layer.appendChild(burst);
+      setTimeout(() => burst.remove(), 450);
+
+      for (let s = 0; s < 7; s++) {
+        const spark = document.createElement('div');
+        spark.className = 'vfx-lightning-spark';
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 24 + Math.random() * 45;
+        spark.style.left = `${to.x}px`;
+        spark.style.top = `${to.y}px`;
+        spark.style.setProperty('--tx', `${Math.cos(angle) * dist}px`);
+        spark.style.setProperty('--ty', `${Math.sin(angle) * dist}px`);
+        layer.appendChild(spark);
+        setTimeout(() => spark.remove(), 350);
+      }
+
+      if (to.el) {
+        to.el.classList.add('card-impact-hit');
+        setTimeout(() => to.el?.classList.remove('card-impact-hit'), 380);
+      }
+
+      // Faster sequential jumping tempo
+      await new Promise((r) => setTimeout(r, 40));
+    }
+
+    await new Promise((r) => setTimeout(r, 120));
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    canvas.remove();
+  }
+
+// Reconstructed Earth Sacred Tree of Life VFX
+function triggerReconstructedSacredTree(targetX: number, targetY: number, layer: HTMLElement): { remove: () => void } {
+  // 1. Ground Druidic Roots Circle
+  const roots = document.createElement('div');
+  roots.className = 'vfx-tree-roots-circle';
+  roots.style.left = `${targetX}px`;
+  roots.style.top = `${targetY + 20}px`;
+  layer.appendChild(roots);
+
+  // 2. Sprouting Sacred World Tree
+  const tree = document.createElement('div');
+  tree.className = 'vfx-sacred-tree';
+  tree.style.left = `${targetX}px`;
+  tree.style.top = `${targetY + 25}px`;
+  layer.appendChild(tree);
+
+  // 3. Expanding Restorative Life Pulse
+  const pulse = document.createElement('div');
+  pulse.className = 'vfx-healing-pulse';
+  pulse.style.left = `${targetX}px`;
+  pulse.style.top = `${targetY}px`;
+  layer.appendChild(pulse);
+
+  // 4. Floating Healing Life Leaves
+  const leaves: HTMLElement[] = [];
+  for (let l = 0; l < 8; l++) {
+    const leaf = document.createElement('div');
+    leaf.className = 'vfx-healing-leaf';
+    leaf.style.left = `${targetX + (Math.random() - 0.5) * 40}px`;
+    leaf.style.top = `${targetY + 10}px`;
+    const tx = (Math.random() - 0.5) * 70;
+    const ty = -50 - Math.random() * 60;
+    leaf.style.setProperty('--tx', `${tx}px`);
+    leaf.style.setProperty('--ty', `${ty}px`);
+    layer.appendChild(leaf);
+    leaves.push(leaf);
+  }
+
+  return {
+    remove: () => {
+      roots.remove();
+      tree.remove();
+      pulse.remove();
+      leaves.forEach((lf) => lf.remove());
+    }
+  };
 }
 
 async function playSpellVFX(
@@ -2856,29 +3013,21 @@ async function playSpellVFX(
     if (spellId === 'air_chain_lightning') {
       sound.play('chainlightning');
 
-      // 1. Strike opposing hero first
       const oppHero = getHeroPos(oppSide);
-      void triggerAuthenticLightning(oppHero.x, oppHero.y, layer);
-      if (oppHero.el) {
-        oppHero.el.classList.add('card-impact-hit');
-        setTimeout(() => oppHero.el?.classList.remove('card-impact-hit'), 500);
-      }
-
-      // 2. Chain lightning jumps sequentially across enemy slots
       const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
-      for (let i = 0; i < enemySlots.length; i++) {
-        const sEl = enemySlots[i];
+      const nodes: { x: number; y: number; el?: HTMLElement | null }[] = [];
+      nodes.push({ x: oppHero.x, y: oppHero.y, el: oppHero.el });
+      enemySlots.forEach((sEl) => {
         const sRect = sEl.getBoundingClientRect();
-        const sX = sRect.left + sRect.width / 2;
-        const sY = sRect.top + sRect.height / 2;
+        nodes.push({
+          x: sRect.left + sRect.width / 2,
+          y: sRect.top + sRect.height / 2,
+          el: sEl
+        });
+      });
 
-        void triggerAuthenticLightning(sX, sY, layer);
-        sEl.classList.add('card-impact-hit');
-        setTimeout(() => sEl.classList.remove('card-impact-hit'), 450);
-        await new Promise((r) => setTimeout(r, 70));
-      }
-
-      await new Promise((r) => setTimeout(r, 600));
+      await triggerChainLightningArcs(nodes, layer);
+      await new Promise((r) => setTimeout(r, 450));
       return;
     } else if (spellId === 'air_call_to_thunder') {
       sound.play('calltothunder');
@@ -2929,14 +3078,30 @@ async function playSpellVFX(
       const pillar = document.createElement('div');
       pillar.className = 'vfx-slot-flame-pillar';
       s.appendChild(pillar);
-      s.classList.add('card-impact-hit');
+      s.classList.add('card-burning-impact');
+
+      // Flying fire embers
+      const r = s.getBoundingClientRect();
+      const sx = r.left + r.width / 2;
+      const sy = r.top + r.height / 2;
+      for (let e = 0; e < 5; e++) {
+        const ember = document.createElement('div');
+        ember.className = 'vfx-fire-ember';
+        ember.style.left = `${sx + (Math.random() - 0.5) * 30}px`;
+        ember.style.top = `${sy + (Math.random() - 0.5) * 30}px`;
+        ember.style.setProperty('--tx', `${(Math.random() - 0.5) * 80}px`);
+        ember.style.setProperty('--ty', `${-60 - Math.random() * 80}px`);
+        layer.appendChild(ember);
+        setTimeout(() => ember.remove(), 750);
+      }
+
       setTimeout(() => {
         pillar.remove();
-        s.classList.remove('card-impact-hit');
-      }, 750);
+        s.classList.remove('card-burning-impact');
+      }, 800);
     });
 
-    await new Promise((r) => setTimeout(r, 780));
+    await new Promise((r) => setTimeout(r, 820));
     wave.remove();
     return;
   }
@@ -3241,11 +3406,7 @@ async function playSpellVFX(
 
   if (spellId === 'earth_natures_ritual') {
     sound.play('naturerit');
-    const tree = document.createElement('div');
-    tree.className = 'vfx-ritforest-tree';
-    tree.style.left = `${targetX}px`;
-    tree.style.top = `${targetY}px`;
-    layer.appendChild(tree);
+    const treeVfx = triggerReconstructedSacredTree(targetX, targetY, layer);
 
     if (destEl) {
       const shield = document.createElement('div');
@@ -3254,8 +3415,8 @@ async function playSpellVFX(
       setTimeout(() => shield.remove(), 1000);
     }
 
-    await new Promise((r) => setTimeout(r, 900));
-    tree.remove();
+    await new Promise((r) => setTimeout(r, 1050));
+    treeVfx.remove();
     return;
   }
 
@@ -3266,11 +3427,7 @@ async function playSpellVFX(
     sound.play('ritualoftheforest');
 
     const hero = getHeroPos(who);
-    const heroTree = document.createElement('div');
-    heroTree.className = 'vfx-ritforest-tree';
-    heroTree.style.left = `${hero.x}px`;
-    heroTree.style.top = `${hero.y}px`;
-    layer.appendChild(heroTree);
+    const heroTreeVfx = triggerReconstructedSacredTree(hero.x, hero.y, layer);
     if (hero.el) {
       hero.el.classList.add('card-impact-hit');
       setTimeout(() => hero.el?.classList.remove('card-impact-hit'), 800);
@@ -3280,23 +3437,19 @@ async function playSpellVFX(
     mySlots.forEach((s, i) => {
       setTimeout(() => {
         const r = s.getBoundingClientRect();
-        const tree = document.createElement('div');
-        tree.className = 'vfx-ritforest-tree';
-        tree.style.left = `${r.left + r.width / 2}px`;
-        tree.style.top = `${r.top + r.height / 2}px`;
-        layer.appendChild(tree);
+        const treeVfx = triggerReconstructedSacredTree(r.left + r.width / 2, r.top + r.height / 2, layer);
         const shield = document.createElement('div');
         shield.className = 'vfx-shield-bubble';
         s.appendChild(shield);
         setTimeout(() => {
-          tree.remove();
+          treeVfx.remove();
           shield.remove();
-        }, 900);
+        }, 1000);
       }, i * 70);
     });
 
-    await new Promise((r) => setTimeout(r, 1050));
-    heroTree.remove();
+    await new Promise((r) => setTimeout(r, 1150));
+    heroTreeVfx.remove();
     return;
   }
 
@@ -3556,31 +3709,57 @@ async function playSpellVFX(
     app.classList.add('screen-shake');
     setTimeout(() => app.classList.remove('screen-shake'), 650);
 
+    const flash = document.createElement('div');
+    flash.className = 'screen-flash-holy';
+    document.body.appendChild(flash);
+    setTimeout(() => flash.remove(), 450);
+
     const enemySlots = Array.from(document.querySelectorAll(`.combat-board-slot[data-side="${oppSide}"]`)) as HTMLElement[];
     enemySlots.forEach((s, i) => {
       setTimeout(() => {
         const sr = s.getBoundingClientRect();
+        const sx = sr.left + sr.width / 2;
+        const sy = sr.top + sr.height / 2;
+
+        const mandala = document.createElement('div');
+        mandala.className = 'vfx-wrath-mandala';
+        mandala.style.left = `${sx}px`;
+        mandala.style.top = `${sy + 15}px`;
+        layer.appendChild(mandala);
+
         const col = document.createElement('div');
         col.className = 'vfx-wrath-column';
-        col.style.left = `${sr.left + sr.width / 2}px`;
+        col.style.left = `${sx}px`;
         layer.appendChild(col);
 
         const burst = document.createElement('div');
-        burst.className = 'vfx-wrath-burst';
-        burst.style.left = `${sr.left + sr.width / 2}px`;
-        burst.style.top = `${sr.top + sr.height / 2}px`;
+        burst.className = 'vfx-wrath-holy-shockwave';
+        burst.style.left = `${sx}px`;
+        burst.style.top = `${sy}px`;
         layer.appendChild(burst);
+
+        for (let sp = 0; sp < 6; sp++) {
+          const spark = document.createElement('div');
+          spark.className = 'vfx-wrath-holy-spark';
+          spark.style.left = `${sx}px`;
+          spark.style.top = `${sy}px`;
+          spark.style.setProperty('--tx', `${(Math.random() - 0.5) * 70}px`);
+          spark.style.setProperty('--ty', `${-70 - Math.random() * 80}px`);
+          layer.appendChild(spark);
+          setTimeout(() => spark.remove(), 850);
+        }
 
         s.classList.add('card-impact-hit');
         setTimeout(() => {
+          mandala.remove();
           col.remove();
           burst.remove();
           s.classList.remove('card-impact-hit');
-        }, 800);
+        }, 900);
       }, i * 75);
     });
 
-    await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 1050));
     return;
   }
 

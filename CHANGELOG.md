@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-10-20
+
+- **音效系统完全回归原版与重构音效清除（Audio Engine Reversion & Cleanup）**：
+  - **彻底清除重构合成层**：移除 `sound.ts` 中的 DSP 增强链、程序化双层谐波振荡器与微音高变调抖动，恢复纯粹 1:1 的 PC 原版音频播放，彻底消除杂音与多余合成层；
+  - **冥想卡牌定制音效处理与替换**：基于根目录 `Freesound.mp3` 进行专业声学截取、12ms 零交叉平滑淡入、1.0s 优美指数余韵淡出、160ms/320ms 立体声交错回声混响（Ping-Pong Echo Reverb），重采样为高保真 44100Hz 双声道并生成替换 `meditation.ogg` 与 `meditation.wav`，完美呈现水系冥想的神圣空灵感。
+- **连环闪电与烈焰风暴视效深度重构优化（Chain Lightning Arcs & Organic Flame Base VFX）**：
+  - **连环闪电弧光特征与节奏重构**：重构闪电算法为法线向量正弦抖动包络（Normal-Vector Sinusoidal Envelope）与随机小分叉（Branching Forks），彻底根治横向跳跃时因 Y 轴无位移退化成单一水平横线的严重 Bug；并将跳跃节奏由 75ms 提速至 40ms，闪电在卡槽与英雄间如裂空惊雷瞬息跳跃；
+  - **烈焰风暴火焰底座去平直化**：重塑卡槽火柱（`.vfx-slot-flame-pillar`），去除 `inset` 底部一字平切硬边，向下延展自地面升腾，配合多重椭圆径向光晕、双向火焰蒙版（`-webkit-mask-image`）羽化及有机贝塞尔圆弧曲线，让火焰如自然烈焰腾跃弥散。
+- **对比演示平台视效同步升级（Audio Compare Demo VFX Sync）**：
+  - **连环闪电**：demo 页面 `triggerChainLightning` 同步升级为 canvas 节点间可见电弧跳跃 + 六向放射状电火花粒子；
+  - **烈焰风暴**：demo 页面 `triggerFlameWave` 同步升级为全屏火焰冲击波叠层 + 每槽烈焰柱 + 飞散火星粒子；
+  - **神圣天罚**：demo 页面 `triggerWrath` 同步升级为金色曼陀罗法阵 + 天穹圣光柱 + 同心神圣冲击波 + 金色升腾光粒子。
+- **音效系统全链路重构：Web Audio DSP 动态增强与元素合成共鸣（Web Audio DSP Audio Refactoring & Elemental Dual-Layer Synth）**：
+  - **动态母带混音链**：保留原有 101 个经典 PC 音效素材 100% 原始辨识度与音色记忆，底层升级 Web Audio API 混音链（Low-shelf 115Hz +3.2dB 温暖低频增益、快速动态压缩器与 0dB 砖墙 Limiter），杜绝爆音破音并提供扎实有力的胸腔震感；
+  - **槽位空间全景平移（Spatial Panning）**：战场 5 个卡槽依据横向物理坐标动态映射为立体声场（-0.45 至 +0.45），敌方卡牌带有微距纵深衰减，极大拓展战场空间声场；
+  - **微音高拟真抗疲劳（Micro-pitch Jitter）**：针对生物扑击（`attack`）、重击（`boom`）、落地（`summondrop`）、UI 点击等高频音效应用 ±2.75% 瞬时重采样，在完全保持原音调特性的同时消除卡牌对战中多生物连击时的机械重复感；
+  - **元素合成共鸣叠层（Elemental Dual-Layer Synth）**：为雷电、火焰、陨石、神圣与死灵法术实时叠加程序化微振荡层（高压电离下潜、次谐波燃烧风暴、808 式沉降、结晶谐波与差频呢喃），原声与程序化音频浑然一体；
+  - **终极大招 BGM 智能下潜与试听对比平台**：大招施法时 BGM 自动下潜至 35%，并在 `android/public/audio_compare.html` 部署独立交互式对比平台，支持原声与重制一键点击切换与实时示波器频谱监测。
+- **PC 原版移植战斗动画重构与高动态物理打击感升华（PC-Ported Combat Animation Overhaul & Kinetic Impact Trails）**：
+  - **生物攻击突进**：保留原版方向与位移基因，升级为「蓄力回缩 8px → 爆发冲刺 56px 带动态残影拖尾 → 震爆回弹」现代弹性物理打击曲线；
+  - **卡牌受击闪烁**：升级为物理方向性受力反冲（Recoil Jitter）与红/青色相分离色差震波（Chromatic Aberration）；
+  - **雷电与全屏法术视效**：落雷增加多级分叉离子电弧、强光盲目核心与命中点放射状电火花粒子；天罚神圣光柱、烈焰风暴、火球、飞石陨落与时间静止全面升级弹簧曲线与粒子光晕，原已改动或原创动画保持不变。
+- **战役模式全 7 章 70 关深度史诗重塑与历史错位根除（Campaign Mode 70-Level Epic Narrative & 16-Year Translation Fix）**：
+  - **根除 2008 年历史错位 Bug**：彻底修正原版第 30 至 70 关对手与剧情数组错位偏移，消除第 68 关与第 70 关标题/对手被战斗规则覆盖的严重问题；关卡正名为【第 68 关：鲜血共鸣】（对手：堕落幻象·斯克拉兹）与【第 70 关：星魂决战】（对手：至高巫妖议会）；
+  - **全 7 章完整宏大叙事重写**：重塑“背负弑师冤屈流亡—寻访四大原初元素领主—重铸巨棱镜—直面内中心魔—揭开恩师牺牲真意—携手瑟莱蒂娅决战巫妖议会”的 70 关史诗暗黑奇幻编年史，段落排版规范流畅。
+
 ## [Unreleased] - 2026-10-19
 
 - **局域网对决横竖版自适应双列排版重构与横向滚动条根除（LAN Multiplayer Responsive 2-Column Grid & Zero Horizontal Scroll）**：

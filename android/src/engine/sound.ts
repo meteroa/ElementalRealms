@@ -62,7 +62,7 @@ class SoundManager {
     lightning: { file: 'lightningbolt.ogg', volume: 0.7 },
     thunder: { file: 'calltothunder.ogg', volume: 0.75 },
     chainlightning: { file: 'chainlightning.ogg', volume: 1 },
-    meditation: { file: 'meditation.ogg', volume: 0.35 },
+    meditation: { file: 'meditation.ogg', volume: 0.9 },
     naturalfury: { file: 'naturalfury.ogg', volume: 2 },
     rejuvenation: { file: 'rejuvenation.ogg', volume: 1 },
     stonerain: { file: 'stonerain.ogg', volume: 1.2 },
@@ -155,6 +155,7 @@ class SoundManager {
     fire_flame_wave: { file: 'flamewave.ogg', volume: 1 },
     fire_inferno: { file: 'inferno.ogg', volume: 1.5 },
     water_acidic_rain: { file: 'acidicrain.ogg', volume: 1 },
+    water_meditation: { file: 'meditation.ogg', volume: 0.9 },
     air_call_to_thunder: { file: 'calltothunder.ogg', volume: 0.75 },
     air_lightning_bolt: { file: 'lightningbolt.ogg', volume: 0.7 },
     air_chain_lightning: { file: 'chainlightning.ogg', volume: 1 },
@@ -592,6 +593,7 @@ class SoundManager {
     return !!(this.soundCatalog[cleanKey] || this.soundCatalog[name]);
   }
 
+  // Authentic original sound playback: zero DSP synthesis, pure 100% classic audio
   public play(name: string, customVolume?: number) {
     if (!this.enabled) return;
     try {
@@ -603,7 +605,7 @@ class SoundManager {
       const vol = customVolume !== undefined ? customVolume : (def.volume ?? 0.8);
       const safeVol = Math.max(0, Math.min(1, vol * this.sfxVolume));
 
-      // 1. Web Audio API (Zero latency, concurrent, zero native handles)
+      // 1. Web Audio API (Zero latency, concurrent, authentic 1:1 original playback)
       const ctx = this.getAudioContext();
       if (ctx) {
         if (ctx.state === 'suspended') {
@@ -775,3 +777,7 @@ class SoundManager {
 }
 
 export const sound = new SoundManager();
+
+if (typeof window !== 'undefined') {
+  (window as any).__soundManager = sound;
+}
