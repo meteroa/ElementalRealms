@@ -6,6 +6,7 @@ import {
   resetBattleBanterSession,
   generateEnemyBanter,
   generateAiBattlefieldScenario,
+  getOfflineOpeningBanter,
 } from './engine/ai_client';
 import './style.css';
 import { SpectromancerEngine } from './engine/game';
@@ -1352,10 +1353,11 @@ let showCardDetailModal = false;
 let detailedCard: CardDef | null = null;
 let activeEnemyBanter: string | null = null;
 let activeBanterSpeaker: string = '';
+let activeBanterSide: 'player' | 'enemy' = 'enemy';
 let banterTimer: any = null;
 let banterPopClass = 'anim-pop';
 
-function showEnemyBanter(banter: string, durationMs = 5000, speaker?: string) {
+function showEnemyBanter(banter: string, durationMs = 5000, speaker?: string, side: 'player' | 'enemy' = 'enemy') {
   if (!banter || currentView !== 'battle') return;
   if (banterTimer) {
     clearTimeout(banterTimer);
@@ -1363,6 +1365,7 @@ function showEnemyBanter(banter: string, durationMs = 5000, speaker?: string) {
   }
   activeEnemyBanter = banter;
   activeBanterSpeaker = speaker || '';
+  activeBanterSide = side;
   banterPopClass = 'anim-pop';
   render();
 
@@ -2282,6 +2285,29 @@ function triggerBattleCompletion() {
 // BATTLE SAVE & RESUME SYSTEM
 // ===================================
 const SAVE_BATTLE_KEY = 'spectromancer_saved_battle_v2';
+const SAVE_BATTLES_LIST_KEY = 'spectromancer_saved_battles_list_v1';
+let showSavesModal = false;
+
+interface SavedBattleRecord {
+  saveId: string;
+  timestamp: number;
+  dateStr: string;
+  battleSource: string;
+  sourceNameCn: string;
+  playerName: string;
+  playerClassCn: string;
+  playerFace: string;
+  playerHp: number;
+  enemyName: string;
+  enemyClassCn: string;
+  enemyFace: string;
+  enemyHp: number;
+  turnCount: number;
+  campaignProfileId?: string | null;
+  campaignLevelId?: number;
+  leagueProfileId?: string | null;
+  battleData: any;
+}
 
 function showToastNotice(msg: string): void {
   const existing = document.querySelector('.game-toast-notice');
@@ -2294,6 +2320,56 @@ function showToastNotice(msg: string): void {
     toast.classList.add('fade-out');
     setTimeout(() => toast.remove(), 400);
   }, 2200);
+}
+
+function getSavedBattlesList(): SavedBattleRecord[] {
+  try {
+    const rawList = localStorage.getItem(SAVE_BATTLES_LIST_KEY);
+    if (rawList) {
+      const parsed = JSON.parse(rawList);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.filter(item => item && item.battleData && item.battleData.engineState && !item.battleData.engineState.gameOver);
+      }
+    }
+    const legacyRaw = localStorage.getItem(SAVE_BATTLE_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw);
+      if (legacy && legacy.engineState && !legacy.engineState.gameOver) {
+        const sourceMap: Record<string, string> = {
+          duel: '单局对战',
+          campaign: '战役模式',
+          league: '英雄联赛',
+          custom_deck: '自组套牌',
+          ai_duel: '智脑对决',
+          lan: '局域网对决'
+        };
+        const pClassObj = HERO_CLASSES.find(c => c.id === legacy.engineState.playerClass);
+        const eClassObj = HERO_CLASSES.find(c => c.id === legacy.engineState.enemyClass);
+        const legacyRecord: SavedBattleRecord = {
+          saveId: `save_legacy_${legacy.timestamp || Date.now()}`,
+          timestamp: legacy.timestamp || Date.now(),
+          dateStr: new Date(legacy.timestamp || Date.now()).toLocaleString('zh-CN', { hour12: false }),
+          battleSource: legacy.battleSource || 'duel',
+          sourceNameCn: sourceMap[legacy.battleSource] || '对决',
+          playerName: legacy.engineState.playerName || '玩家',
+          playerClassCn: pClassObj?.nameCn || '法师',
+          playerFace: legacy.engineState.playerFace || './faces/Face1.jpg',
+          playerHp: legacy.engineState.playerHp || 60,
+          enemyName: legacy.engineState.enemyName || '对手',
+          enemyClassCn: eClassObj?.nameCn || '法师',
+          enemyFace: legacy.engineState.enemyFace || './faces/Face6.jpg',
+          enemyHp: legacy.engineState.enemyHp || 60,
+          turnCount: legacy.engineState.turnCount || 1,
+          campaignProfileId: legacy.campaignProfileId,
+          campaignLevelId: legacy.campaignLevelId,
+          leagueProfileId: legacy.leagueProfileId,
+          battleData: legacy,
+        };
+        return [legacyRecord];
+      }
+    }
+  } catch {}
+  return [];
 }
 
 function saveCurrentBattle(): boolean {
@@ -2334,6 +2410,51 @@ function saveCurrentBattle(): boolean {
       currentBattlefieldTheme,
     };
     localStorage.setItem(SAVE_BATTLE_KEY, JSON.stringify(battleData));
+
+    const sourceMap: Record<string, string> = {
+      duel: '单局对战',
+      campaign: '战役模式',
+      league: '英雄联赛',
+      custom_deck: '自组套牌',
+      ai_duel: '智脑对决',
+      lan: '局域网对决'
+    };
+    const pClassObj = HERO_CLASSES.find(c => c.id === engine.player.className);
+    const eClassObj = HERO_CLASSES.find(c => c.id === engine.enemy.className);
+
+    let slotKey: string = currentBattleSource;
+    if (currentBattleSource === 'campaign' && activeCampaign?.id) {
+      slotKey = `campaign_${activeCampaign.id}`;
+    } else if (currentBattleSource === 'league' && activeLeague?.id) {
+      slotKey = `league_${activeLeague.id}`;
+    }
+
+    const newRecord: SavedBattleRecord = {
+      saveId: `slot_${slotKey}`,
+      timestamp: Date.now(),
+      dateStr: new Date().toLocaleString('zh-CN', { hour12: false }),
+      battleSource: currentBattleSource,
+      sourceNameCn: sourceMap[currentBattleSource] || '对决',
+      playerName: engine.player.name,
+      playerClassCn: pClassObj?.nameCn || '法师',
+      playerFace: engine.player.face,
+      playerHp: engine.player.hp,
+      enemyName: engine.enemy.name,
+      enemyClassCn: eClassObj?.nameCn || '法师',
+      enemyFace: engine.enemy.face,
+      enemyHp: engine.enemy.hp,
+      turnCount: engine.turnCount,
+      campaignProfileId: activeCampaign?.id || null,
+      campaignLevelId: selectedCampaignLevelId || 1,
+      leagueProfileId: activeLeague?.id || null,
+      battleData,
+    };
+
+    const currentList = getSavedBattlesList().filter(r => r.saveId !== newRecord.saveId);
+    currentList.unshift(newRecord);
+    if (currentList.length > 8) currentList.pop();
+
+    localStorage.setItem(SAVE_BATTLES_LIST_KEY, JSON.stringify(currentList));
     return true;
   } catch (err) {
     console.error('Failed to save battle:', err);
@@ -2341,11 +2462,34 @@ function saveCurrentBattle(): boolean {
   }
 }
 
-function loadSavedBattle(): boolean {
+function deleteSavedBattle(saveId: string): void {
   try {
-    const raw = localStorage.getItem(SAVE_BATTLE_KEY);
-    if (!raw) return false;
-    const data = JSON.parse(raw);
+    const list = getSavedBattlesList().filter(r => r.saveId !== saveId);
+    localStorage.setItem(SAVE_BATTLES_LIST_KEY, JSON.stringify(list));
+    if (list.length > 0) {
+      localStorage.setItem(SAVE_BATTLE_KEY, JSON.stringify(list[0].battleData));
+    } else {
+      localStorage.removeItem(SAVE_BATTLE_KEY);
+    }
+  } catch {}
+}
+
+function loadSavedBattle(targetSaveId?: string): boolean {
+  try {
+    let data: any = null;
+    const list = getSavedBattlesList();
+    if (targetSaveId) {
+      const match = list.find(r => r.saveId === targetSaveId);
+      if (match) data = match.battleData;
+    }
+    if (!data && list.length > 0) {
+      data = list[0].battleData;
+    }
+    if (!data) {
+      const raw = localStorage.getItem(SAVE_BATTLE_KEY);
+      if (raw) data = JSON.parse(raw);
+    }
+    if (!data) return false;
     const s = data.engineState;
     if (!s) return false;
 
@@ -2411,32 +2555,91 @@ function loadSavedBattle(): boolean {
   }
 }
 
-function getSavedBattleInfo(): any | null {
-  try {
-    const raw = localStorage.getItem(SAVE_BATTLE_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw);
-    if (data && data.engineState && !data.engineState.gameOver) {
-      return data;
-    }
-  } catch {}
+export function getSavedBattleInfo(): any | null {
+  const list = getSavedBattlesList();
+  if (list.length > 0) return list[0].battleData;
   return null;
 }
 
 function hasSavedCampaignBattle(profileId?: string): boolean {
-  const data = getSavedBattleInfo();
-  if (!data) return false;
-  if (data.battleSource !== 'campaign') return false;
-  if (profileId && data.campaignProfileId && data.campaignProfileId !== profileId) return false;
-  return true;
+  const list = getSavedBattlesList();
+  return list.some(r => r.battleSource === 'campaign' && (!profileId || !r.campaignProfileId || r.campaignProfileId === profileId));
 }
 
 function hasSavedLeagueBattle(profileId?: string): boolean {
-  const data = getSavedBattleInfo();
-  if (!data) return false;
-  if (data.battleSource !== 'league') return false;
-  if (profileId && data.leagueProfileId && data.leagueProfileId !== profileId) return false;
-  return true;
+  const list = getSavedBattlesList();
+  return list.some(r => r.battleSource === 'league' && (!profileId || !r.leagueProfileId || r.leagueProfileId === profileId));
+}
+
+function renderSavedBattlesModal(): string {
+  const list = getSavedBattlesList();
+  return `
+    <div class="modal-overlay" id="saved-battles-modal-overlay">
+      <div class="stone-options-dialog saved-battles-modal-dialog" style="width:min(660px, 94vw); max-height:86vh; display:flex; flex-direction:column; padding:18px 20px; box-sizing:border-box;">
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1.5px solid rgba(198,155,63,0.35); padding-bottom:12px; margin-bottom:12px; flex-shrink:0;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:22px;">💾</span>
+            <h3 style="color:#ffd700; font-size:19px; font-weight:900; margin:0; text-shadow:0 1px 4px #000;">对战存档管理 (${list.length} 个进行中战局)</h3>
+          </div>
+          <button class="modal-close-btn" id="btn-close-saved-battles" style="position:static; width:30px; height:30px; font-size:20px; cursor:pointer;" title="关闭">×</button>
+        </div>
+
+        <div class="saved-battles-scroll-list" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:10px; padding-right:4px;">
+          ${list.length === 0 ? `
+            <div style="text-align:center; padding:36px 12px; color:#d4af37; font-size:14px; font-weight:700;">
+              暂无可载入的对战存档
+            </div>
+          ` : list.map((record) => `
+            <div class="saved-battle-item-card" style="background:linear-gradient(135deg, rgba(30,22,14,0.95) 0%, rgba(18,12,8,0.98) 100%); border:1.5px solid rgba(198,155,63,0.45); border-radius:10px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between; gap:12px; box-shadow:0 4px 12px rgba(0,0,0,0.6);">
+              <div style="display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+                <div style="display:flex; align-items:center; gap:-6px; flex-shrink:0;">
+                  <img src="${toRel(record.playerFace)}" style="width:42px; height:42px; border-radius:6px; border:1.5px solid #10b981; object-fit:cover;" title="${record.playerName}" />
+                  <span style="font-size:12px; font-weight:900; color:#ffd700; margin:0 4px;">VS</span>
+                  <img src="${toRel(record.enemyFace)}" style="width:42px; height:42px; border-radius:6px; border:1.5px solid #ef4444; object-fit:cover;" title="${record.enemyName}" />
+                </div>
+                <div style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                  <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
+                    <span style="background:rgba(212,175,55,0.2); color:#fef08a; border:1px solid rgba(212,175,55,0.4); padding:1px 6px; border-radius:4px; font-size:11px; font-weight:800;">
+                      ${record.sourceNameCn}
+                    </span>
+                    <span style="color:#f3f4f6; font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                      ${record.playerName} (HP:${record.playerHp}) vs ${record.enemyName} (HP:${record.enemyHp})
+                    </span>
+                  </div>
+                  <div style="color:#a8a29e; font-size:11.5px;">
+                    第 ${record.turnCount} 回合 · ${record.dateStr}
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                <button class="btn-load-specific-save duel-stone-action-btn start" data-save-id="${record.saveId}" style="padding:6px 14px; font-size:13px;">
+                  继续对决 ▶
+                </button>
+                <button class="btn-delete-specific-save duel-stone-action-btn close" data-save-id="${record.saveId}" style="padding:6px 10px; font-size:13px; background:rgba(185,28,28,0.25); border-color:#dc2626; color:#fca5a5;" title="删除此存档">
+                  🗑️
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function exitCurrentBattleToMenu(): void {
+  if (engine) {
+    engine.destroy();
+  }
+  if (banterTimer) {
+    clearTimeout(banterTimer);
+    banterTimer = null;
+  }
+  activeEnemyBanter = null;
+  resetTurnTimer();
+  currentView = 'menu';
+  syncModeBgm();
+  render();
 }
 
 
@@ -4499,9 +4702,10 @@ function setupEngineCallbacks() {
 
   engine.onAiBanter = (banter: string, who?: 'player' | 'enemy') => {
     if (banter && currentView === 'battle') {
-      const speakerName = who === 'player' ? engine.player.name : engine.enemy.name;
+      const side: 'player' | 'enemy' = who === 'player' ? 'player' : 'enemy';
+      const speakerName = side === 'player' ? engine.player.name : engine.enemy.name;
       engine.log(`💬【${speakerName}】：“${banter}”`, 'heal');
-      showEnemyBanter(banter, 4500, speakerName);
+      showEnemyBanter(banter, 4500, speakerName, side);
     }
   };
 
@@ -4592,18 +4796,44 @@ function setupEngineCallbacks() {
     const oppClassObj = HERO_CLASSES.find(c => c.id === engine.enemy.className);
     setTimeout(() => {
       if (currentView === 'battle' && !engine.gameOver) {
-        generateEnemyBanter(
-          engine.enemy.name,
-          oppClassObj?.nameCn || '法师',
-          engine.enemy.hp,
-          engine.player.hp,
-          '对决开局挑衅'
-        ).then((banter) => {
-          if (banter && currentView === 'battle') {
-            engine.log(`💬【${engine.enemy.name}】：“${banter}”`, 'heal');
-            showEnemyBanter(banter, 4500);
-          }
-        }).catch(() => {});
+        if (engine.isPlayerAiControlled) {
+          // 神谕观战：双方 AI 隔空对线互动
+          const playerLine = getOfflineOpeningBanter(engine.player.name, true);
+          engine.log(`💬【${engine.player.name}】：“${playerLine}”`, 'heal');
+          showEnemyBanter(playerLine, 3200, engine.player.name, 'player');
+
+          setTimeout(() => {
+            if (currentView === 'battle' && !engine.gameOver) {
+              const enemyLine = getOfflineOpeningBanter(engine.enemy.name, false);
+              engine.log(`💬【${engine.enemy.name}】：“${enemyLine}”`, 'heal');
+              showEnemyBanter(enemyLine, 3200, engine.enemy.name, 'enemy');
+            }
+          }, 3500);
+        } else {
+          generateEnemyBanter(
+            engine.enemy.name,
+            oppClassObj?.nameCn || '法师',
+            engine.enemy.hp,
+            engine.player.hp,
+            '对决开局挑衅',
+            engine.battleSource
+          ).then((banter) => {
+            if (banter && currentView === 'battle') {
+              engine.log(`💬【${engine.enemy.name}】：“${banter}”`, 'heal');
+              showEnemyBanter(banter, 4500, engine.enemy.name, 'enemy');
+            } else if (!banter && currentView === 'battle') {
+              const fallbackLine = getOfflineOpeningBanter(engine.enemy.name, false);
+              engine.log(`💬【${engine.enemy.name}】：“${fallbackLine}”`, 'heal');
+              showEnemyBanter(fallbackLine, 4500, engine.enemy.name, 'enemy');
+            }
+          }).catch(() => {
+            if (currentView === 'battle') {
+              const fallbackLine = getOfflineOpeningBanter(engine.enemy.name, false);
+              engine.log(`💬【${engine.enemy.name}】：“${fallbackLine}”`, 'heal');
+              showEnemyBanter(fallbackLine, 4500, engine.enemy.name, 'enemy');
+            }
+          });
+        }
       }
     }, 1200);
   }
@@ -4616,7 +4846,8 @@ setupEngineCallbacks();
 // ==========================================
 
 function renderMainMenu(): string {
-  const hasSavedBattle = Boolean(localStorage.getItem(SAVE_BATTLE_KEY));
+  const savedList = getSavedBattlesList();
+  const hasSavedBattle = savedList.length > 0;
   return `
     <div class="main-menu-view">
       <!-- AMBIENT PARTICLES -->
@@ -4634,9 +4865,9 @@ function renderMainMenu(): string {
         </div>
 
         <div class="mobile-menu-util-bar">
-          <button class="menu-util-btn ${hasSavedBattle ? 'has-save-highlight' : ''}" id="btn-menu-load-save" title="${hasSavedBattle ? '读取并继续上次保存的对战进度' : '当前暂无对战存档'}">
+          <button class="menu-util-btn ${hasSavedBattle ? 'has-save-highlight' : ''}" id="btn-menu-load-save" title="${hasSavedBattle ? `读取对战存档（共 ${savedList.length} 个进行中战局）` : '当前暂无对战存档'}">
             <span class="util-icon">💾</span>
-            <span class="util-label">${hasSavedBattle ? '读取存档' : '暂无存档'}</span>
+            <span class="util-label">${hasSavedBattle ? `读取存档${savedList.length > 1 ? ` (${savedList.length})` : ''}` : '暂无存档'}</span>
           </button>
           <button class="menu-util-btn" id="btn-menu-replays" title="对战录像与回放馆">
             <span class="util-icon">📼</span>
@@ -4663,10 +4894,10 @@ function renderMainMenu(): string {
           <div class="saved-battle-quick-card" id="btn-resume-battle-banner">
             <div class="saved-card-glow-indicator"></div>
             <div class="saved-card-text">
-              <div class="saved-card-title">⚡ 发现进行中的对战存档</div>
-              <div class="saved-card-sub">点击立即载入历史战局并继续对决</div>
+              <div class="saved-card-title">⚡ 发现进行中的对战存档 ${savedList.length > 1 ? `(${savedList.length} 个战局)` : ''}</div>
+              <div class="saved-card-sub">${savedList.length > 1 ? `点击打开对战存档列表选择继续` : `[${savedList[0].sourceNameCn}] ${savedList[0].playerName} vs ${savedList[0].enemyName} · 第 ${savedList[0].turnCount} 回合`}</div>
             </div>
-            <button class="saved-card-btn" id="btn-resume-battle-action">继续对决 ▶</button>
+            <button class="saved-card-btn" id="btn-resume-battle-action">${savedList.length > 1 ? '选择战局 ▶' : '继续对决 ▶'}</button>
           </div>
         ` : ''}
         <div class="mobile-mode-grid">
@@ -4691,7 +4922,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">战役模式</div>
-              <div class="mode-card-desc">7 大篇章 · 65 关剧情挑战与领地首领讨伐</div>
+              <div class="mode-card-desc">3 大篇章 · 23 关剧情挑战与领地首领讨伐</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -5842,7 +6073,7 @@ function renderCodexPageContent(tab: string): string {
           <div class="codex-section-title">🎮 丰厚多样的对战玩法</div>
           <div class="codex-section-body">
             1. <strong>单局对战 (Single Duel)：</strong> 自由配置 15 大流派与随机流派、精美英雄头像与 AI 难度，并在开局前挑选「战场场景」——特殊造物（火山、祭坛、行军石、魔法学院…）会作为战场规则预置在阵线上。<br>
-            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 7 大篇章领地据点；击败领主开启后续多重分支路线，体验各领地专属战规，部分关卡战规会预置特殊造物。<br>
+            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 3 大篇章 23 个领地据点；击败领主开启后续多重分支路线，体验各领地专属战规，部分关卡战规会预置特殊造物。<br>
             3. <strong>英雄联赛 (League of Heroes)：</strong> 支持创建多名法师角色档案，参与 8 轮天梯排位决战；每场联赛都会按赛程分配一个战场场景（含特殊造物场景），冲击巅峰积分榜首！<br>
             4. <strong>自组卡牌工坊 (Custom Deck)：</strong> 精细构筑专属 20 张王牌套牌，体验极致的套路搭配与战术博弈。<br>
             5. <strong>局域网对战 (LAN Duel)：</strong> 同一无线局域网或手机热点下，输入 4 位房间码即可实现低延迟跨设备双人实时联机对决！房主选择的战场场景会同步给双方。<br>
@@ -6236,7 +6467,7 @@ function renderCampaignHubModal(): string {
                         ${isCur ? '<span style="font-size:11px; background:#1e3a8a; color:#bfdbfe; padding:2px 6px; border-radius:4px; font-weight:900;">当前选择</span>' : ''}
                       </div>
                       <div style="font-size:clamp(12.5px, 1.05vw, 15px); color:#2b1f13; font-weight:800;">
-                        征战进度: 已通关 ${clearedCount} / 65 关 · 当前所选关卡: 第 ${p.selectedLevelId || 1} 关
+                        征战进度: 已通关 ${clearedCount} / 23 关 · 当前所选关卡: 第 ${p.selectedLevelId || 1} 关
                       </div>
                       ${p.createdAt ? `<div style="font-size:11px; color:#6b4e33;">创建时间: ${p.createdAt}</div>` : ''}
                     </div>
@@ -6724,7 +6955,7 @@ function renderCombatScreen(): string {
           <div class="combat-heroes-stack">
             <!-- Opponent Hero Card: Sinister Demonic Theme with Full Width Mana Bar -->
             <div class="combat-hero-row opponent ${engine.activeTurn === 'enemy' ? 'turn-active' : 'turn-inactive'}" style="position: relative;">
-              ${activeEnemyBanter ? `
+              ${activeEnemyBanter && activeBanterSide === 'enemy' ? `
                 <div class="arcane-speech-scroll comic-dialogue-bubble ${banterPopClass}" title="${activeBanterSpeaker ? `${activeBanterSpeaker}的战意传音` : 'AI 魔导师战意传音'}">
                   <div class="arcane-speech-tail comic-bubble-tail"></div>
                   <div class="arcane-speech-body">
@@ -6767,8 +6998,15 @@ function renderCombatScreen(): string {
               </div>
             </div>
 
-            <!-- Player Hero Card: Radiant Celestial Theme without Mana Bar (Mana displayed in hand column header) -->
-            <div class="combat-hero-row player ${engine.activeTurn === 'player' ? 'turn-active' : 'turn-inactive'}">
+            <div class="combat-hero-row player ${engine.activeTurn === 'player' ? 'turn-active' : 'turn-inactive'}" style="position: relative;">
+              ${activeEnemyBanter && activeBanterSide === 'player' ? `
+                <div class="arcane-speech-scroll comic-dialogue-bubble ${banterPopClass} bubble-player" title="${activeBanterSpeaker ? `${activeBanterSpeaker}的战意传音` : '魔导师战意传音'}">
+                  <div class="arcane-speech-tail comic-bubble-tail"></div>
+                  <div class="arcane-speech-body">
+                    <span class="arcane-speech-text">“${activeEnemyBanter}”</span>
+                  </div>
+                </div>
+              ` : ''}
               <div class="combat-hero-portrait-wrap">
                 <img src="${toRel(p.face)}" class="combat-hero-avatar combat-hero-portrait-frame bottom" alt="${p.name}" />
                 <img src="./ui/Portraitramka.png" class="combat-hero-ramka" alt="Frame" />
@@ -6923,113 +7161,124 @@ function renderCombatScreen(): string {
         </div>
 
         <!-- LOWER HAND SECTION: 5 Columns of 4 Tall Vertical CCG Cards with Elemental Framing -->
-        <div class="combat-hand-section">
-          <!-- 5-Column 20-Card Grid (Framed with Elemental Borders) -->
-          <div class="combat-hand-grid">
-            ${elementsOrder.map((elem, idx) => {
-              const targetHand = showOpponentHand ? engine.getEffectiveHand('enemy') : engine.getEffectiveHand('player');
-              const targetSpecialElem = showOpponentHand ? e.specialElement : p.specialElement;
-              const targetSpecialClass = showOpponentHand ? e.className : p.className;
-              const currentSpecialName = showOpponentHand ? eSpecialName : pSpecialName;
+        ${(() => {
+          const isMyTurn = engine.activeTurn === 'player' && !engine.isCombatPhase && !engine.gameOver;
+          return `
+            <div class="combat-hand-section ${!isMyTurn && !showOpponentHand ? 'opponent-turn-active' : ''}">
+              <!-- 5-Column 20-Card Grid (Framed with Elemental Borders) -->
+              <div class="combat-hand-grid">
+                ${elementsOrder.map((elem, idx) => {
+                  const targetHand = showOpponentHand ? engine.getEffectiveHand('enemy') : engine.getEffectiveHand('player');
+                  const targetSpecialElem = showOpponentHand ? e.specialElement : p.specialElement;
+                  const targetSpecialClass = showOpponentHand ? e.className : p.className;
+                  const currentSpecialName = showOpponentHand ? eSpecialName : pSpecialName;
 
-              let cardsOfElem = idx === 4
-                ? targetHand.filter((c) =>
-                    c.element === targetSpecialElem ||
-                    c.element === 'special' ||
-                    (targetSpecialClass && c.className === targetSpecialClass)
-                  )
-                : targetHand.filter((c) => c.element === elem);
+                  let cardsOfElem = idx === 4
+                    ? targetHand.filter((c) =>
+                        c.element === targetSpecialElem ||
+                        c.element === 'special' ||
+                        (targetSpecialClass && c.className === targetSpecialClass)
+                      )
+                    : targetHand.filter((c) => c.element === elem);
 
-              if (idx === 4 && cardsOfElem.length === 0) {
-                cardsOfElem = targetHand.slice(16, 20);
-              }
+                  if (idx === 4 && cardsOfElem.length === 0) {
+                    cardsOfElem = targetHand.slice(16, 20);
+                  }
 
-              const colLabel = idx === 4 ? currentSpecialName : elemNames[elem];
-              const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
-              const icon = elemIcons[elem] || '🔮';
-              const colMana = (showOpponentHand ? e.mana[elem] : p.mana[elem]) || 0;
+                  const colLabel = idx === 4 ? currentSpecialName : elemNames[elem];
+                  const elemIcons: Record<string, string> = { fire: '🔥', water: '💧', air: '⚡', earth: '🌿', special: '🔮', death: '💀', holy: '✨', mechanics: '⚙️', control: '👁️', chaos: '🌀', illusion: '🎭', sorcery: '🔮' };
+                  const icon = elemIcons[elem] || '🔮';
+                  const colMana = (showOpponentHand ? e.mana[elem] : p.mana[elem]) || 0;
 
-              const labelFontSize = colLabel.length >= 4 
-                ? 'font-size: clamp(9px, 0.75vw, 11px);' 
-                : colLabel.length >= 3 
-                  ? 'font-size: clamp(10px, 0.85vw, 12px);' 
-                  : 'font-size: clamp(12px, 1vw, 14px);';
+                  const labelFontSize = colLabel.length >= 4 
+                    ? 'font-size: clamp(9px, 0.75vw, 11px);' 
+                    : colLabel.length >= 3 
+                      ? 'font-size: clamp(10px, 0.85vw, 12px);' 
+                      : 'font-size: clamp(12px, 1vw, 14px);';
 
-              return `
-                <div class="hand-column elem-${elem}">
-                  <div class="hand-column-header elem-${elem}">
-                    <span class="col-icon">${icon}</span>
-                    <span class="col-label" style="${labelFontSize}" title="${colLabel}">${colLabel}</span>
-                    <span class="col-mana-badge" title="${colLabel}能量">${colMana}</span>
-                  </div>
-                  <div class="hand-column-cards">
-                    ${cardsOfElem.map((card) => {
-                      // Hand cells are wide strips (~2.7–4.2 : 1), so spell/ability cards use the
-                      // wide banner art (whole circular motif + art-filled surround) while creature
-                      // paintings keep the large art.
-                      const cardImg = card.type === 'spell'
-                        ? (card.imgUrl || card.imgBigUrl)
-                        : (card.imgBigUrl || card.imgUrl);
-                      if (showOpponentHand) {
-                        const isRevealed = (currentBattleSource === 'campaign' && completedCampaignLevels.includes(6))
-                          ? true
-                          : (engine.enemyRevealedCardIds.has(card.id) || (card.isActivatedAbility && engine.enemyRevealedCardIds.has(card.id.replace('ability_', ''))));
-                        const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
+                  return `
+                    <div class="hand-column elem-${elem}">
+                      <div class="hand-column-header elem-${elem}">
+                        <span class="col-icon">${icon}</span>
+                        <span class="col-label" style="${labelFontSize}" title="${colLabel}">${colLabel}</span>
+                        <span class="col-mana-badge" title="${colLabel}能量">${colMana}</span>
+                      </div>
+                      <div class="hand-column-cards">
+                        ${cardsOfElem.map((card) => {
+                          const cardImg = card.type === 'spell'
+                            ? (card.imgUrl || card.imgBigUrl)
+                            : (card.imgBigUrl || card.imgUrl);
+                          if (showOpponentHand) {
+                            const isRevealed = (currentBattleSource === 'campaign' && completedCampaignLevels.includes(6))
+                              ? true
+                              : (engine.enemyRevealedCardIds.has(card.id) || (card.isActivatedAbility && engine.enemyRevealedCardIds.has(card.id.replace('ability_', ''))));
+                            const isSelected = selectedCard?.id === card.id || inspectedCard?.id === card.id;
 
-                        if (isRevealed) {
-                          const effCost = engine.getCardEffectiveCost('enemy', card);
-                          const isCostModified = effCost !== card.cost;
-                          const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
-                          return `
-                            <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
-                              <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
-                              <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
-                              ${lifeCostBadge(card)}
-                              ${card.type === 'creature' ? `
-                                <div class="card-stats-badges">
-                                  <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
-                                  <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                            if (isRevealed) {
+                              const effCost = engine.getCardEffectiveCost('enemy', card);
+                              const isCostModified = effCost !== card.cost;
+                              const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
+                              return `
+                                <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} revealed ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true">
+                                  <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+                                  <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
+                                  ${lifeCostBadge(card)}
+                                  ${card.type === 'creature' ? `
+                                    <div class="card-stats-badges">
+                                      <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
+                                      <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                                    </div>
+                                  ` : ''}
                                 </div>
-                              ` : ''}
-                            </div>
-                          `;
-                        } else {
-                          return `
-                            <div class="combat-hand-card-item hand-card-cell vertical elem-${elem} face-down ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true" title="敌方手牌（未明示）">
-                              <div class="face-down-inner">
-                                <div class="face-down-dragon-seal">${icon}</div>
-                                <div class="face-down-label">未知</div>
+                              `;
+                            } else {
+                              return `
+                                <div class="combat-hand-card-item hand-card-cell vertical elem-${elem} face-down ${isSelected ? 'selected' : ''}" data-card-id="${card.id}" data-is-opponent="true" title="敌方手牌（未明示）">
+                                  <div class="face-down-inner">
+                                    <div class="face-down-dragon-seal">${icon}</div>
+                                    <div class="face-down-label">未知</div>
+                                  </div>
+                                </div>
+                              `;
+                            }
+                          } else {
+                            const effCost = engine.getCardEffectiveCost('player', card);
+                            const isCostModified = effCost !== card.cost;
+                            const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
+                            const canAfford = isMyTurn && p.mana[card.element] >= effCost && (!card.lifeCost || p.hp > card.lifeCost);
+                            const isSelected = selectedCard?.id === card.id;
+                            const turnInactiveClass = !isMyTurn ? 'opponent-turn-card' : '';
+                            return `
+                              <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${turnInactiveClass} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
+                                <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
+                                <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
+                                ${lifeCostBadge(card)}
+                                ${card.type === 'creature' ? `
+                                  <div class="card-stats-badges">
+                                    <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
+                                    <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
+                                  </div>
+                                ` : ''}
                               </div>
-                            </div>
-                          `;
-                        }
-                      } else {
-                        const effCost = engine.getCardEffectiveCost('player', card);
-                        const isCostModified = effCost !== card.cost;
-                        const costDiffClass = isCostModified ? (effCost > card.cost ? 'cost-increased' : 'cost-discounted') : '';
-                        const canAfford = p.mana[card.element] >= effCost && (!card.lifeCost || p.hp > card.lifeCost);
-                        const isSelected = selectedCard?.id === card.id;
-                        return `
-                          <div class="combat-hand-card-item hand-card-cell vertical elem-${card.element} type-${card.type} ${canAfford ? 'playable' : 'disabled'} ${isSelected ? 'selected' : ''}" data-card-id="${card.id}">
-                            <img src="${toRel(cardImg)}" class="hand-card-art ${card.type === 'spell' ? 'spell-art' : ''}" alt="${card.nameCn}" />
-                            <div class="card-cost-gem elem-${card.element} ${costDiffClass}" title="${isCostModified ? `原基础费用: ${card.cost}，环境修正后实收: ${effCost}` : `费用: ${effCost}`}">${effCost}</div>
-                            ${lifeCostBadge(card)}
-                            ${card.type === 'creature' ? `
-                              <div class="card-stats-badges">
-                                <div class="card-stat-atk" title="攻击力: ${formatCardAtk(card.attack)}">${formatCardAtk(card.attack)}</div>
-                                <div class="card-stat-hp" title="生命值: ${card.life}">${card.life}</div>
-                              </div>
-                            ` : ''}
-                          </div>
-                        `;
-                      }
-                    }).join('')}
+                            `;
+                          }
+                        }).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+              ${!isMyTurn && !showOpponentHand ? `
+                <div class="opponent-turn-hand-overlay">
+                  <div class="opponent-turn-status-badge">
+                    <span class="turn-pulse-icon">⏳</span>
+                    <span class="turn-status-text">对方回合中 · 等待对手行动</span>
                   </div>
                 </div>
-              `;
-            }).join('')}
-          </div>
-        </div>
+              ` : ''}
+            </div>
+          `;
+        })()}
       </div>
     </div>
     ${showSurrenderModal ? renderSurrenderModal() : ''}
@@ -8398,6 +8647,7 @@ export function render() {
   if (showClassGridPickerFor) app.innerHTML += renderClassGridPickerModal(showClassGridPickerFor);
   if (showScenarioGridPicker) app.innerHTML += renderScenarioGridPickerModal();
   if (showAiScenarioModal) app.innerHTML += renderAiScenarioModal();
+  if (showSavesModal) app.innerHTML += renderSavedBattlesModal();
 
   attachEventListeners();
 
@@ -9488,9 +9738,7 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
     if (saveCurrentBattle()) {
       showToastNotice('💾 战斗进度已保存！随时可继续对决。');
     }
-    currentView = 'menu';
-    sound.playBgm('menu1');
-    render();
+    exitCurrentBattleToMenu();
   });
 
   const handleCloseOptions = () => {
@@ -9592,13 +9840,21 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
       showToastNotice('✅ 战斗已自动保存！已安全返回主菜单。');
     }
     showOptionsModal = false;
-    currentView = 'menu';
-    sound.playBgm('menu1');
-    render();
+    exitCurrentBattleToMenu();
   });
 
   const handleLoadSavedBattle = () => {
     sound.play('click');
+    const saves = getSavedBattlesList();
+    if (saves.length === 0) {
+      showToastNotice('ℹ️ 暂无未完成的对战存档');
+      return;
+    }
+    if (saves.length > 1) {
+      showSavesModal = true;
+      render();
+      return;
+    }
     if (loadSavedBattle()) {
       showToastNotice('⚔️ 已成功载入战斗存档！继续对决。');
       currentView = 'battle';
@@ -9612,6 +9868,54 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
   document.getElementById('btn-menu-load-save')?.addEventListener('click', handleLoadSavedBattle);
   document.getElementById('btn-resume-battle-banner')?.addEventListener('click', handleLoadSavedBattle);
   document.getElementById('btn-resume-battle-action')?.addEventListener('click', handleLoadSavedBattle);
+
+  document.getElementById('btn-close-saved-battles')?.addEventListener('click', () => {
+    sound.play('click');
+    showSavesModal = false;
+    render();
+  });
+
+  document.getElementById('saved-battles-modal-overlay')?.addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) {
+      sound.play('click');
+      showSavesModal = false;
+      render();
+    }
+  });
+
+  document.querySelectorAll('.btn-load-specific-save').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const saveId = (btn as HTMLElement).dataset.saveId;
+      sound.play('click');
+      if (loadSavedBattle(saveId)) {
+        showSavesModal = false;
+        showToastNotice('⚔️ 已成功载入战斗存档！继续对决。');
+        currentView = 'battle';
+        sound.playBgm(getCombatBgmForCurrentBattle());
+        render();
+      } else {
+        showToastNotice('⚠️ 存档载入失败或已损坏');
+      }
+    });
+  });
+
+  document.querySelectorAll('.btn-delete-specific-save').forEach((btn) => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const saveId = (btn as HTMLElement).dataset.saveId;
+      if (saveId) {
+        if (!confirm('确定要删除此场对战存档吗？')) return;
+        sound.play('click');
+        deleteSavedBattle(saveId);
+        showToastNotice('🗑️ 对战存档已删除');
+        if (getSavedBattlesList().length === 0) {
+          showSavesModal = false;
+        }
+        render();
+      }
+    });
+  });
 
   const bgmSlider = document.getElementById('slider-bgm-volume') as HTMLInputElement | null;
   const bgmLabel = document.getElementById('label-bgm-volume');

@@ -3151,6 +3151,70 @@ body, html {
   cursor: not-allowed;
 }
 
+/* Opponent Turn Inactive State & Hand Mask */
+.combat-hand-section {
+  position: relative;
+}
+
+.hand-card-cell.opponent-turn-card {
+  filter: grayscale(0.55) brightness(0.65) !important;
+  opacity: 0.65 !important;
+  box-shadow: none !important;
+  border-color: rgba(90, 75, 55, 0.6) !important;
+  cursor: default;
+}
+
+.hand-card-cell.opponent-turn-card:hover {
+  transform: none !important;
+  border-color: rgba(90, 75, 55, 0.6) !important;
+  box-shadow: none !important;
+}
+
+.opponent-turn-hand-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 8, 14, 0.68);
+  backdrop-filter: blur(1.5px);
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  animation: fadeInOverlay 0.25s ease-out forwards;
+  border-radius: 6px;
+}
+
+.opponent-turn-status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(18, 14, 22, 0.94);
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  border-radius: 20px;
+  padding: 6px 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85), 0 0 14px rgba(250, 204, 21, 0.3);
+  color: #fef08a;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.turn-pulse-icon {
+  font-size: 15px;
+  animation: pulseRotate 2s infinite ease-in-out;
+}
+
+@keyframes pulseRotate {
+  0% { transform: scale(1) rotate(0deg); opacity: 0.8; }
+  50% { transform: scale(1.15) rotate(180deg); opacity: 1; }
+  100% { transform: scale(1) rotate(360deg); opacity: 0.8; }
+}
+
+@keyframes fadeInOverlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
 /* Face-down Opponent Card */
 .hand-card-cell.face-down {
   background: linear-gradient(135deg, #1f1812 0%, #0d0b09 100%);
@@ -6126,14 +6190,14 @@ body, html {
 /* Campaign Map Pan/Zoom Control Buttons */
 .campaign-map-controls {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 10px;
+  right: 12px;
   z-index: 50;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  background: rgba(18, 14, 11, 0.92);
-  padding: 6px;
+  gap: 4px;
+  background: rgba(18, 14, 11, 0.94);
+  padding: 5px 6px;
   border-radius: 8px;
   border: 1px solid rgba(212, 175, 55, 0.55);
   box-shadow: 0 4px 18px rgba(0, 0, 0, 0.85);
@@ -6212,20 +6276,20 @@ body, html {
 }
 
 .campaign-ctrl-btn-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  align-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, 32px);
+  gap: 4px;
+  justify-content: center;
 }
 
 .map-ctrl-btn {
-  width: 34px;
-  height: 34px;
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
   background: linear-gradient(180deg, #3d3224 0%, #241c14 100%);
   border: 1px solid #786343;
   color: #ffd700;
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -10726,6 +10790,28 @@ body, html {
   word-break: break-word;
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", "Source Han Sans CN", "Segoe UI", system-ui, sans-serif !important;
   text-shadow: 0 1px 1px rgba(255, 255, 255, 0.9) !important;
+}
+
+.comic-dialogue-bubble.bubble-player,
+.arcane-speech-scroll.bubble-player {
+  background: linear-gradient(155deg, #f0fdf4 0%, #ecfdf5 50%, #dcfce7 100%) !important;
+  border-color: #065f46 !important;
+  box-shadow: 
+    0 0 0 1.5px #10b981,
+    inset 0 0 16px rgba(16, 185, 129, 0.15),
+    3px 6px 0px rgba(6, 78, 59, 0.55), 
+    0 14px 40px rgba(0, 0, 0, 0.92),
+    0 0 24px rgba(16, 185, 129, 0.25) !important;
+}
+
+.comic-dialogue-bubble.bubble-player .comic-bubble-tail,
+.arcane-speech-scroll.bubble-player .arcane-speech-tail {
+  border-right-color: #065f46 !important;
+}
+
+.comic-dialogue-bubble.bubble-player .comic-bubble-tail::after,
+.arcane-speech-scroll.bubble-player .arcane-speech-tail::after {
+  border-right-color: #ecfdf5 !important;
 }
 
 /* ========================================================

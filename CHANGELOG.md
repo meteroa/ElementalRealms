@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased] - 2026-10-20
+## [Unreleased] - 2026-10-21
+
+- **局域网对战巨型蜘蛛伴生小蜘蛛图像缺失修复与对手回合遮罩（LAN Spider Token Image & Opponent Turn Dimming Mask）**：
+  - **伴生生物注册与资源路径校准**：将【巨型蜘蛛】召唤的伴生衍生生物【丛林蜘蛛】（`earth_forest_spider`）正式注册入 `cards.json`，并将生物图径校正为 `ForestSpider.webp`/`ForestSpiderBig.webp`；在引擎随从快照压缩与解析流程中完整保留伴生衍生卡牌元数据，彻底根除局域网联机对战客机出现「DEFINED undefined」占位图问题；
+  - **对方回合手牌灰暗遮罩与状态指示**：在局域网及各类战斗模式的对方回合期间，我方手牌区自动应用低饱和度灰暗滤镜（`opponent-turn-card`）并覆盖半透明遮罩与「⏳ 对方回合中 · 等待对手行动」呼吸徽章，杜绝卡牌高亮引发的操作误导。
+- **战役大地图右上角操作区布局优化（Campaign Map Controls Compact 2x2 Grid）**：
+  - **四键紧凑双列化**：将右上角地图放大/缩小/复位/篇章的 4 个控制按钮由旧版的纵向单列改为 2x2 紧凑双列网格（`repeat(2, 32px)`），控制栏整体垂直高度缩减超 50%；
+  - **防遮盖与横竖屏自适应**：将工具栏定位微调至 `top: 10px; right: 12px;`，在手机横屏及竖屏模式下均彻底消除与底部右侧操作按钮区（开始战斗、角色档案、奖品、主菜单）的重叠遮挡。
+- **战役篇章与关卡文案校正与全局对齐（Campaign 3 Continents 23 Levels Text Sync）**：
+  - **全场景文案纠偏**：修正主菜单战役卡片、游戏帮助秘典（Codex）及英雄档案进度面板中遗留的“7 大篇章 · 65 关”陈旧描述，统一对齐当前实际运行的“3 大篇章 · 23 关剧情挑战与领地首领讨伐”。
+- **神谕观战双 AI 战意对线互动与退出后台残留彻底清除（Oracle Spectator Banter & Engine Lifecycle Cleanup）**：
+  - **双 AI 隔空对线互动**：为神谕观战模式（双 AI 上帝对弈）量身打造双方 AI 互相放狠话对线机制，开局双方互喷战意对白，出牌时触发专属战术台词，并在己方与敌方头像侧分别展示专属漫画对白气泡；
+  - **退出战斗生命周期彻底销毁（Zero Background Leaks）**：为 `SpectromancerEngine` 引入 `isDestroyed` 状态标志、`pendingTimers` 定时器收拢追踪与 `destroy()` 销毁机制；在保存退出、返回主菜单或认输时彻底阻断异步决策与音效循环，解决退出观战后主界面仍在播放战斗音效与动画的残留 Bug。
+- **对战多存档管理与独立槽位管理器（Multi-Battle Save Slots System）**：
+  - **多存档独立槽位机制**：升级单战局存档为支持多达 8 个对战槽位的 `SavedBattleRecord` 列表，为单局、战役、联赛等不同模式及角色档案提供独立槽位保存；
+  - **交互式对战存档管理器**：主菜单支持动态显示进行中文档数量；多存档时点击【读取存档】弹出直观的「对战存档管理」弹窗，展示双方头像、血量、模式标签、当前回合及存档时间，支持独立恢复指定对决或删除过期废弃存档。
+
 
 - **音效系统完全回归原版与重构音效清除（Audio Engine Reversion & Cleanup）**：
   - **彻底清除重构合成层**：移除 `sound.ts` 中的 DSP 增强链、程序化双层谐波振荡器与微音高变调抖动，恢复纯粹 1:1 的 PC 原版音频播放，彻底消除杂音与多余合成层；

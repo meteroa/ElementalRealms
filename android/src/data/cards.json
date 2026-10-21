@@ -635,6 +635,20 @@
     "onSummon": "spawn_spiders"
   },
   {
+    "id": "earth_forest_spider",
+    "element": "earth",
+    "name": "Forest Spider",
+    "nameCn": "丛林蜘蛛",
+    "type": "creature",
+    "cost": 1,
+    "attack": 2,
+    "life": 11,
+    "image": "ForestSpider",
+    "imgUrl": "/cards/ForestSpider.webp",
+    "imgBigUrl": "/cards/ForestSpiderBig.webp",
+    "desc": "【丛林蜘蛛】巨型蜘蛛繁衍的伴生子蛛，数值为 2/11。"
+  },
+  {
     "id": "earth_troll",
     "element": "earth",
     "name": "Troll",

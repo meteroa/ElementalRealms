@@ -1179,4 +1179,86 @@ export async function generateAiBattlefieldScenario(
   }
 }
 
+export function getOfflineOpeningBanter(speakerName: string, isFirstAttacker: boolean): string {
+  const openingTaunts: Record<string, string[]> = {
+    '阿姆哈特': ['狂妄的挑战者，也配直视奥术的真正辉煌？', '你微末的魔力，不过是我指尖跳动的火花。'],
+    '巴特拉斯': ['圣堂审判已至，邪魔与宵小当无所遁形！', '以圣殿骑士之名，我将荡涤一切亵渎！'],
+    '魁塔纳': ['战况胜率推演已毕，你的败亡概率为 99.4%。', '齿轮已开始咬合，接受机械的终极定理吧。'],
+    '迪莫夫': ['你的恐惧在我心头荡漾，真是美妙的乐章。', '看看这脆弱的心智，只需轻轻一击便会粉碎。'],
+    '杜斯坦': ['哈哈哈哈！让爆炸、烈焰与疯狂将这里撕碎！', '混乱才是最公平的真理！一起毁灭吧！'],
+    '伊格波特': ['你看见的是真实，还是我施舍给你的梦境？', '扑空的感觉如何？这局棋你赢不了。'],
+    '埃尔加': ['深渊之火渴求灵魂，你的哀嚎将是最甜的柴薪！', '闻闻这硫磺的焦香吧，地狱已经为你开门！'],
+    '弗沃尔': ['群兽与蜂群已经按捺不住嗜血的躁动了！', '在大自然的蛮荒伟力面前，你的防线不堪一击！'],
+    '富塔克': ['岁月长河奔流不息，你的结局早在千年前注定。', '徒劳的挣扎，不过是命运齿轮下的尘埃。'],
+    '斯哈克': ['小的们抄家伙！把他的宝物和金币统统抢光！', '嘎嘎！敢跟哥布林过招，让你尝尝暗器的厉害！'],
+    '欧拉夏': ['万木长青，古老森林会吞噬每一个傲慢的入侵者。', '大自然的脉动，正在将你的生机寸寸抽离。'],
+    '古斯塔夫': ['巨神魔像的铁蹄，将踏平一切软弱的抵抗！', '血肉苦弱，唯有永恒构装永不磨灭！'],
+  };
+
+  const pool = openingTaunts[speakerName];
+  if (pool && pool.length > 0) {
+    return pool[isFirstAttacker ? 0 : (pool.length > 1 ? 1 : 0)];
+  }
+
+  const genericFirst = [
+    `今日便在此立下战约，看看谁才是真正的元素主宰！`,
+    `拔出你的魔杖吧，我的法术可不会手下留情！`,
+    `敢踏入此地，就做好承受元素风暴的准备！`
+  ];
+  const genericSecond = [
+    `哼，大言不惭，胜负尚未可知！`,
+    `不过是虚张声势，且看我如何破你阵法！`,
+    `很好，这样才配做我踏向巅峰的磨刀石！`
+  ];
+  const gPool = isFirstAttacker ? genericFirst : genericSecond;
+  return gPool[Math.floor(Math.random() * gPool.length)];
+}
+
+import type { CardDef } from '../types';
+
+export function getOfflineCombatBanter(
+  _speakerName: string,
+  _speakerClassId: string,
+  card: CardDef,
+  _isWinning: boolean,
+  isCritical: boolean
+): string {
+  if (isCritical) {
+    const criticalLines = [
+      `这一击将为你敲响丧钟！`,
+      `绝望吧，这便是凡人无法逾越的深渊！`,
+      `你已退无可退，接受审判！`,
+      `终局已定，胜负在这一合分晓！`
+    ];
+    return criticalLines[Math.floor(Math.random() * criticalLines.length)];
+  }
+
+  if (card.cost >= 6) {
+    const bigPlays = [
+      `唤醒远古的威能——【${card.nameCn}】降临！`,
+      `感受这撕裂天地的庞大压迫感吧！`,
+      `【${card.nameCn}】，将眼前的阻碍通通扫平！`,
+      `真正的浩劫，现在才刚刚开始！`
+    ];
+    return bigPlays[Math.floor(Math.random() * bigPlays.length)];
+  }
+
+  if (card.type === 'spell') {
+    const spellLines = [
+      `以此秘法【${card.nameCn}】，瓦解你的攻势！`,
+      `元素倾泻，见证真理的力量！`,
+      `【${card.nameCn}】施展，局势易位！`
+    ];
+    return spellLines[Math.floor(Math.random() * spellLines.length)];
+  }
+
+  const normalPlays = [
+    `阵线推进，【${card.nameCn}】列阵御敌！`,
+    `在【${card.nameCn}】的锋刃前退散吧！`,
+    `破晓之时，正义必将斩断阻碍！`,
+    `愚蠢的布局，已尽在我的算度之中！`
+  ];
+  return normalPlays[Math.floor(Math.random() * normalPlays.length)];
+}
+
 

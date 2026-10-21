@@ -1,7 +1,7 @@
 import type { CardDef, BoardCreature, PlayerState, ElementType, HeroClass, BattleLogEntry, CampaignLevel, NetworkGameStateSnapshot } from '../types';
 import cardsData from '../data/cards.json';
 import { sound } from './sound';
-import { decideAiTurnAction, isAiEnabledForBattle } from './ai_client';
+import { decideAiTurnAction, isAiEnabledForBattle, getOfflineCombatBanter } from './ai_client';
 
 export interface ReplayStep {
   turn: number;
@@ -208,6 +208,8 @@ export class SpectromancerEngine {
   public difficulty: string = '普通';
   public battleSource: 'duel' | 'campaign' | 'league' | 'custom_deck' | 'lan' | 'ai_duel' = 'duel';
   public isPlayerAiControlled: boolean = false;
+  public isDestroyed: boolean = false;
+  private pendingTimers: Set<any> = new Set();
   private aiRecentCardIds: string[] = [];
 
   constructor(
@@ -356,8 +358,40 @@ export class SpectromancerEngine {
     return board.map((c) => (c ? { ...c, card: { ...c.card } } : null));
   }
 
+  public destroy(): void {
+    this.isDestroyed = true;
+    this.pendingTimers.forEach((t) => clearTimeout(t));
+    this.pendingTimers.clear();
+    // Nullify engine callbacks to prevent background execution
+    this.onStateChange = undefined;
+    this.onAiBanter = undefined;
+    this.onDamageEffect = undefined;
+    this.onHealEffect = undefined;
+    this.onAttackLunge = undefined;
+    this.onCardImpact = undefined;
+    this.onSpellVfx = undefined;
+    this.onCardEnterSlot = undefined;
+    this.onCreatureAppear = undefined;
+    this.onCardAnnouncement = undefined;
+    this.onStateBroadcast = undefined;
+    this.onVfxBroadcast = undefined;
+  }
+
   private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
+    if (this.isDestroyed) {
+      return Promise.reject(new Error('Engine destroyed'));
+    }
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pendingTimers.delete(timer);
+        if (this.isDestroyed) {
+          reject(new Error('Engine destroyed'));
+        } else {
+          resolve();
+        }
+      }, ms);
+      this.pendingTimers.add(timer);
+    });
   }
 
   private createPlayer(
@@ -1702,9 +1736,9 @@ export class SpectromancerEngine {
               cost: 1,
               attack: 2,
               life: 11,
-              image: 'GiantSpider',
-              imgUrl: './cards/GiantSpider.webp',
-              imgBigUrl: './cards/GiantSpiderBig.webp',
+              image: 'ForestSpider',
+              imgUrl: './cards/ForestSpider.webp',
+              imgBigUrl: './cards/ForestSpiderBig.webp',
               desc: '丛林蜘蛛',
             };
             const spiderCreature: BoardCreature = {
@@ -3550,21 +3584,29 @@ export class SpectromancerEngine {
       enemyBoard: this.cloneBoard(this.enemyBoard),
     });
 
-    if (!this.gameOver) {
+    if (!this.gameOver && !this.isDestroyed) {
       if (attackerSide === 'player') {
         this.startTurn('enemy');
         this.notify();
-        if (!this.isLanGame) {
-          await this.delay(900);
-          await this.triggerAiTurn('enemy');
+        if (!this.isLanGame && !this.isDestroyed) {
+          try {
+            await this.delay(900);
+            if (!this.isDestroyed) {
+              await this.triggerAiTurn('enemy');
+            }
+          } catch {}
         }
       } else {
         this.turnCount++;
         this.startTurn('player');
         this.notify();
-        if (this.isPlayerAiControlled && !this.isLanGame) {
-          await this.delay(900);
-          await this.triggerAiTurn('player');
+        if (this.isPlayerAiControlled && !this.isLanGame && !this.isDestroyed) {
+          try {
+            await this.delay(900);
+            if (!this.isDestroyed) {
+              await this.triggerAiTurn('player');
+            }
+          } catch {}
         }
       }
     } else {
@@ -4668,14 +4710,15 @@ export class SpectromancerEngine {
   }
 
   public async triggerAiTurn(who: 'player' | 'enemy' = 'enemy'): Promise<void> {
-    if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return;
+    if (this.isDestroyed || this.gameOver || this.activeTurn !== who || this.isCombatPhase) return;
 
     try {
       let loopCount = 0;
       // Loop allows AI to take extra actions if granted (e.g. Chrono Engine / Time Dragon)
-      while (this.activeTurn === who && !this.isCombatPhase && !this.gameOver && loopCount < 5) {
+      while (!this.isDestroyed && this.activeTurn === who && !this.isCombatPhase && !this.gameOver && loopCount < 5) {
         loopCount++;
         const didPlay = await this.executeAiSingleDecision(who);
+        if (this.isDestroyed) return;
         if (!didPlay) {
           // If could not play or chose not to play, end action phase and enter combat
           await this.passTurn(who);
@@ -4683,7 +4726,7 @@ export class SpectromancerEngine {
         }
 
         // If played a card, check if still in action phase (e.g. extra action remaining)
-        if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+        if (!this.isDestroyed && this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
           if (this.extraActionRemaining[who] > 0) {
             await this.delay(650);
           } else {
@@ -4695,19 +4738,20 @@ export class SpectromancerEngine {
       }
 
       // Hard safety net: if still somehow stuck on turn and not in combat, passTurn immediately
-      if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+      if (!this.isDestroyed && this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
         await this.passTurn(who);
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (this.isDestroyed || err?.message === 'Engine destroyed') return;
       console.error(`Safe fallback triggered in triggerAiTurn(${who}):`, err);
-      if (this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
+      if (!this.isDestroyed && this.activeTurn === who && !this.isCombatPhase && !this.gameOver) {
         await this.passTurn(who);
       }
     }
   }
 
   private async executeAiSingleDecision(who: 'player' | 'enemy' = 'enemy'): Promise<boolean> {
-    if (this.gameOver || this.activeTurn !== who || this.isCombatPhase) return false;
+    if (this.isDestroyed || this.gameOver || this.activeTurn !== who || this.isCombatPhase) return false;
 
     const actor = who === 'player' ? this.player : this.enemy;
     const opp = who === 'player' ? this.enemy : this.player;
@@ -5137,6 +5181,18 @@ export class SpectromancerEngine {
     }
 
     if (chosenAction) {
+      if (this.onAiBanter && (chosenAction.card.cost >= 5 || Math.random() < 0.45)) {
+        const offlineLine = getOfflineCombatBanter(
+          actor.name,
+          actor.className,
+          chosenAction.card,
+          actor.hp > opp.hp,
+          opp.hp <= 14
+        );
+        if (offlineLine) {
+          this.onAiBanter(offlineLine, who);
+        }
+      }
       this.aiRecentCardIds.push(chosenAction.card.id);
       if (this.aiRecentCardIds.length > 5) {
         this.aiRecentCardIds.shift();
@@ -5158,7 +5214,7 @@ export class SpectromancerEngine {
       if (!c) return null;
       return {
         ...c,
-        card: { id: c.card.id } as CardDef,
+        card: { ...c.card },
       };
     });
   }
@@ -5215,12 +5271,12 @@ export class SpectromancerEngine {
     this.playerBoard = snapshot.enemyBoard.map((c) => {
       if (!c) return null;
       const fullCard = (c.card && c.card.id ? allCards.find((cd) => cd.id === c.card.id) : null) || c.card;
-      return { ...c, owner: 'player', card: fullCard || c.card };
+      return { ...c, owner: 'player', card: { ...c.card, ...(fullCard || {}) } };
     });
     this.enemyBoard = snapshot.playerBoard.map((c) => {
       if (!c) return null;
       const fullCard = (c.card && c.card.id ? allCards.find((cd) => cd.id === c.card.id) : null) || c.card;
-      return { ...c, owner: 'enemy', card: fullCard || c.card };
+      return { ...c, owner: 'enemy', card: { ...c.card, ...(fullCard || {}) } };
     });
 
     this.player.golemAttackBonus = snapshot.enemyGolemAttackBonus || 0;
