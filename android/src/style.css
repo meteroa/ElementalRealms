@@ -3180,7 +3180,6 @@ body, html {
   align-items: center;
   justify-content: center;
   pointer-events: none;
-  animation: fadeInOverlay 0.25s ease-out forwards;
   border-radius: 6px;
 }
 
@@ -6238,18 +6237,20 @@ body, html {
 
 .continent-btn-row {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 3px;
   justify-content: center;
+  max-width: 84px;
 }
 
 .continent-nav-btn {
-  width: 25px;
-  height: 25px;
-  border-radius: 4px;
+  width: 17px;
+  height: 18px;
+  border-radius: 3px;
   background: linear-gradient(180deg, #2d2319 0%, #19130d 100%);
   border: 1px solid #6b5535;
   color: #d1b58a;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 900;
   display: flex;
   align-items: center;
@@ -6257,6 +6258,13 @@ body, html {
   cursor: pointer;
   transition: all 0.16s ease;
   padding: 0;
+}
+
+.continent-nav-btn.locked {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+  border-color: #443322;
+  color: #887766;
 }
 
 .continent-nav-btn:hover {
@@ -9400,18 +9408,21 @@ body, html {
   }
 
   .campaign-map-viewport {
-    height: 42vh !important;
+    flex: 1 !important;
     width: 100vw !important;
+    height: auto !important;
+    min-height: 0 !important;
     overflow: hidden !important;
-    flex-shrink: 0 !important;
     position: relative !important;
     touch-action: none !important;
+    transition: flex 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   }
 
   .campaign-bottom-deck {
     position: relative !important;
     width: 100vw !important;
-    flex: 1 !important;
+    height: 56vh !important;
+    flex: 0 0 56vh !important;
     min-height: 0 !important;
     display: flex !important;
     flex-direction: column !important;
@@ -9419,6 +9430,16 @@ body, html {
     gap: 6px !important;
     background: #120e0a !important;
     box-sizing: border-box !important;
+    transition: flex 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), height 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .campaign-bottom-deck.collapsed {
+    height: 44px !important;
+    min-height: 44px !important;
+    max-height: 44px !important;
+    flex: 0 0 44px !important;
+    transform: none !important;
+    padding: 0 !important;
   }
 
   .campaign-deck-center {

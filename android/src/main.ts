@@ -138,6 +138,7 @@ let campaignProfiles: CampaignProfile[] = (() => {
 
 function computeUnlockedCampaignLevels(completed: number[]): number[] {
   const unlocked = new Set<number>([1]);
+  // 第一大陆（Chapter 1：第 1 ~ 8 关）
   if (completed.includes(1)) {
     unlocked.add(2);
     unlocked.add(3);
@@ -155,6 +156,7 @@ function computeUnlockedCampaignLevels(completed: number[]): number[] {
   if (completed.includes(7)) {
     unlocked.add(8);
   }
+  // 第二大陆（Chapter 2：第 9 ~ 16 关）
   if (completed.includes(8)) {
     unlocked.add(9);
   }
@@ -175,6 +177,7 @@ function computeUnlockedCampaignLevels(completed: number[]): number[] {
   if (completed.some(id => [14, 15].includes(id))) {
     unlocked.add(16);
   }
+  // 第三大陆（Chapter 3：第 17 ~ 23, 29, 30 关）
   if (completed.includes(16)) {
     unlocked.add(17);
   }
@@ -192,7 +195,159 @@ function computeUnlockedCampaignLevels(completed: number[]): number[] {
   if (completed.some(id => [21, 22].includes(id))) {
     unlocked.add(23);
   }
+  if (completed.includes(23)) {
+    unlocked.add(29);
+    unlocked.add(30);
+  }
+  if (completed.includes(29)) {
+    unlocked.add(30);
+  }
+  // 第四大陆（Chapter 4：第 31 ~ 40 关）
+  if (completed.includes(23) || completed.includes(30)) {
+    unlocked.add(31);
+  }
+  if (completed.includes(31)) {
+    unlocked.add(32);
+    unlocked.add(33);
+  }
+  if (completed.includes(32)) {
+    unlocked.add(34);
+  }
+  if (completed.includes(33)) {
+    unlocked.add(36);
+  }
+  if (completed.includes(34)) {
+    unlocked.add(35);
+    unlocked.add(36);
+  }
+  if (completed.includes(35)) {
+    unlocked.add(38);
+  }
+  if (completed.includes(36)) {
+    unlocked.add(37);
+    unlocked.add(38);
+  }
+  if (completed.includes(37)) {
+    unlocked.add(39);
+  }
+  if (completed.includes(38)) {
+    unlocked.add(40);
+  }
+  if (completed.includes(39)) {
+    unlocked.add(40);
+  }
+  // 第五大陆（Chapter 5：第 41 ~ 50 关）
+  if (completed.includes(40)) {
+    unlocked.add(41);
+  }
+  if (completed.includes(41)) {
+    unlocked.add(42);
+    unlocked.add(43);
+  }
+  if (completed.includes(42)) {
+    unlocked.add(44);
+  }
+  if (completed.includes(43)) {
+    unlocked.add(44);
+    unlocked.add(46);
+  }
+  if (completed.includes(44)) {
+    unlocked.add(45);
+  }
+  if (completed.includes(45)) {
+    unlocked.add(47);
+  }
+  if (completed.includes(46)) {
+    unlocked.add(48);
+  }
+  if (completed.includes(47)) {
+    unlocked.add(49);
+  }
+  if (completed.includes(48)) {
+    unlocked.add(49);
+  }
+  if (completed.includes(49)) {
+    unlocked.add(50);
+  }
+  // 第六大陆（Chapter 6：第 51 ~ 60 关）
+  if (completed.includes(50)) {
+    unlocked.add(51);
+  }
+  if (completed.includes(51)) {
+    unlocked.add(52);
+    unlocked.add(53);
+  }
+  if (completed.includes(52)) {
+    unlocked.add(54);
+  }
+  if (completed.includes(53)) {
+    unlocked.add(56);
+  }
+  if (completed.includes(54)) {
+    unlocked.add(55);
+    unlocked.add(56);
+  }
+  if (completed.includes(55)) {
+    unlocked.add(58);
+  }
+  if (completed.includes(56)) {
+    unlocked.add(57);
+  }
+  if (completed.includes(57)) {
+    unlocked.add(60);
+  }
+  if (completed.includes(58)) {
+    unlocked.add(59);
+  }
+  if (completed.includes(59)) {
+    unlocked.add(60);
+  }
+  // 第七大陆（Chapter 7：第 61 ~ 70 关）
+  if (completed.includes(60)) {
+    unlocked.add(61);
+  }
+  if (completed.includes(61)) {
+    unlocked.add(62);
+    unlocked.add(63);
+  }
+  if (completed.includes(62)) {
+    unlocked.add(64);
+  }
+  if (completed.includes(63)) {
+    unlocked.add(66);
+  }
+  if (completed.includes(64)) {
+    unlocked.add(65);
+    unlocked.add(66);
+  }
+  if (completed.includes(65)) {
+    unlocked.add(67);
+  }
+  if (completed.includes(66)) {
+    unlocked.add(68);
+  }
+  if (completed.includes(67)) {
+    unlocked.add(69);
+  }
+  if (completed.includes(68)) {
+    unlocked.add(70);
+  }
+  if (completed.includes(69)) {
+    unlocked.add(70);
+  }
   return Array.from(unlocked).sort((a, b) => a - b);
+}
+
+export type CampaignMapIndex = 1 | 2 | 3 | 4 | 5 | 6 | 7;
+
+function getMapIndexForLevel(levelId: number): CampaignMapIndex {
+  if (levelId >= 61) return 7;
+  if (levelId >= 51) return 6;
+  if (levelId >= 41) return 5;
+  if (levelId >= 31) return 4;
+  if (levelId >= 17) return 3;
+  if (levelId >= 9) return 2;
+  return 1;
 }
 
 let activeCampaignId: string = campaignProfiles[0]?.id || '';
@@ -205,7 +360,7 @@ if (!unlockedCampaignLevels.includes(selectedCampaignLevelId)) {
   const nextUncompleted = unlockedCampaignLevels.find(id => !completedCampaignLevels.includes(id));
   selectedCampaignLevelId = nextUncompleted || unlockedCampaignLevels[unlockedCampaignLevels.length - 1] || 1;
 }
-let campaignMapIndex: 1 | 2 | 3 = (selectedCampaignLevelId >= 17) ? 3 : ((selectedCampaignLevelId >= 9) ? 2 : 1);
+let campaignMapIndex: CampaignMapIndex = getMapIndexForLevel(selectedCampaignLevelId);
 let campaignDifficultyIndex: number = activeCampaign?.difficultyIdx || 0;
 
 let showCampaignHubModal = false;
@@ -261,10 +416,20 @@ function recordCampaignVictory() {
   if (nextUncompleted) {
     selectedCampaignLevelId = nextUncompleted;
   }
-  if (selectedCampaignLevelId >= 17 || completedCampaignLevels.includes(16)) {
+  if (selectedCampaignLevelId >= 61 || completedCampaignLevels.includes(60)) {
+    campaignMapIndex = 7;
+  } else if (selectedCampaignLevelId >= 51 || completedCampaignLevels.includes(50)) {
+    campaignMapIndex = 6;
+  } else if (selectedCampaignLevelId >= 41 || completedCampaignLevels.includes(40)) {
+    campaignMapIndex = 5;
+  } else if (selectedCampaignLevelId >= 31 || completedCampaignLevels.includes(30) || completedCampaignLevels.includes(23)) {
+    campaignMapIndex = 4;
+  } else if (selectedCampaignLevelId >= 17 || completedCampaignLevels.includes(16)) {
     campaignMapIndex = 3;
   } else if (selectedCampaignLevelId >= 9 || completedCampaignLevels.includes(8)) {
     campaignMapIndex = 2;
+  } else {
+    campaignMapIndex = 1;
   }
   saveCampaignProfiles();
   try {
@@ -313,7 +478,31 @@ function deleteCampaignProfile(id: string) {
   );
 }
 
-const CAMPAIGN_MAP1_NODES = [
+export interface CampaignMapNode {
+  levelId: number;
+  name: string;
+  face: string;
+  x: number;
+  y: number;
+  landmark: string;
+}
+
+export interface CampaignMapRoute {
+  from: number;
+  to: number;
+}
+
+export interface CampaignPortalDef {
+  x: number;
+  y: number;
+  targetMap: CampaignMapIndex;
+  label: string;
+  isUnlocked: boolean;
+  lockMsg: string;
+}
+
+// 第一大陆（Chapter 1：第 1 ~ 8 关）
+const CAMPAIGN_MAP1_NODES: CampaignMapNode[] = [
   { levelId: 1, name: '德米尔', face: './faces/Face6.jpg', x: 23.5, y: 44.0, landmark: '麦田' },
   { levelId: 2, name: '闪银', face: './faces/Face7.jpg', x: 33.2, y: 51.5, landmark: '农舍' },
   { levelId: 3, name: '费德米尔', face: './faces/Face8.jpg', x: 28.5, y: 71.0, landmark: '风车' },
@@ -324,7 +513,7 @@ const CAMPAIGN_MAP1_NODES = [
   { levelId: 8, name: '博瑞', face: './faces/Face13.jpg', x: 73.2, y: 19.5, landmark: '禁锢熔炉' },
 ];
 
-const CAMPAIGN_MAP1_ROUTES = [
+const CAMPAIGN_MAP1_ROUTES: CampaignMapRoute[] = [
   { from: 1, to: 2 },
   { from: 1, to: 3 },
   { from: 1, to: 4 },
@@ -337,7 +526,7 @@ const CAMPAIGN_MAP1_ROUTES = [
 ];
 
 // 第二大陆（Chapter 2：第 9 ~ 16 关）
-const CAMPAIGN_MAP2_NODES = [
+const CAMPAIGN_MAP2_NODES: CampaignMapNode[] = [
   { levelId: 9, name: '艾瑞欧', face: './faces/Face14.jpg', x: 33.7, y: 76.0, landmark: '荒野兽穴' },
   { levelId: 10, name: '卡特拉', face: './faces/Face15.jpg', x: 21.0, y: 46.5, landmark: '绝望火山' },
   { levelId: 11, name: '曼迪阿杜斯', face: './faces/Face16.jpg', x: 29.8, y: 60.8, landmark: '暗夜营地' },
@@ -348,7 +537,7 @@ const CAMPAIGN_MAP2_NODES = [
   { levelId: 16, name: '弗斯拉夫', face: './faces/Face21.jpg', x: 79.1, y: 22.0, landmark: '水晶苍穹' },
 ];
 
-const CAMPAIGN_MAP2_ROUTES = [
+const CAMPAIGN_MAP2_ROUTES: CampaignMapRoute[] = [
   { from: 9, to: 10 },
   { from: 9, to: 11 },
   { from: 10, to: 12 },
@@ -360,18 +549,20 @@ const CAMPAIGN_MAP2_ROUTES = [
   { from: 15, to: 16 },
 ];
 
-// 第三大陆（Chapter 3：第 17 ~ 23 关）
-const CAMPAIGN_MAP3_NODES = [
+// 第三大陆（Chapter 3：第 17 ~ 23, 29, 30 关）
+const CAMPAIGN_MAP3_NODES: CampaignMapNode[] = [
   { levelId: 17, name: '哈米尔', face: './faces/Face22.jpg', x: 25.9, y: 71.8, landmark: '龙之天梯' },
   { levelId: 18, name: '哈拉尔', face: './faces/Face23.jpg', x: 28.8, y: 56.5, landmark: '永雨之地' },
   { levelId: 19, name: '龙王', face: './faces/Face24.jpg', x: 27.3, y: 22.0, landmark: '龙王之穴' },
   { levelId: 20, name: '黑暗凯文', face: './faces/Face25.jpg', x: 41.5, y: 54.0, landmark: '暗灵圣地' },
   { levelId: 21, name: '阿特朗', face: './faces/Face26.jpg', x: 57.6, y: 22.8, landmark: '魔法学院' },
   { levelId: 22, name: '风之领主', face: './faces/Face27.jpg', x: 54.7, y: 60.0, landmark: '风暴之殿' },
-  { levelId: 23, name: '铎拉克', face: './faces/Face28.jpg', x: 80.1, y: 26.2, landmark: '星灵湮灭塔' },
+  { levelId: 23, name: '铎拉克', face: './faces/Face28.jpg', x: 70.0, y: 36.0, landmark: '星灵湮灭塔' },
+  { levelId: 29, name: '比比', face: './faces/Face34.jpg', x: 75.5, y: 68.0, landmark: '幻象荒漠' },
+  { levelId: 30, name: '拉特林', face: './faces/Face35.jpg', x: 83.0, y: 30.0, landmark: '幽影暗哨' },
 ];
 
-const CAMPAIGN_MAP3_ROUTES = [
+const CAMPAIGN_MAP3_ROUTES: CampaignMapRoute[] = [
   { from: 17, to: 18 },
   { from: 17, to: 19 },
   { from: 18, to: 20 },
@@ -380,13 +571,316 @@ const CAMPAIGN_MAP3_ROUTES = [
   { from: 20, to: 22 },
   { from: 21, to: 23 },
   { from: 22, to: 23 },
+  { from: 23, to: 29 },
+  { from: 23, to: 30 },
+  { from: 29, to: 30 },
 ];
 
-// 大陆传送门坐标
-const CAMPAIGN_PORTAL_MAP1 = { x: 66.0, y: 26.0, targetMap: 2, label: '星门 · 前往第二大陆' };
-const CAMPAIGN_PORTAL_MAP2_TO_1 = { x: 18.0, y: 82.0, targetMap: 1, label: '星门 · 返回第一大陆' };
-const CAMPAIGN_PORTAL_MAP2_TO_3 = { x: 88.5, y: 21.0, targetMap: 3, label: '星门 · 前往第三大陆' };
-const CAMPAIGN_PORTAL_MAP3 = { x: 18.0, y: 82.0, targetMap: 2, label: '星门 · 返回第二大陆' };
+// 第四大陆（Chapter 4：第 31 ~ 40 关 · 黄金沙海与古代金字塔）
+const CAMPAIGN_MAP4_NODES: CampaignMapNode[] = [
+  { levelId: 31, name: '马王雅格', face: './faces/Face36.jpg', x: 22.0, y: 72.0, landmark: '黄金平原' },
+  { levelId: 32, name: '查皮', face: './faces/Face37.jpg', x: 26.0, y: 44.0, landmark: '古神庙废墟' },
+  { levelId: 33, name: '波利瑞斯', face: './faces/Face38.jpg', x: 38.0, y: 68.0, landmark: '黎明要塞' },
+  { levelId: 34, name: '欧拉夏', face: './faces/Face39.jpg', x: 40.0, y: 35.0, landmark: '铁卫营地' },
+  { levelId: 35, name: '古斯塔夫', face: './faces/Face40.jpg', x: 52.0, y: 22.0, landmark: '苍白雪峰' },
+  { levelId: 36, name: '虫眼', face: './faces/Face41.jpg', x: 54.0, y: 56.0, landmark: '深暗地牢' },
+  { levelId: 37, name: '强占者阿希', face: './faces/Face42.jpg', x: 67.0, y: 74.0, landmark: '狂野巨石阵' },
+  { levelId: 38, name: '洛克诺金', face: './faces/Face43.jpg', x: 68.0, y: 40.0, landmark: '蒸汽工坊' },
+  { levelId: 39, name: '罗伯特', face: './faces/Face44.jpg', x: 79.0, y: 62.0, landmark: '星辰观测台' },
+  { levelId: 40, name: '格瑞斯沃德', face: './faces/Face45.jpg', x: 83.5, y: 28.0, landmark: '审判金字塔' },
+];
+
+const CAMPAIGN_MAP4_ROUTES: CampaignMapRoute[] = [
+  { from: 31, to: 32 },
+  { from: 31, to: 33 },
+  { from: 32, to: 34 },
+  { from: 33, to: 36 },
+  { from: 34, to: 35 },
+  { from: 34, to: 36 },
+  { from: 35, to: 38 },
+  { from: 36, to: 37 },
+  { from: 36, to: 38 },
+  { from: 37, to: 39 },
+  { from: 38, to: 40 },
+  { from: 39, to: 40 },
+];
+
+// 第五大陆（Chapter 5：第 41 ~ 50 关 · 极寒冰原与冰封古城）
+const CAMPAIGN_MAP5_NODES: CampaignMapNode[] = [
+  { levelId: 41, name: '赛维斯特', face: './faces/Face46.jpg', x: 22.0, y: 66.0, landmark: '虚空裂隙' },
+  { levelId: 42, name: '英斯蒂亚', face: './faces/Face47.jpg', x: 25.0, y: 38.0, landmark: '静默修道院' },
+  { levelId: 43, name: '维姆杜尔', face: './faces/Face48.jpg', x: 36.0, y: 74.0, landmark: '血咒毒泽' },
+  { levelId: 44, name: '布洛金', face: './faces/Face49.jpg', x: 38.0, y: 48.0, landmark: '驱魂荒原' },
+  { levelId: 45, name: '提克托克', face: './faces/Face50.jpg', x: 50.0, y: 28.0, landmark: '引力峡谷' },
+  { levelId: 46, name: '斯洛卡', face: './faces/Face51.jpg', x: 52.0, y: 68.0, landmark: '断魂绝壁' },
+  { levelId: 47, name: '斯塔西斯', face: './faces/Face52.jpg', x: 64.0, y: 40.0, landmark: '千年地宫' },
+  { levelId: 48, name: '克拉姆', face: './faces/Face53.jpg', x: 66.0, y: 74.0, landmark: '地狱铁砧' },
+  { levelId: 49, name: '骨拳', face: './faces/Face54.jpg', x: 77.0, y: 55.0, landmark: '死灵角斗场' },
+  { levelId: 50, name: '受损伊曼达', face: './faces/Face55.jpg', x: 83.5, y: 26.0, landmark: '机械神域' },
+];
+
+const CAMPAIGN_MAP5_ROUTES: CampaignMapRoute[] = [
+  { from: 41, to: 42 },
+  { from: 41, to: 43 },
+  { from: 42, to: 44 },
+  { from: 43, to: 44 },
+  { from: 43, to: 46 },
+  { from: 44, to: 45 },
+  { from: 45, to: 47 },
+  { from: 46, to: 48 },
+  { from: 47, to: 49 },
+  { from: 48, to: 49 },
+  { from: 49, to: 50 },
+];
+
+// 第六大陆（Chapter 6：第 51 ~ 60 关 · 熔岩深渊与末日裂谷）
+const CAMPAIGN_MAP6_NODES: CampaignMapNode[] = [
+  { levelId: 51, name: '洛特王', face: './faces/Face56.jpg', x: 22.0, y: 68.0, landmark: '钢铁废都' },
+  { levelId: 52, name: '卓兹奥', face: './faces/Face57.jpg', x: 25.0, y: 36.0, landmark: '冰海要塞' },
+  { levelId: 53, name: '雅玛墨脱', face: './faces/Face58.jpg', x: 36.0, y: 74.0, landmark: '蛮荒巨石阵' },
+  { levelId: 54, name: '伊斯拉阿兹', face: './faces/Face59.jpg', x: 39.0, y: 46.0, landmark: '暗裔浮岛' },
+  { levelId: 55, name: '心魔镜像', face: './faces/Face60.jpg', x: 50.0, y: 32.0, landmark: '真理镜厅' },
+  { levelId: 56, name: '马福林', face: './faces/Face61.jpg', x: 52.0, y: 65.0, landmark: '行刑刑场' },
+  { levelId: 57, name: '泰坦伊曼达', face: './faces/Face62.jpg', x: 65.0, y: 72.0, landmark: '泰坦熔炉' },
+  { levelId: 58, name: '托卡布', face: './faces/Face63.jpg', x: 66.0, y: 40.0, landmark: '忘川死谷' },
+  { levelId: 59, name: '乌卡斯', face: './faces/Face64.jpg', x: 77.0, y: 30.0, landmark: '因崔卡斯禁地' },
+  { levelId: 60, name: '因斯克', face: './faces/Face65.jpg', x: 84.0, y: 58.0, landmark: '剧毒渊薮' },
+];
+
+const CAMPAIGN_MAP6_ROUTES: CampaignMapRoute[] = [
+  { from: 51, to: 52 },
+  { from: 51, to: 53 },
+  { from: 52, to: 54 },
+  { from: 53, to: 56 },
+  { from: 54, to: 55 },
+  { from: 54, to: 56 },
+  { from: 55, to: 58 },
+  { from: 56, to: 57 },
+  { from: 57, to: 60 },
+  { from: 58, to: 59 },
+  { from: 59, to: 60 },
+];
+
+// 第七大陆（Chapter 7：第 61 ~ 70 关 · 星界神域与永恒圣堂）
+const CAMPAIGN_MAP7_NODES: CampaignMapNode[] = [
+  { levelId: 61, name: '艾克西拉', face: './faces/Face66.jpg', x: 22.0, y: 66.0, landmark: '疯魔图书馆' },
+  { levelId: 62, name: '斯普拉克丝', face: './faces/Face67.jpg', x: 25.0, y: 34.0, landmark: '深渊之门' },
+  { levelId: 63, name: '斯克拉兹', face: './faces/Face68.jpg', x: 37.0, y: 72.0, landmark: '工坊深渊' },
+  { levelId: 64, name: '卡山德拉', face: './faces/Face69.jpg', x: 39.0, y: 44.0, landmark: '星光神坛' },
+  { levelId: 65, name: '维特拉克斯', face: './faces/Face70.jpg', x: 50.0, y: 28.0, landmark: '折叠维度' },
+  { levelId: 66, name: '弗沃尔', face: './faces/Face71.jpg', x: 53.0, y: 62.0, landmark: '冥河彼岸' },
+  { levelId: 67, name: '加拉度', face: './faces/Face72.jpg', x: 66.0, y: 48.0, landmark: '议会内殿' },
+  { levelId: 68, name: '堕落幻象', face: './faces/Face73.jpg', x: 69.0, y: 76.0, landmark: '棱镜核心' },
+  { levelId: 69, name: '伊森哈特', face: './faces/Face74.jpg', x: 79.0, y: 32.0, landmark: '宗师星堂' },
+  { levelId: 70, name: '巫妖议会', face: './faces/Face75.jpg', x: 88.0, y: 55.0, landmark: '至高神座' },
+];
+
+const CAMPAIGN_MAP7_ROUTES: CampaignMapRoute[] = [
+  { from: 61, to: 62 },
+  { from: 61, to: 63 },
+  { from: 62, to: 64 },
+  { from: 63, to: 66 },
+  { from: 64, to: 65 },
+  { from: 64, to: 66 },
+  { from: 65, to: 67 },
+  { from: 66, to: 68 },
+  { from: 67, to: 69 },
+  { from: 68, to: 70 },
+  { from: 69, to: 70 },
+];
+
+const CONTINENT_TITLES: Record<number, string> = {
+  1: '第一大陆 · 黎明平原与要塞 (第 1 ~ 8 关)',
+  2: '第二大陆 · 元素荒原与苍穹 (第 9 ~ 16 关)',
+  3: '第三大陆 · 龙之群峰与终焉神殿 (第 17 ~ 30 关)',
+  4: '第四大陆 · 黄金沙海与古代金字塔 (第 31 ~ 40 关)',
+  5: '第五大陆 · 极寒冰原与冰封古城 (第 41 ~ 50 关)',
+  6: '第六大陆 · 熔岩深渊与末日裂谷 (第 51 ~ 60 关)',
+  7: '第七大陆 · 星界神域与永恒圣堂 (第 61 ~ 70 关)',
+};
+
+const CONTINENT_NAMES: Record<number, string> = {
+  1: '第一大陆 · 黎明平原',
+  2: '第二大陆 · 元素荒原',
+  3: '第三大陆 · 龙之群峰',
+  4: '第四大陆 · 黄金沙海',
+  5: '第五大陆 · 极寒冰原',
+  6: '第六大陆 · 熔岩深渊',
+  7: '第七大陆 · 星界神域',
+};
+
+function getCampaignMapNodes(mapIdx: number): CampaignMapNode[] {
+  switch (mapIdx) {
+    case 1: return CAMPAIGN_MAP1_NODES;
+    case 2: return CAMPAIGN_MAP2_NODES;
+    case 3: return CAMPAIGN_MAP3_NODES;
+    case 4: return CAMPAIGN_MAP4_NODES;
+    case 5: return CAMPAIGN_MAP5_NODES;
+    case 6: return CAMPAIGN_MAP6_NODES;
+    case 7: return CAMPAIGN_MAP7_NODES;
+    default: return CAMPAIGN_MAP1_NODES;
+  }
+}
+
+function getCampaignMapRoutes(mapIdx: number): CampaignMapRoute[] {
+  switch (mapIdx) {
+    case 1: return CAMPAIGN_MAP1_ROUTES;
+    case 2: return CAMPAIGN_MAP2_ROUTES;
+    case 3: return CAMPAIGN_MAP3_ROUTES;
+    case 4: return CAMPAIGN_MAP4_ROUTES;
+    case 5: return CAMPAIGN_MAP5_ROUTES;
+    case 6: return CAMPAIGN_MAP6_ROUTES;
+    case 7: return CAMPAIGN_MAP7_ROUTES;
+    default: return CAMPAIGN_MAP1_ROUTES;
+  }
+}
+
+function getAllCampaignNodes(): CampaignMapNode[] {
+  return [
+    ...CAMPAIGN_MAP1_NODES,
+    ...CAMPAIGN_MAP2_NODES,
+    ...CAMPAIGN_MAP3_NODES,
+    ...CAMPAIGN_MAP4_NODES,
+    ...CAMPAIGN_MAP5_NODES,
+    ...CAMPAIGN_MAP6_NODES,
+    ...CAMPAIGN_MAP7_NODES,
+  ];
+}
+
+function isContinentUnlocked(mapIdx: number): boolean {
+  if (mapIdx <= 1) return true;
+  if (mapIdx === 2) return completedCampaignLevels.includes(8) || completedCampaignLevels.some(id => id >= 9);
+  if (mapIdx === 3) return completedCampaignLevels.includes(16) || completedCampaignLevels.some(id => id >= 17);
+  if (mapIdx === 4) return completedCampaignLevels.includes(23) || completedCampaignLevels.includes(30) || completedCampaignLevels.some(id => id >= 31);
+  if (mapIdx === 5) return completedCampaignLevels.includes(40) || completedCampaignLevels.some(id => id >= 41);
+  if (mapIdx === 6) return completedCampaignLevels.includes(50) || completedCampaignLevels.some(id => id >= 51);
+  if (mapIdx === 7) return completedCampaignLevels.includes(60) || completedCampaignLevels.some(id => id >= 61);
+  return false;
+}
+
+function getCampaignMapPortals(mapIdx: number): CampaignPortalDef[] {
+  switch (mapIdx) {
+    case 1:
+      return [
+        {
+          x: 66.0,
+          y: 26.0,
+          targetMap: 2,
+          label: '✨ 星门 · 前往第二大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(8),
+          lockMsg: '需击败第 8 关首领【博瑞】激活星门',
+        },
+      ];
+    case 2:
+      return [
+        {
+          x: 18.0,
+          y: 82.0,
+          targetMap: 1,
+          label: '⬅ 星门 · 返回第一大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+        {
+          x: 88.5,
+          y: 21.0,
+          targetMap: 3,
+          label: '✨ 星门 · 前往第三大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(16),
+          lockMsg: '需击败第 16 关首领【弗斯拉夫】激活星门',
+        },
+      ];
+    case 3:
+      return [
+        {
+          x: 18.0,
+          y: 82.0,
+          targetMap: 2,
+          label: '⬅ 星门 · 返回第二大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+        {
+          x: 91.0,
+          y: 48.0,
+          targetMap: 4,
+          label: '✨ 星门 · 前往第四大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(23) || completedCampaignLevels.includes(30),
+          lockMsg: '需击败第 23 关首领【铎拉克】或第 30 关【拉特林】激活星门',
+        },
+      ];
+    case 4:
+      return [
+        {
+          x: 12.0,
+          y: 78.0,
+          targetMap: 3,
+          label: '⬅ 星门 · 返回第三大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+        {
+          x: 92.0,
+          y: 22.0,
+          targetMap: 5,
+          label: '✨ 星门 · 前往第五大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(40),
+          lockMsg: '需击败第 40 关首领【严厉的格瑞斯沃德】激活星门',
+        },
+      ];
+    case 5:
+      return [
+        {
+          x: 12.0,
+          y: 78.0,
+          targetMap: 4,
+          label: '⬅ 星门 · 返回第四大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+        {
+          x: 92.0,
+          y: 22.0,
+          targetMap: 6,
+          label: '✨ 星门 · 前往第六大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(50),
+          lockMsg: '需击败第 50 关首领【受损的伊曼达】激活星门',
+        },
+      ];
+    case 6:
+      return [
+        {
+          x: 12.0,
+          y: 78.0,
+          targetMap: 5,
+          label: '⬅ 星门 · 返回第五大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+        {
+          x: 92.0,
+          y: 35.0,
+          targetMap: 7,
+          label: '✨ 星门 · 前往第七大陆 ➔',
+          isUnlocked: completedCampaignLevels.includes(60),
+          lockMsg: '需击败第 60 关首领【沼泽领主因斯克】激活星门',
+        },
+      ];
+    case 7:
+      return [
+        {
+          x: 12.0,
+          y: 78.0,
+          targetMap: 6,
+          label: '⬅ 星门 · 返回第六大陆',
+          isUnlocked: true,
+          lockMsg: '',
+        },
+      ];
+    default:
+      return [];
+  }
+}
 
 let campaignMapPanX = 0;
 let campaignMapPanY = 0;
@@ -1887,7 +2381,7 @@ function saveCompletedBattleReplay(eng: SpectromancerEngine, mode: string) {
   const eName = eng.enemy.name || '对手';
   const pFace = currentBattleSource === 'lan' ? (eng.player.face || `./faces/Face${lanPlayerFaceId}.jpg`) : `./faces/Face${playerFaceIndex + 1}.jpg`;
   const eFace = currentBattleSource === 'campaign' 
-    ? ([...CAMPAIGN_MAP1_NODES, ...CAMPAIGN_MAP2_NODES].find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
+    ? (getAllCampaignNodes().find(n => n.levelId === selectedCampaignLevelId)?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
     : (currentBattleSource === 'league'
       ? (activeLeague?.standings[(activeLeague.currentMatch - 1) % activeLeague.standings.length]?.face || `./faces/Face${aiFaceIndex + 1}.jpg`)
       : (currentBattleSource === 'lan' ? (eng.enemy.face || `./faces/Face${aiFaceIndex + 1}.jpg`) : `./faces/Face${aiFaceIndex + 1}.jpg`));
@@ -4922,7 +5416,7 @@ function renderMainMenu(): string {
             </div>
             <div class="mode-card-body">
               <div class="mode-card-title">战役模式</div>
-              <div class="mode-card-desc">3 大篇章 · 23 关剧情挑战与领地首领讨伐</div>
+              <div class="mode-card-desc">7 大篇章 · 65 关剧情挑战与领地首领讨伐</div>
             </div>
             <div class="mode-card-arrow">▶</div>
           </div>
@@ -6073,7 +6567,7 @@ function renderCodexPageContent(tab: string): string {
           <div class="codex-section-title">🎮 丰厚多样的对战玩法</div>
           <div class="codex-section-body">
             1. <strong>单局对战 (Single Duel)：</strong> 自由配置 15 大流派与随机流派、精美英雄头像与 AI 难度，并在开局前挑选「战场场景」——特殊造物（火山、祭坛、行军石、魔法学院…）会作为战场规则预置在阵线上。<br>
-            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 3 大篇章 23 个领地据点；击败领主开启后续多重分支路线，体验各领地专属战规，部分关卡战规会预置特殊造物。<br>
+            2. <strong>战役模式 (Campaign)：</strong> 踏上宏伟的元素大陆大地图，攻伐 7 大篇章 65 个领地据点；击败领主开启后续多重分支路线，体验各领地专属战规，部分关卡战规会预置特殊造物。<br>
             3. <strong>英雄联赛 (League of Heroes)：</strong> 支持创建多名法师角色档案，参与 8 轮天梯排位决战；每场联赛都会按赛程分配一个战场场景（含特殊造物场景），冲击巅峰积分榜首！<br>
             4. <strong>自组卡牌工坊 (Custom Deck)：</strong> 精细构筑专属 20 张王牌套牌，体验极致的套路搭配与战术博弈。<br>
             5. <strong>局域网对战 (LAN Duel)：</strong> 同一无线局域网或手机热点下，输入 4 位房间码即可实现低延迟跨设备双人实时联机对决！房主选择的战场场景会同步给双方。<br>
@@ -6467,7 +6961,7 @@ function renderCampaignHubModal(): string {
                         ${isCur ? '<span style="font-size:11px; background:#1e3a8a; color:#bfdbfe; padding:2px 6px; border-radius:4px; font-weight:900;">当前选择</span>' : ''}
                       </div>
                       <div style="font-size:clamp(12.5px, 1.05vw, 15px); color:#2b1f13; font-weight:800;">
-                        征战进度: 已通关 ${clearedCount} / 23 关 · 当前所选关卡: 第 ${p.selectedLevelId || 1} 关
+                        征战进度: 已通关 ${clearedCount} / 65 关 · 当前所选关卡: 第 ${p.selectedLevelId || 1} 关
                       </div>
                       ${p.createdAt ? `<div style="font-size:11px; color:#6b4e33;">创建时间: ${p.createdAt}</div>` : ''}
                     </div>
@@ -7485,23 +7979,11 @@ function renderCampaignMapScreen(): string {
   }
   const currentLvl = (campaignData as CampaignLevel[]).find(l => l.id === selectedCampaignLevelId) || (campaignData as CampaignLevel[])[0];
 
-  const currentMapBg = campaignMapIndex === 3
-    ? './ui/Campaign_Map3.jpg'
-    : (campaignMapIndex === 2 ? './ui/Campaign_Map2.jpg' : './ui/Campaign_Map1.jpg');
-  const activeNodes = campaignMapIndex === 3
-    ? CAMPAIGN_MAP3_NODES
-    : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
-  const activeRoutes = campaignMapIndex === 3
-    ? CAMPAIGN_MAP3_ROUTES
-    : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_ROUTES : CAMPAIGN_MAP1_ROUTES);
-  const portal1Unlocked = completedCampaignLevels.includes(8);
-  const portal2Unlocked = completedCampaignLevels.includes(16);
-
-  const bannerText = campaignMapIndex === 1
-    ? '第一大陆 · 黎明平原与要塞 (第 1 ~ 8 关)'
-    : (campaignMapIndex === 2
-        ? '第二大陆 · 元素荒原与苍穹 (第 9 ~ 16 关)'
-        : '第三大陆 · 龙之群峰与终焉神殿 (第 17 ~ 23 关)');
+  const currentMapBg = `./ui/Campaign_Map${campaignMapIndex}.jpg`;
+  const activeNodes = getCampaignMapNodes(campaignMapIndex);
+  const activeRoutes = getCampaignMapRoutes(campaignMapIndex);
+  const activePortals = getCampaignMapPortals(campaignMapIndex);
+  const bannerText = CONTINENT_TITLES[campaignMapIndex] || '战役大地图';
 
   return `
     <div class="campaign-screen-view">
@@ -7555,65 +8037,22 @@ function renderCampaignMapScreen(): string {
             `;
           }).join('')}
 
-          ${campaignMapIndex === 1 ? `
-            <!-- Map 1 星门: 前往第二大陆 -->
-            <div class="campaign-node campaign-portal ${portal1Unlocked ? 'portal-active available' : 'locked'}"
-                 data-portal-target="2"
-                 data-unlocked="${portal1Unlocked ? '1' : '0'}"
-                 style="left: ${CAMPAIGN_PORTAL_MAP1.x}%; top: ${CAMPAIGN_PORTAL_MAP1.y}%;"
-                 title="${portal1Unlocked ? '星门 · 穿越至第二大陆 (第9~16关)' : '星门 (需击败第8关博瑞激活)'}">
-              <div class="campaign-node-badge-title">${portal1Unlocked ? '✨ 星门 · 前往第二大陆 ➔' : '🔒 星门 (未激活)'}</div>
+          ${activePortals.map(p => `
+            <div class="campaign-node campaign-portal ${p.isUnlocked ? 'portal-active available' : 'locked'}"
+                 data-portal-target="${p.targetMap}"
+                 data-unlocked="${p.isUnlocked ? '1' : '0'}"
+                 data-lock-msg="${p.lockMsg}"
+                 style="left: ${p.x}%; top: ${p.y}%;"
+                 title="${p.isUnlocked ? `${p.label} (点击穿越)` : p.lockMsg}">
+              <div class="campaign-node-badge-title">${p.isUnlocked ? p.label : '🔒 星门 (未激活)'}</div>
               <div class="campaign-node-avatar-frame">
-                <span class="campaign-portal-icon">🌀</span>
-                ${!portal1Unlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
+                <span class="campaign-portal-icon">${p.targetMap < campaignMapIndex ? '🚪' : '🌀'}</span>
+                ${!p.isUnlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
               </div>
               <div class="campaign-node-landmark-tag">星魂传送门</div>
               <div class="campaign-node-pointer"></div>
             </div>
-          ` : (campaignMapIndex === 2 ? `
-            <!-- Map 2 星门: 返回第一大陆 -->
-            <div class="campaign-node campaign-portal portal-active available"
-                 data-portal-target="1"
-                 data-unlocked="1"
-                 style="left: ${CAMPAIGN_PORTAL_MAP2_TO_1.x}%; top: ${CAMPAIGN_PORTAL_MAP2_TO_1.y}%;"
-                 title="星门 · 返回第一大陆 (第1~8关)">
-              <div class="campaign-node-badge-title">⬅ 星门 · 返回第一大陆</div>
-              <div class="campaign-node-avatar-frame">
-                <span class="campaign-portal-icon">🚪</span>
-              </div>
-              <div class="campaign-node-landmark-tag">星魂传送门</div>
-              <div class="campaign-node-pointer"></div>
-            </div>
-
-            <!-- Map 2 星门: 前往第三大陆 -->
-            <div class="campaign-node campaign-portal ${portal2Unlocked ? 'portal-active available' : 'locked'}"
-                 data-portal-target="3"
-                 data-unlocked="${portal2Unlocked ? '1' : '0'}"
-                 style="left: ${CAMPAIGN_PORTAL_MAP2_TO_3.x}%; top: ${CAMPAIGN_PORTAL_MAP2_TO_3.y}%;"
-                 title="${portal2Unlocked ? '星门 · 穿越至第三大陆 (第17~23关)' : '星门 (需击败第16关弗斯拉夫激活)'}">
-              <div class="campaign-node-badge-title">${portal2Unlocked ? '✨ 星门 · 前往第三大陆 ➔' : '🔒 星门 (未激活)'}</div>
-              <div class="campaign-node-avatar-frame">
-                <span class="campaign-portal-icon">🌀</span>
-                ${!portal2Unlocked ? '<div class="campaign-node-lock-badge">🔒</div>' : ''}
-              </div>
-              <div class="campaign-node-landmark-tag">星魂传送门</div>
-              <div class="campaign-node-pointer"></div>
-            </div>
-          ` : `
-            <!-- Map 3 星门: 返回第二大陆 -->
-            <div class="campaign-node campaign-portal portal-active available"
-                 data-portal-target="2"
-                 data-unlocked="1"
-                 style="left: ${CAMPAIGN_PORTAL_MAP3.x}%; top: ${CAMPAIGN_PORTAL_MAP3.y}%;"
-                 title="星门 · 返回第二大陆 (第9~16关)">
-              <div class="campaign-node-badge-title">⬅ 星门 · 返回第二大陆</div>
-              <div class="campaign-node-avatar-frame">
-                <span class="campaign-portal-icon">🚪</span>
-              </div>
-              <div class="campaign-node-landmark-tag">星魂传送门</div>
-              <div class="campaign-node-pointer"></div>
-            </div>
-          `)}
+          `).join('')}
         </div>
 
         <!-- 悬浮地图操控按钮 -->
@@ -7624,9 +8063,12 @@ function renderCampaignMapScreen(): string {
               <span class="continent-hdr-title">大陆 ${campaignMapIndex}</span>
             </div>
             <div class="continent-btn-row">
-              <button class="continent-nav-btn ${campaignMapIndex === 1 ? 'active' : ''}" data-target-map="1" title="第一大陆 · 黎明平原与要塞 (第1~8关)${campaignMapIndex === 1 ? '【当前所在】' : ''}">Ⅰ</button>
-              <button class="continent-nav-btn ${campaignMapIndex === 2 ? 'active' : ''}" data-target-map="2" title="第二大陆 · 元素荒原与苍穹 (第9~16关)${campaignMapIndex === 2 ? '【当前所在】' : ''}">Ⅱ</button>
-              <button class="continent-nav-btn ${campaignMapIndex === 3 ? 'active' : ''}" data-target-map="3" title="第三大陆 · 龙之群峰与终焉神殿 (第17~23关)${campaignMapIndex === 3 ? '【当前所在】' : ''}">Ⅲ</button>
+              ${([1, 2, 3, 4, 5, 6, 7] as const).map(num => {
+                const roman = ['Ⅰ', 'Ⅱ', 'Ⅲ', 'Ⅳ', 'Ⅴ', 'Ⅵ', 'Ⅶ'][num - 1];
+                const isCur = campaignMapIndex === num;
+                const isUnl = isContinentUnlocked(num);
+                return `<button class="continent-nav-btn ${isCur ? 'active' : ''} ${!isUnl ? 'locked' : ''}" data-target-map="${num}" title="${CONTINENT_TITLES[num]}${isCur ? '【当前所在】' : (!isUnl ? '【尚未激活】' : '')}">${roman}</button>`;
+              }).join('')}
             </div>
           </div>
           <div class="campaign-ctrl-btn-group">
@@ -10550,8 +10992,13 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
       if (!viewport) return window.innerHeight;
       const vh = viewport.clientHeight;
       const deck = document.getElementById('campaign-bottom-deck');
-      const isCollapsed = deck?.classList.contains('collapsed') ?? isCampaignDeckCollapsed;
-      const deckH = isCollapsed ? 44 : (deck?.clientHeight || 200);
+      if (!deck) return vh;
+      const isAbsolute = window.getComputedStyle(deck).position === 'absolute';
+      if (!isAbsolute) {
+        return Math.max(160, vh);
+      }
+      const isCollapsed = deck.classList.contains('collapsed') ?? isCampaignDeckCollapsed;
+      const deckH = isCollapsed ? 44 : (deck.clientHeight || 200);
       return Math.max(160, vh - deckH);
     }
 
@@ -10581,7 +11028,7 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
 
     function focusLevel(levelId: number, smooth = true) {
       if (!viewport) return;
-      const currentNodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+      const currentNodes = getCampaignMapNodes(campaignMapIndex);
       const node = currentNodes.find(n => n.levelId === levelId) || currentNodes[0];
       const nx = (node.x / 100) * STAGE_W;
       const ny = (node.y / 100) * STAGE_H;
@@ -10700,11 +11147,26 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
     document.querySelectorAll('.continent-nav-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const targetMap = parseInt((btn as HTMLElement).dataset.targetMap || '1', 10) as 1 | 2 | 3;
+        const targetMap = parseInt((btn as HTMLElement).dataset.targetMap || '1', 10) as CampaignMapIndex;
         if (targetMap === campaignMapIndex) return;
+        if (!isContinentUnlocked(targetMap)) {
+          sound.play('click');
+          const prevBossMap: Record<number, string> = {
+            2: '第 8 关【博瑞】',
+            3: '第 16 关【弗斯拉夫】',
+            4: '第 23 关【铎拉克】或第 30 关【拉特林】',
+            5: '第 40 关【严厉的格瑞斯沃德】',
+            6: '第 50 关【受损的伊曼达】',
+            7: '第 60 关【沼泽领主因斯克】',
+          };
+          showToastNotice(`🔒 ${CONTINENT_NAMES[targetMap]}尚未解锁，请先攻克${prevBossMap[targetMap] || '前序首领'}！`);
+          (btn as HTMLElement).classList.add('shake-locked');
+          setTimeout(() => (btn as HTMLElement).classList.remove('shake-locked'), 400);
+          return;
+        }
         sound.play('click');
         campaignMapIndex = targetMap;
-        const nodes = campaignMapIndex === 3 ? CAMPAIGN_MAP3_NODES : (campaignMapIndex === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+        const nodes = getCampaignMapNodes(campaignMapIndex);
         if (!nodes.some(n => n.levelId === selectedCampaignLevelId)) {
           selectedCampaignLevelId = nodes[0].levelId;
         }
@@ -10729,7 +11191,9 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
         const icon = toggleDeckBtn.querySelector('.toggle-icon');
         if (icon) icon.textContent = isCampaignDeckCollapsed ? '▲ 展开面板' : '▼ 收起面板';
       }
-      focusLevel(selectedCampaignLevelId, true);
+      setTimeout(() => {
+        focusLevel(selectedCampaignLevelId, true);
+      }, 320);
     };
     toggleDeckBtn?.addEventListener('click', toggleDeckHandler);
     miniExpandBtn?.addEventListener('click', toggleDeckHandler);
@@ -10795,22 +11259,21 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
         // 传送门点击交互
         const portalTarget = (nodeEl as HTMLElement).dataset.portalTarget;
         if (portalTarget) {
-          const targetMap = parseInt(portalTarget, 10) as 1 | 2 | 3;
+          const targetMap = parseInt(portalTarget, 10) as CampaignMapIndex;
           const isUnlocked = (nodeEl as HTMLElement).dataset.unlocked === '1';
           if (!isUnlocked) {
             sound.play('click');
-            const reqBoss = targetMap === 2 ? '博瑞' : '弗斯拉夫';
-            showToastNotice(`🌀 星门尚未激活，请先击败该大陆最终首领【${reqBoss}】！`);
+            const lockMsg = (nodeEl as HTMLElement).dataset.lockMsg || '星门尚未激活！';
+            showToastNotice(`🌀 ${lockMsg}`);
             nodeEl.classList.add('shake-locked');
             setTimeout(() => nodeEl.classList.remove('shake-locked'), 400);
             return;
           }
           sound.play('victory');
           campaignMapIndex = targetMap;
-          const targetNodes = targetMap === 3 ? CAMPAIGN_MAP3_NODES : (targetMap === 2 ? CAMPAIGN_MAP2_NODES : CAMPAIGN_MAP1_NODES);
+          const targetNodes = getCampaignMapNodes(targetMap);
           selectedCampaignLevelId = targetNodes[0].levelId;
-          const continentNames = { 1: '第一大陆', 2: '第二大陆', 3: '第三大陆' };
-          showToastNotice(`✨ 穿越星门，您已抵达【${continentNames[targetMap]}】！`);
+          showToastNotice(`✨ 穿越星门，您已抵达【${CONTINENT_NAMES[targetMap]}】！`);
           render();
           focusLevel(selectedCampaignLevelId, false);
           return;

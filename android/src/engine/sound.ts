@@ -423,14 +423,19 @@ class SoundManager {
 
   private menuTracks: string[] = ['menu1', 'menu2'];
   private currentMenuTrackIdx: number = 0;
-  private combatTracks: string[] = ['combat4', 'combat6', 'combat7', 'combat8', 'combat9', 'combat10', 'combat11', 'combat12'];
+  private combatTracks: string[] = [
+    'combat1', 'combat2', 'combat3', 'combat4',
+    'combat5', 'combat6', 'combat7', 'combat8',
+    'combat9', 'combat10', 'combat11', 'combat12'
+  ];
 
   // Preload essential high-frequency SFX and core BGM into memory via Web Audio
   private preloadCoreSounds() {
     const frequent = [
       'menu1.ogg', 'menu2.ogg', 'campaign_map.ogg',
-      'combat4.ogg', 'combat6.ogg', 'combat7.ogg', 'combat8.ogg', 'combat9.ogg',
-      'combat10.ogg', 'combat11.ogg', 'combat12.ogg',
+      'combat1.ogg', 'combat2.ogg', 'combat3.ogg', 'combat4.ogg',
+      'combat5.ogg', 'combat6.ogg', 'combat7.ogg', 'combat8.ogg',
+      'combat9.ogg', 'combat10.ogg', 'combat11.ogg', 'combat12.ogg',
       'attack.ogg', 'boom.ogg', 'btn1.ogg', 'btn2.ogg', 'btn3.ogg', 'summon1.ogg', 'summondrop.ogg',
       'flamewave.ogg', 'lightningbolt.ogg', 'calltothunder.ogg', 'healing.ogg', 'ritual_of_glory.ogg', 'doombolt.ogg'
     ];
@@ -533,6 +538,10 @@ class SoundManager {
     this.playBgm(this.menuTracks[this.currentMenuTrackIdx], true);
   }
 
+  public getCombatTracks(): string[] {
+    return [...this.combatTracks];
+  }
+
   public getRandomCombatTrack(): string {
     const candidates = this.combatTracks.filter(t => t !== this.currentTrack);
     const pool = candidates.length > 0 ? candidates : this.combatTracks;
@@ -545,7 +554,7 @@ class SoundManager {
     if (cleanTrack === 'battle' || cleanTrack === 'combat' || cleanTrack === 'random_combat') {
       cleanTrack = this.getRandomCombatTrack();
     }
-    if (cleanTrack === 'battle1') cleanTrack = 'combat4';
+    if (cleanTrack === 'battle1') cleanTrack = 'combat1';
     if (cleanTrack === 'campaign') cleanTrack = 'campaign_map';
 
     // 智能在两首主界面史诗交响曲之间切换轮播
