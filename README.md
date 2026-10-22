@@ -111,7 +111,7 @@
 * **分级双层开关架构**：
   * **Tier 1（全局总控）**：开启后即刻激活【🔮 AI 巅峰对决】；
   * **Tier 2（常规模式范围）**：细化勾选单人对战、联赛、战役、卡组实测是否接入大模型，未勾选模式自动采用 0 延迟、0 流量的纯本地原生启发式算法。
-* **全流程遥测黑匣子**：所有调用的 System Prompt、局势快照、模型原始返回与耗时均实时持久化记录至 `tools/battle_ai_records.txt`，设置弹窗内支持一键直接导出。
+
 
 ---
 
@@ -234,10 +234,6 @@ ElementalRealms/
 │   └── vite.config.ts       # Vite 构建与打包配置
 ├── release_pc/              # Windows PC 端安装包及便携版产物
 ├── release_apk/             # Android 正式版 APK 安装包
-├── tools/                   # 大模型实战遥测记录与测试工具库
-│   ├── battle_ai_records.txt# 实战大模型请求/响应全量文本持久化日志
-│   ├── test_combat_api.js   # 命令行大模型接口压测脚本
-│   └── run_combat_api_test.bat # 一键连通性测试脚本
 ├── package_pc.bat           # 一键编译并打包 Windows PC 端程序
 ├── start_dev.bat            # 一键启动开发调试
 ├── start_preview.bat        # 一键本地生产预览
