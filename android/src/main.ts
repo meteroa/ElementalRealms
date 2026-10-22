@@ -3,10 +3,13 @@ import {
   saveAiConfig,
   testAiConnection,
   PROVIDER_PRESETS,
+  BANTER_SOURCE_LABELS,
   resetBattleBanterSession,
   generateEnemyBanter,
   generateAiBattlefieldScenario,
   getOfflineOpeningBanter,
+  getBanterCacheStats,
+  clearBanterCache,
 } from './engine/ai_client';
 import './style.css';
 import { SpectromancerEngine } from './engine/game';
@@ -432,8 +435,10 @@ function recordCampaignVictory() {
     campaignMapIndex = 1;
   }
   saveCampaignProfiles();
+  // 通关后该关的进度存档立即失效（同时清理旧版遗留的 SAVE_BATTLE_KEY 与列表条目）
   try {
     localStorage.removeItem(SAVE_BATTLE_KEY);
+    clearSavedBattleForCurrentBattle();
   } catch {}
 }
 
@@ -2868,6 +2873,10 @@ function getSavedBattlesList(): SavedBattleRecord[] {
 
 function saveCurrentBattle(): boolean {
   try {
+    if (!isSaveAllowedForMode(currentBattleSource)) {
+      console.log(`[Save] 模式 ${currentBattleSource} 不支持存档`);
+      return false;
+    }
     const battleData = {
       timestamp: Date.now(),
       battleSource: currentBattleSource,
@@ -2921,6 +2930,9 @@ function saveCurrentBattle(): boolean {
       slotKey = `campaign_${activeCampaign.id}`;
     } else if (currentBattleSource === 'league' && activeLeague?.id) {
       slotKey = `league_${activeLeague.id}`;
+    } else if (currentBattleSource === 'duel' || currentBattleSource === 'custom_deck') {
+      // 单局 / 自组：每次保存生成独立槽位，最多保留 MAX_MANUAL_SAVES 个
+      slotKey = `${currentBattleSource}_${Date.now()}`;
     }
 
     const newRecord: SavedBattleRecord = {
@@ -2946,7 +2958,16 @@ function saveCurrentBattle(): boolean {
 
     const currentList = getSavedBattlesList().filter(r => r.saveId !== newRecord.saveId);
     currentList.unshift(newRecord);
-    if (currentList.length > 8) currentList.pop();
+
+    // 单槽模式（战役/联赛）不参与数量裁剪，避免把正在进行的战役进度挤掉；
+    // 只对单局/自组这类可多次手动存档的模式做上限控制。
+    const manual = currentList.filter(r => !isSingleSlotMode(r.battleSource));
+    if (manual.length > MAX_MANUAL_SAVES) {
+      const drop = new Set(manual.slice(MAX_MANUAL_SAVES).map(r => r.saveId));
+      const trimmed = currentList.filter(r => !drop.has(r.saveId));
+      localStorage.setItem(SAVE_BATTLES_LIST_KEY, JSON.stringify(trimmed));
+      return true;
+    }
 
     localStorage.setItem(SAVE_BATTLES_LIST_KEY, JSON.stringify(currentList));
     return true;
@@ -2956,15 +2977,112 @@ function saveCurrentBattle(): boolean {
   }
 }
 
-function deleteSavedBattle(saveId: string): void {
+// ===================================
+// 分模式存档策略
+//   战役 campaign : 每个角色档案 1 个进度槽，通关/失败/重开即失效
+//   联赛 league   : 每个联赛档案 1 个进度槽，该场对决结束后失效
+//   单局 duel / 自组 custom_deck : 允许手动存档，最多保留 N 个
+//   局域网 lan / AI 观战 ai_duel : 不提供存档（联机对局无法单人续战）
+// ===================================
+const MAX_MANUAL_SAVES = 8;
+
+/** 该模式是否允许保存进度 */
+function isSaveAllowedForMode(source: string): boolean {
+  return source === 'campaign' || source === 'league' || source === 'duel' || source === 'custom_deck';
+}
+
+/** 该模式是否为"单槽覆盖"（战役/联赛：一个档案只保留一条进度） */
+function isSingleSlotMode(source: string): boolean {
+  return source === 'campaign' || source === 'league';
+}
+
+/**
+ * 战局结束（分出胜负）后清理对应存档。
+ * 战役/联赛必须清，否则"接续战斗"会永远残留一局已打完的旧战役。
+ */
+function clearSavedBattleForCurrentBattle(): void {
   try {
-    const list = getSavedBattlesList().filter(r => r.saveId !== saveId);
+    if (!currentBattleSource) return;
+    // 注意：必须读原始列表，不能用 getSavedBattlesList()——它会过滤掉 gameOver 的条目，
+    // 而本局刚分出胜负，正是要删掉这类条目。
+    const list = readRawSavedBattlesList();
+    let kept = list;
+
+    if (currentBattleSource === 'campaign') {
+      kept = list.filter(r => !(r.battleSource === 'campaign' &&
+        (!activeCampaign?.id || !r.campaignProfileId || r.campaignProfileId === activeCampaign.id)));
+    } else if (currentBattleSource === 'league') {
+      kept = list.filter(r => !(r.battleSource === 'league' &&
+        (!activeLeague?.id || !r.leagueProfileId || r.leagueProfileId === activeLeague.id)));
+    } else {
+      // 单局 / 自组：只清当前这一局对应的槽位
+      const slotKey = currentBattleSource;
+      kept = list.filter(r => r.saveId !== `slot_${slotKey}`);
+    }
+
+    persistSavedBattlesList(kept);
+  } catch {}
+}
+
+/** 读取原始存档列表（不做 gameOver 过滤），用于清理逻辑 */
+function readRawSavedBattlesList(): SavedBattleRecord[] {
+  try {
+    const raw = localStorage.getItem(SAVE_BATTLES_LIST_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed.filter(item => item && item.saveId);
+  } catch {}
+  return [];
+}
+
+/** 写回存档列表，并同步旧版单槽键，保持两者一致 */
+function persistSavedBattlesList(list: SavedBattleRecord[]): void {
+  try {
     localStorage.setItem(SAVE_BATTLES_LIST_KEY, JSON.stringify(list));
     if (list.length > 0) {
       localStorage.setItem(SAVE_BATTLE_KEY, JSON.stringify(list[0].battleData));
     } else {
       localStorage.removeItem(SAVE_BATTLE_KEY);
     }
+  } catch {}
+}
+
+/**
+ * 兼容旧版遗留数据：清除历史遗留的、已结束或模式不允许的存档。
+ * 这是"永远有一个接续战斗"的根因修复（老版本只删 SAVE_BATTLE_KEY，
+ * 没有清理 SAVE_BATTLES_LIST_KEY，导致列表里的条目永久残留）。
+ */
+function purgeStaleSavedBattles(): void {
+  try {
+    const raw = localStorage.getItem(SAVE_BATTLES_LIST_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    const cleaned = parsed.filter((item: any) => {
+      if (!item || !item.battleData || !item.battleData.engineState) return false;
+      if (item.battleData.engineState.gameOver) return false;      // 已结束的对局
+      if (!isSaveAllowedForMode(item.battleSource)) return false;  // 不该存在的模式
+      return true;
+    });
+    // 单槽模式去重：同一档案只保留最新一条
+    const seen = new Set<string>();
+    const deduped = cleaned.filter((item: any) => {
+      if (!isSingleSlotMode(item.battleSource)) return true;
+      if (seen.has(item.saveId)) return false;
+      seen.add(item.saveId);
+      return true;
+    });
+    if (deduped.length !== parsed.length) {
+      persistSavedBattlesList(deduped);
+      console.log(`[Save] 已清理 ${parsed.length - deduped.length} 条失效存档`);
+    }
+  } catch {}
+}
+
+function deleteSavedBattle(saveId: string): void {
+  try {
+    const list = readRawSavedBattlesList().filter(r => r.saveId !== saveId);
+    persistSavedBattlesList(list);
   } catch {}
 }
 
@@ -3139,6 +3257,9 @@ function exitCurrentBattleToMenu(): void {
 
 // Start Menu Music on launch
 sound.playBgm('menu1');
+
+// 启动时清理历史遗留的失效存档（修复旧版本"接续战斗永远残留"的问题）
+purgeStaleSavedBattles();
 
 async function animateCardToSlot(
   who: 'player' | 'enemy',
@@ -7226,6 +7347,35 @@ function renderOptionsModal(): string {
                     </div>
                   </div>
 
+                  <!-- 开关 3: 战斗对白（狠话）来源 -->
+                  <div style="background:#f5f3ff; border:1px solid #ddd6fe; border-radius:8px; padding:12px 16px; display:flex; flex-direction:column; gap:8px;">
+                    <div style="font-size:13.5px; font-weight:800; color:#5b21b6;">💬 开关三：战斗对白（狠话）从哪里来？</div>
+                    <div style="font-size:12px; color:#6d28d9; line-height:1.45;">
+                      电脑对手在开局挑衅与对局中会喊话。这里决定台词来源，与上面「由谁出牌」相互独立：
+                    </div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:10px; margin-top:2px;">
+                      ${(['ai', 'local', 'hybrid'] as const).map(src => `
+                        <label style="display:flex; align-items:flex-start; gap:8px; font-size:12.5px; font-weight:700; color:#4c1d95; cursor:pointer; background:rgba(255,255,255,0.6); border:1px solid ${aiCfg.banterSource === src ? '#8b5cf6' : 'transparent'}; border-radius:6px; padding:8px 10px;">
+                          <input type="radio" name="banter-source" id="radio-banter-${src}" value="${src}" ${(aiCfg.banterSource || 'hybrid') === src ? 'checked' : ''} style="width:16px; height:16px; margin-top:2px; accent-color:#7c3aed; cursor:pointer;" />
+                          <span style="display:flex; flex-direction:column; gap:2px;">
+                            <span>${src === 'ai' ? '🤖 大模型生成' : (src === 'local' ? '📚 本地词库抽取' : '🔀 混合（推荐）')}</span>
+                            <span style="font-weight:600; font-size:11.5px; color:#7c3aed; line-height:1.4;">${BANTER_SOURCE_LABELS[src].desc}</span>
+                          </span>
+                        </label>
+                      `).join('')}
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; border-top:1px dashed #ddd6fe; padding-top:10px; margin-top:2px;">
+                      <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-weight:700; color:#4c1d95; cursor:pointer;">
+                        <input type="checkbox" id="chk-banter-cache" ${aiCfg.banterCacheEnabled !== false ? 'checked' : ''} style="width:17px; height:17px; accent-color:#7c3aed; cursor:pointer;" />
+                        💾 把 AI 生成的狠话保存到本地，之后可离线复用
+                      </label>
+                      <div style="display:flex; align-items:center; gap:8px;">
+                        <span style="font-size:11.5px; font-weight:700; color:#6d28d9;">已收藏 ${getBanterCacheStats().lines} 句 / ${getBanterCacheStats().speakers} 位角色</span>
+                        <button class="duel-stone-action-btn close" id="btn-clear-banter-cache" style="height:30px; font-size:12px; padding:0 12px;">清空</button>
+                      </div>
+                    </div>
+                  </div>
+
                   <!-- 大模型服务商与参数配置 -->
                   <div style="font-size:13px; font-weight:800; color:#5c3d1e;">⚙️ 模型接口与密钥配置：</div>
                   <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:8px;">
@@ -7279,13 +7429,15 @@ function renderOptionsModal(): string {
             `;
           })()}
 
-          ${currentView === 'battle' ? `
+          ${currentView === 'battle' && isSaveAllowedForMode(currentBattleSource) ? `
             <div style="border-top:1.5px dashed rgba(198,155,63,0.4); padding-top:16px; display:flex; flex-direction:column; gap:8px;">
               <button class="campaign-pc-btn start-btn" id="btn-options-save-quit" style="width:100%; height:48px; font-size:clamp(15.5px, 1.3vw, 18px); font-weight:900;">
                 💾 保存战斗进度并返回主菜单
               </button>
               <div style="font-size:12.5px; color:#5c3d1e; text-align:center; font-weight:700;">
-                自动保存当前血量、能量、场上随从与手牌状态，可随时在主菜单恢复对决
+                ${isSingleSlotMode(currentBattleSource)
+                  ? '本模式的进度会覆盖同一档案的上一次存档，通关或分出胜负后自动失效'
+                  : '自动保存当前血量、能量、场上随从与手牌状态，可随时在主菜单恢复对决'}
               </div>
             </div>
           ` : ''}
@@ -7393,10 +7545,17 @@ function renderCombatScreen(): string {
           </button>
 
           <!-- 2. 保存退出 -->
-          <button class="combat-strip-item btn-save-exit" id="btn-combat-save-exit" title="保存战斗进度并返回主菜单">
-            <span class="strip-icon">💾</span>
-            <span class="strip-text">保存退出</span>
-          </button>
+          ${isSaveAllowedForMode(currentBattleSource) ? `
+            <button class="combat-strip-item btn-save-exit" id="btn-combat-save-exit" title="${isSingleSlotMode(currentBattleSource) ? '保存本档案进度并返回主菜单' : '保存战斗进度并返回主菜单'}">
+              <span class="strip-icon">💾</span>
+              <span class="strip-text">保存退出</span>
+            </button>
+          ` : `
+            <button class="combat-strip-item btn-save-exit" id="btn-combat-quit-nosave" title="该模式不支持存档，将直接返回主菜单">
+              <span class="strip-icon">🚪</span>
+              <span class="strip-text">退出对局</span>
+            </button>
+          `}
 
           <!-- 3. 战场规则 -->
           <button class="combat-strip-item btn-rules" id="btn-combat-rules" title="查看当前战场特殊规则">
@@ -10178,8 +10337,19 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
   document.getElementById('btn-combat-save-exit')?.addEventListener('click', () => {
     sound.play('click');
     if (saveCurrentBattle()) {
-      showToastNotice('💾 战斗进度已保存！随时可继续对决。');
+      showToastNotice(isSingleSlotMode(currentBattleSource)
+        ? '💾 进度已保存到本档案，下次可从「接续战斗」继续。'
+        : '💾 战斗进度已保存！随时可继续对决。');
+    } else {
+      showToastNotice('⚠️ 该模式不支持存档，已直接退出对局。');
     }
+    exitCurrentBattleToMenu();
+  });
+
+  // 局域网 / AI 观战等不可存档模式：直接退出，不留存档
+  document.getElementById('btn-combat-quit-nosave')?.addEventListener('click', () => {
+    sound.play('click');
+    showToastNotice('🚪 该模式为实时联机/观战对局，不支持中途存档。');
     exitCurrentBattleToMenu();
   });
 
@@ -10279,7 +10449,9 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
   document.getElementById('btn-options-save-quit')?.addEventListener('click', () => {
     sound.play('click');
     if (saveCurrentBattle()) {
-      showToastNotice('✅ 战斗已自动保存！已安全返回主菜单。');
+      showToastNotice(isSingleSlotMode(currentBattleSource)
+        ? '✅ 进度已保存到本档案，已安全返回主菜单。'
+        : '✅ 战斗已自动保存！已安全返回主菜单。');
     }
     showOptionsModal = false;
     exitCurrentBattleToMenu();
@@ -10564,6 +10736,38 @@ function startCampaignBattle(levelId: number = selectedCampaignLevelId) {
       cfg.applyModes[key] = (e.target as HTMLInputElement).checked;
       saveAiConfig(cfg);
     });
+  });
+
+  // 战斗对白（狠话）来源
+  (['ai', 'local', 'hybrid'] as const).forEach((src) => {
+    document.getElementById(`radio-banter-${src}`)?.addEventListener('change', (e) => {
+      if (!(e.target as HTMLInputElement).checked) return;
+      sound.play('click');
+      const cfg = getAiConfig();
+      cfg.banterSource = src;
+      saveAiConfig(cfg);
+      render();
+    });
+  });
+
+  document.getElementById('chk-banter-cache')?.addEventListener('change', (e) => {
+    sound.play('click');
+    const cfg = getAiConfig();
+    cfg.banterCacheEnabled = (e.target as HTMLInputElement).checked;
+    saveAiConfig(cfg);
+    showToastNotice(cfg.banterCacheEnabled ? '💾 已开启狠话本地收藏' : '⏸️ 已停止收藏 AI 狠话');
+  });
+
+  document.getElementById('btn-clear-banter-cache')?.addEventListener('click', () => {
+    sound.play('click');
+    const stats = getBanterCacheStats();
+    if (stats.lines === 0) {
+      showToastNotice('ℹ️ 本地暂无收藏的狠话');
+      return;
+    }
+    clearBanterCache();
+    showToastNotice(`🗑️ 已清空 ${stats.lines} 句收藏狠话`);
+    render();
   });
 
   (['deepseek', 'siliconflow', 'ollama', 'custom'] as const).forEach((p) => {
@@ -12082,6 +12286,8 @@ function startCustomDeckBattle() {
     if (currentBattleSource === 'campaign' && engine && engine.winner === 'player') {
       recordCampaignVictory();
     }
+    // 本局已分出胜负，对应存档立即失效
+    clearSavedBattleForCurrentBattle();
     if (currentBattleSource === 'ai_duel') {
       startAiDuelBattle();
       return;
@@ -12107,6 +12313,8 @@ function startCustomDeckBattle() {
     if (currentBattleSource === 'campaign' && engine && engine.winner === 'player') {
       recordCampaignVictory();
     }
+    // 本局已分出胜负，对应存档立即失效
+    clearSavedBattleForCurrentBattle();
     currentView = 'menu';
     render();
   });

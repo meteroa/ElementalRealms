@@ -10,7 +10,19 @@ export interface AiModelConfig {
     campaign: boolean;
     custom_deck: boolean;
   };
+  /** 战斗对白（狠话）来源：ai=大模型生成，local=本地词库，hybrid=AI 优先失败回落本地 */
+  banterSource: BanterSource;
+  /** 是否把 AI 生成的台词沉淀到本地词库，供以后复用 */
+  banterCacheEnabled: boolean;
 }
+
+export type BanterSource = 'ai' | 'local' | 'hybrid';
+
+export const BANTER_SOURCE_LABELS: Record<BanterSource, { name: string; desc: string }> = {
+  ai: { name: '大模型 AI 生成', desc: '每次由大模型即兴创作，台词不重复但需要联网且消耗额度' },
+  local: { name: '本地词库抽取', desc: '从内置台词库随机抽取，完全离线、零延迟、零消耗' },
+  hybrid: { name: '混合（AI 优先，失败回落本地）', desc: '优先请求大模型，超时或未配置时自动使用本地台词' },
+};
 
 export const PROVIDER_PRESETS: Record<AiModelConfig['provider'], { name: string; baseUrl: string; model: string }> = {
   deepseek: {
@@ -55,6 +67,10 @@ export function getAiConfig(): AiModelConfig {
           campaign: rawModes.campaign !== false,
           custom_deck: rawModes.custom_deck !== false,
         },
+        banterSource: (parsed.banterSource === 'ai' || parsed.banterSource === 'local' || parsed.banterSource === 'hybrid')
+          ? parsed.banterSource
+          : 'hybrid',
+        banterCacheEnabled: parsed.banterCacheEnabled !== false,
       };
     }
   } catch {}
@@ -71,6 +87,8 @@ export function getAiConfig(): AiModelConfig {
       campaign: true,
       custom_deck: true,
     },
+    banterSource: 'hybrid',
+    banterCacheEnabled: true,
   };
 }
 
@@ -264,6 +282,70 @@ let currentBattleBanterCalls = 0;
 export function resetBattleBanterSession(): void {
   currentBattleBanterCalls = 0;
   console.log('[AI Banter] Battle banter session reset');
+}
+
+// ==============================================================================
+// 💬 战斗对白（狠话）本地词库缓存
+//     AI 生成的台词按角色沉淀，避免同一角色反复消耗额度；可在设置中清空。
+// ==============================================================================
+const BANTER_CACHE_KEY = 'spectromancer_banter_cache_v1';
+const BANTER_CACHE_MAX_PER_SPEAKER = 40;
+
+type BanterCache = Record<string, string[]>;
+
+function readBanterCache(): BanterCache {
+  try {
+    const raw = localStorage.getItem(BANTER_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as BanterCache;
+  } catch {}
+  return {};
+}
+
+function writeBanterCache(cache: BanterCache): void {
+  try {
+    localStorage.setItem(BANTER_CACHE_KEY, JSON.stringify(cache));
+  } catch {}
+}
+
+/** 把 AI 生成的台词沉淀到本地，按说话者去重 */
+export function cacheBanterLine(speakerName: string, line: string): void {
+  const speaker = (speakerName || '').trim();
+  const text = (line || '').trim();
+  if (!speaker || !text) return;
+  const cache = readBanterCache();
+  const bucket = cache[speaker] || (cache[speaker] = []);
+  if (bucket.includes(text)) return;
+  bucket.push(text);
+  if (bucket.length > BANTER_CACHE_MAX_PER_SPEAKER) {
+    bucket.splice(0, bucket.length - BANTER_CACHE_MAX_PER_SPEAKER);
+  }
+  writeBanterCache(cache);
+}
+
+/** 从本地缓存里随机取一句该角色的台词（没有则返回 null） */
+export function pickCachedBanter(speakerName: string): string | null {
+  const bucket = readBanterCache()[(speakerName || '').trim()];
+  if (!bucket || bucket.length === 0) return null;
+  return bucket[Math.floor(Math.random() * bucket.length)];
+}
+
+/** 统计已沉淀的台词数量（用于设置界面展示） */
+export function getBanterCacheStats(): { speakers: number; lines: number } {
+  const cache = readBanterCache();
+  const speakers = Object.keys(cache).filter(k => (cache[k] || []).length > 0);
+  return {
+    speakers: speakers.length,
+    lines: speakers.reduce((sum, k) => sum + cache[k].length, 0),
+  };
+}
+
+/** 清空台词缓存 */
+export function clearBanterCache(): void {
+  try {
+    localStorage.removeItem(BANTER_CACHE_KEY);
+  } catch {}
 }
 
 export interface CharacterPersona {
@@ -795,11 +877,22 @@ export async function generateEnemyBanter(
   actionDesc: string,
   mode?: string
 ): Promise<string | null> {
+  const banterCfg = getAiConfig();
+
+  // 对白来源由设置决定，与对局 AI 托管开关解耦：
+  //   local  —— 直接不请求大模型，交由调用方使用本地词库
+  //   ai     —— 仅走大模型
+  //   hybrid —— 大模型优先，失败后由调用方回落本地词库
+  if (banterCfg.banterSource === 'local') {
+    console.log('[AI Banter] Skipped: banter source is local');
+    return null;
+  }
+
   if (!isAiEnabledForBattle(mode)) {
     console.log('[AI Banter] Skipped: AI mode is disabled for mode:', mode);
     return null;
   }
-  const config = getAiConfig();
+  const config = banterCfg;
   if (!config.baseUrl) {
     console.log('[AI Banter] Skipped: baseUrl is missing');
     return null;
@@ -904,6 +997,11 @@ export async function generateEnemyBanter(
     content = content.replace(/^["'“”‘’]+|["'“”‘’]+$/g, '').trim();
     if (content.length > 40) content = content.slice(0, 38) + '…';
     console.log(`[AI Banter #${currentBattleBanterCalls}] Success: "${content}"`);
+
+    // 把 AI 原创台词沉淀到本地词库，供以后离线复用
+    if (config.banterCacheEnabled !== false) {
+      cacheBanterLine(enemyName, content);
+    }
 
     recordCombatAiTelemetry({
       enemyName,
@@ -1197,8 +1295,14 @@ export function getOfflineOpeningBanter(speakerName: string, isFirstAttacker: bo
 
   const pool = openingTaunts[speakerName];
   if (pool && pool.length > 0) {
+    // 优先复用大模型此前为这名角色沉淀的原创台词，让本地词库随对局一起成长
+    const cached = pickCachedBanter(speakerName);
+    if (cached && Math.random() < 0.5) return cached;
     return pool[isFirstAttacker ? 0 : (pool.length > 1 ? 1 : 0)];
   }
+
+  const cachedGeneric = pickCachedBanter(speakerName);
+  if (cachedGeneric) return cachedGeneric;
 
   const genericFirst = [
     `今日便在此立下战约，看看谁才是真正的元素主宰！`,
@@ -1217,12 +1321,16 @@ export function getOfflineOpeningBanter(speakerName: string, isFirstAttacker: bo
 import type { CardDef } from '../types';
 
 export function getOfflineCombatBanter(
-  _speakerName: string,
+  speakerName: string,
   _speakerClassId: string,
   card: CardDef,
   _isWinning: boolean,
   isCritical: boolean
 ): string {
+  // 复用该角色此前由大模型沉淀的原创台词，让本地词库随对局一起成长
+  const cached = pickCachedBanter(speakerName);
+  if (cached && Math.random() < 0.4) return cached;
+
   if (isCritical) {
     const criticalLines = [
       `这一击将为你敲响丧钟！`,
