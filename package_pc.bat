@@ -1,6 +1,5 @@
 @echo off
 title Elemental Realms - Build PC Executable
-chcp 65001 >nul
 echo ===============================================================
 echo     Elemental Realms - PC Packaging Tool (Windows x64)
 echo ===============================================================
@@ -9,31 +8,30 @@ echo.
 cd /d "%~dp0android"
 
 where node >nul 2>nul
-if errorlevel 1 (
-    echo [Error] 未检测到 Node.js，请先安装 Node.js (https://nodejs.org/) 并配置 PATH 环境变量。
+if %errorlevel% neq 0 (
+    echo [Error] Node.js is not found. Please install Node.js from https://nodejs.org/
     pause
     exit /b 1
 )
 
 if not exist "node_modules\" (
-    echo [Elemental Realms] 首次运行检测：未找到依赖包 (node_modules)。
-    echo 正在自动安装项目依赖 (npm install)，请稍候...
+    echo [Elemental Realms] Dependencies not found. Running npm install, please wait...
     echo.
     call npm install
-    if errorlevel 1 (
+    if %errorlevel% neq 0 (
         echo.
-        echo [Error] 依赖安装失败，请检查网络连接后重试。
+        echo [Error] npm install failed. Please check your network connection.
         pause
         exit /b 1
     )
     echo.
-    echo [Elemental Realms] 依赖安装完成！
+    echo [Elemental Realms] Dependencies successfully installed!
     echo.
 )
 
 echo [1/2] Compiling production assets (tsc and vite build)...
 call npm run build
-if errorlevel 1 (
+if %errorlevel% neq 0 (
     echo.
     echo [Error] Web build failed! Please check errors above.
     pause
@@ -44,7 +42,7 @@ echo.
 echo [2/2] Packaging executable with Electron-Builder...
 echo Output directory will be: release_pc\
 call npx electron-builder --config electron-builder.json
-if errorlevel 1 (
+if %errorlevel% neq 0 (
     echo.
     echo [Error] Electron packaging failed!
     pause
