@@ -3,6 +3,7 @@
   "private": true,
   "description": "Elemental Realms - Monorepo root workspace scripts",
   "scripts": {
+    "postinstall": "npm --prefix android install",
     "dev": "npm --prefix android run dev",
     "build": "npm --prefix android run build",
     "preview": "npm --prefix android run preview",
